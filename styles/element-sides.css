@@ -1,0 +1,44 @@
+/* Styles for element sides and rotations */
+.element-with-sides {
+  position: relative;
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+
+.element-side {
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
+}
+
+.element-side-top {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  transform-origin: center top;
+}
+
+.element-side-right {
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  transform-origin: right center;
+}
+
+.element-side-bottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  transform-origin: center bottom;
+}
+
+.element-side-left {
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  transform-origin: left center;
+}

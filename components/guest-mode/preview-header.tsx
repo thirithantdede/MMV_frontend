@@ -1,0 +1,92 @@
+"use client"
+
+import { memo } from "react"
+import { ArrowLeft, ChevronDown, ChevronUp, Loader2, CalendarDays, Ticket } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ElementSearch } from "@/components/guest-mode/store-search"
+import type { MapElement } from "@/types"
+
+interface PreviewHeaderProps {
+  onExitPreview: () => void
+  previewFloor: number
+  totalFloors: number
+  goToPrevFloor: () => void
+  goToNextFloor: () => void
+  isFloorTransitioning: boolean
+  hasRouteOnOtherFloors: boolean
+  onOpenEventsDialog: () => void
+  onOpenPromotionsDialog: () => void
+  onStoreSelect: (store: MapElement) => void
+}
+
+export const PreviewHeader = memo(function PreviewHeader({
+  onExitPreview,
+  previewFloor,
+  totalFloors,
+  goToPrevFloor,
+  goToNextFloor,
+  isFloorTransitioning,
+  hasRouteOnOtherFloors,
+  onOpenEventsDialog,
+  onOpenPromotionsDialog,
+  onStoreSelect,
+}: PreviewHeaderProps) {
+  return (
+    <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-3">
+      <div className="flex items-center justify-between mb-2">
+        <Button variant="ghost" onClick={onExitPreview} className="gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Exit Preview
+        </Button>
+
+        {/* Floor navigation */}
+        <div className="bg-white rounded-md shadow-md p-2 flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToPrevFloor}
+            disabled={previewFloor <= 1 || isFloorTransitioning}
+            className={hasRouteOnOtherFloors && previewFloor > 1 ? "animate-bounce-gentle" : ""}
+          >
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+          <span className="font-medium px-2">
+            {isFloorTransitioning ? (
+              <div className="flex items-center gap-1 text-primary">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Loading...</span>
+              </div>
+            ) : (
+              `Floor ${previewFloor}`
+            )}
+          </span>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={goToNextFloor}
+            disabled={previewFloor >= totalFloors || isFloorTransitioning}
+            className={hasRouteOnOtherFloors && previewFloor < totalFloors ? "animate-bounce-gentle" : ""}
+          >
+            <ChevronUp className="h-4 w-4" />
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={onOpenPromotionsDialog} className="gap-2">
+            <Ticket className="h-4 w-4" />
+            Promotions
+          </Button>
+          <Button variant="outline" onClick={onOpenEventsDialog} className="gap-2">
+            <CalendarDays className="h-4 w-4" />
+            Events
+          </Button>
+        </div>
+      </div>
+
+      {/* Search bar */}
+      <div className="px-2">
+        <ElementSearch onElementSelect={onStoreSelect} />
+      </div>
+    </div>
+  )
+})
