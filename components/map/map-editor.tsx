@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useCallback, useMemo, useRef, useEffect } from "react"
+import { useCallback, useMemo, useRef, useEffect, useState } from "react"
 import { useDrop } from "react-dnd"
 import type { MapElement } from "@/types"
 import { useMapEditor } from "@/context/map-editor-context"
@@ -17,6 +17,7 @@ import { MapControls } from "@/components/map/map-controls"
 import { DropIndicator } from "@/components/map/drop-indicator"
 
 // Optimize MapEditor component with better memoization and performance improvements
+
 export function MapEditor() {
   const {
     elements,
@@ -34,6 +35,7 @@ export function MapEditor() {
   const containerRef = useRef<HTMLDivElement>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)
   const touchStartRef = useRef<{ x1: number; y1: number; x2: number; y2: number; dist: number } | null>(null)
+  const [isValid, setIsValid] = useState(false)
 
   // Drag and drop handling
   const {
@@ -62,118 +64,118 @@ export function MapEditor() {
   )
 
   // Memoize drop target configuration
-  const [{ isOver, canDrop }, drop] = useDrop(
-    () => ({
-      accept: ["store", "elevator", "escalator", "room", "pathway", "door", "floor", "event"],
-      canDrop: (item: any, monitor) => {
-        if (isEditingFootprint) return false
+    const [{ isOver, canDrop }, drop] = useDrop(
+      () => ({
+        accept: ["store", "elevator", "escalator", "room", "pathway", "door", "floor", "event","stairs"],
+        canDrop: (item: any, monitor) => {
+          if (isEditingFootprint) return false
 
-        const mapRect = mapRef.current?.getBoundingClientRect()
-        if (!mapRect) return false
+          const mapRect = mapRef.current?.getBoundingClientRect()
+          if (!mapRect) return false
 
-        const clientOffset = monitor.getClientOffset()
-        if (!clientOffset) return false
+          const clientOffset = monitor.getClientOffset()
+          if (!clientOffset) return false
 
-        // Adjust for zoom level
-        const x = Math.floor((clientOffset.x - mapRect.left) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
-        const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
-        const width = item.defaultWidth || 100
-        const height = item.defaultHeight || 100
+          // Adjust for zoom level
+          const x = Math.floor((clientOffset.x - mapRect.left) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
+          const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
+          const width = item.defaultWidth || 100
+          const height = item.defaultHeight || 100
 
-        // Special case for doors - they must be on the building border
-        if (item.type === "door") {
-          return isOnBuildingBorder(x, y, width, height)
-        }
+          // Special case for doors - they must be on the building border
+          if (item.type === "door") {
+            return isOnBuildingBorder(x, y, width, height)
+          }
 
-        // Check if the new element would overlap with existing elements
-        if (isOverlapping(x, y, width, height, "new-element")) {
-          return false
-        }
+          // Check if the new element would overlap with existing elements
+          if (isOverlapping(x, y, width, height, "new-element")) {
+            return false
+          }
+          isWithinBuilding(x, y, width, height) ? setIsValid(true) : setIsValid(false)
+          return isWithinBuilding(x, y, width, height)
+        },
+        drop: (item: any, monitor) => {
+          if (isEditingFootprint) return
 
-        return isWithinBuilding(x, y, width, height)
-      },
-      drop: (item: any, monitor) => {
-        if (isEditingFootprint) return
+          const mapRect = mapRef.current?.getBoundingClientRect()
+          if (!mapRect) return
 
-        const mapRect = mapRef.current?.getBoundingClientRect()
-        if (!mapRect) return
+          const clientOffset = monitor.getClientOffset()
+          if (!clientOffset) return
 
-        const clientOffset = monitor.getClientOffset()
-        if (!clientOffset) return
+          // Adjust for zoom level
+          const x = Math.floor((clientOffset.x - mapRect.left) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
+          const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
+          const width = item.defaultWidth || 100
+          const height = item.defaultHeight || 100
 
-        // Adjust for zoom level
-        const x = Math.floor((clientOffset.x - mapRect.left) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
-        const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
-        const width = item.defaultWidth || 100
-        const height = item.defaultHeight || 100
+          // Special case for doors - they must be on the building border
+          if (item.type === "door" && !isOnBuildingBorder(x, y, width, height)) {
+            return
+          }
 
-        // Special case for doors - they must be on the building border
-        if (item.type === "door" && !isOnBuildingBorder(x, y, width, height)) {
-          return
-        }
+          // Check if the new element would overlap with existing elements
+          if (isOverlapping(x, y, width, height, "new-element")) {
+            return
+          }
 
-        // Check if the new element would overlap with existing elements
-        if (isOverlapping(x, y, width, height, "new-element")) {
-          return
-        }
+          // For other elements, they must be within the building footprint
+          if (item.type !== "door" && !isWithinBuilding(x, y, width, height)) {
+            return
+          }
 
-        // For other elements, they must be within the building footprint
-        if (item.type !== "door" && !isWithinBuilding(x, y, width, height)) {
-          return
-        }
+          // Create additional fields for event type
+          const additionalFields =
+            item.type === "event"
+              ? {
+                  start_date: new Date().toISOString().split("T")[0],
+                  end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 days from now
+                  start_time: "09:00",
+                  end_time: "18:00",
+                  is_active: true,
+                  host: "",
+                  company: "",
+                  is_foc: false,
+                  created_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString(),
+                }
+              : {}
 
-        // Create additional fields for event type
-        const additionalFields =
-          item.type === "event"
-            ? {
-                start_date: new Date().toISOString().split("T")[0],
-                end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 days from now
-                start_time: "09:00",
-                end_time: "18:00",
-                is_active: true,
-                host: "",
-                company: "",
-                is_foc: false,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              }
-            : {}
+          const newElement: MapElement = {
+            id: `element-${Date.now()}`,
+            type: item.type,
+            x,
+            y,
+            width,
+            height,
+            name: item.name || `New ${item.type}`,
+            color: item.color || "#e2e8f0",
+            floor: currentFloor,
+            walkable: item.type === "floor" || item.type === "pathway",
+            ...additionalFields,
+          }
 
-        const newElement: MapElement = {
-          id: `element-${Date.now()}`,
-          type: item.type,
-          x,
-          y,
-          width,
-          height,
-          name: item.name || `New ${item.type}`,
-          color: item.color || "#e2e8f0",
-          floor: currentFloor,
-          walkable: item.type === "floor" || item.type === "pathway",
-          ...additionalFields,
-        }
-
-        addElement(newElement)
-        setSelectedElement(newElement)
-      },
-      collect: (monitor) => ({
-        isOver: !!monitor.isOver(),
-        canDrop: !!monitor.canDrop(),
+          addElement(newElement)
+          setSelectedElement(newElement)
+        },
+        collect: (monitor) => ({
+          isOver: !!monitor.isOver(),
+          canDrop: !!monitor.canDrop(),
+        }),
       }),
-    }),
-    [
-      currentFloor,
-      mapSettings,
-      addElement,
-      setSelectedElement,
-      mapRef,
-      zoomLevel,
-      isWithinBuilding,
-      isOnBuildingBorder,
-      isOverlapping,
-      isEditingFootprint,
-    ],
-  )
+      [
+        currentFloor,
+        mapSettings,
+        addElement,
+        setSelectedElement,
+        mapRef,
+        zoomLevel,
+        isWithinBuilding,
+        isOnBuildingBorder,
+        isOverlapping,
+        isEditingFootprint,
+      ],
+    )
 
   // Handle element selection - memoized
   const handleElementClick = useCallback(

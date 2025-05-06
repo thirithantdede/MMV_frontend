@@ -20,13 +20,12 @@ export const DropIndicator = memo(function DropIndicator({
 
   return (
     <div
-      className={`absolute pointer-events-none ${canDrop ? "bg-primary/10" : "bg-destructive/10"}`}
+      className={`absolute pointer-events-none ${canDrop ? "bg-green-400/10" : "bg-destructive/30"}`}
       style={{
         left: mapSettings.buildingX,
         top: mapSettings.buildingY,
         width: mapSettings.buildingWidth,
         height: mapSettings.buildingHeight,
-        inset: "unset",
       }}
     />
   )

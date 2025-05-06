@@ -99,7 +99,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   // UI state
   const [showLeftPanel, setShowLeftPanel] = useState(true)
-  const [showRightPanel, setShowRightPanel] = useState(true)
+  const [showRightPanel, setShowRightPanel] = useState(false)
 
   // Zoom state - updated min zoom to 0.3 (30%)
   const [zoomLevel, setZoomLevel] = useState(1)

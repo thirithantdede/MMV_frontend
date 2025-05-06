@@ -48,7 +48,7 @@ export const FloorWalkingPaths = memo(function FloorWalkingPaths({
             top: tile.y,
             width: tile.size,
             height: tile.size,
-            backgroundColor: "rgba(240, 240, 240, 0.3)",
+            backgroundColor: "",
           }}
           data-walkable="true"
           data-floor={currentFloor}
