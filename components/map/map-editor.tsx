@@ -15,6 +15,7 @@ import { FloatingFloorIndicator } from "@/components/map/floor-indicator"
 import { MapElementsLayer } from "@/components/map/map-elements-layer"
 import { MapControls } from "@/components/map/map-controls"
 import { DropIndicator } from "@/components/map/drop-indicator"
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 
 // Optimize MapEditor component with better memoization and performance improvements
 
@@ -31,6 +32,8 @@ export function MapEditor() {
     setZoomLevel,
     isEditingFootprint,
   } = useMapEditor()
+
+  useKeyboardShortcuts()
 
   const containerRef = useRef<HTMLDivElement>(null)
   const mapContainerRef = useRef<HTMLDivElement>(null)

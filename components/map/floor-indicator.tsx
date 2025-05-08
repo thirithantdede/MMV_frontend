@@ -7,12 +7,12 @@ export const FloatingFloorIndicator = memo(function FloatingFloorIndicator() {
   const { currentFloor, mapSettings } = useMapEditor()
 
   // Position it to the top right of the building footprint
-  const positionX = mapSettings.buildingX + mapSettings.buildingWidth + 20
-  const positionY = mapSettings.buildingY - 40
+  const positionX = mapSettings.buildingX + mapSettings.buildingWidth - 90
+  const positionY = mapSettings.buildingY - 50
 
   return (
     <div
-      className="absolute bg-primary text-white px-4 py-2 rounded-lg shadow-lg z-10 font-bold text-lg"
+      className="absolute bg-primary text-white px-4 py-2 rounded-lg shadow-lg z-10 font-bold text-lg w-28"
       style={{
         left: positionX,
         top: positionY,

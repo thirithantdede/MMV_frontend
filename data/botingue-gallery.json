@@ -1,0 +1,495 @@
+{
+    "id": "boutique-galleria",
+    "name": "Boutique Galleria",
+    "description": "An upscale shopping destination featuring luxury boutiques and specialty stores",
+    "address": "789 Fashion Avenue, Metropolis",
+    "contact": {
+      "phone": "+1 (555) 456-7890",
+      "email": "info@boutiquegalleria.com",
+      "website": "https://boutiquegalleria.com"
+    },
+    "hours": {
+      "monday": "11:00 AM - 8:00 PM",
+      "tuesday": "11:00 AM - 8:00 PM",
+      "wednesday": "11:00 AM - 8:00 PM",
+      "thursday": "11:00 AM - 8:00 PM",
+      "friday": "11:00 AM - 9:00 PM",
+      "saturday": "10:00 AM - 9:00 PM",
+      "sunday": "12:00 PM - 6:00 PM"
+    },
+    "buildingFootprint": {
+      "points": [{ "x": 30, "y": 30 }, { "x": 170, "y": 30 }, { "x": 170, "y": 170 }, { "x": 30, "y": 170 }],
+      "style": {
+        "fillColor": "#fdf2f8",
+        "strokeColor": "#ec4899",
+        "strokeWidth": 2
+      }
+    },
+    "floors": [
+      {
+        "id": "ground-floor",
+        "name": "Ground Floor",
+        "level": 1,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 200,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "main-entrance",
+            "type": "entrance",
+            "name": "Main Entrance",
+            "position": { "x": 100, "y": 30 },
+            "size": { "width": 30, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elegant main entrance with doorman service",
+              "icon": "door-open",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "luxury-fashion-1",
+            "type": "store",
+            "name": "Elegance",
+            "position": { "x": 50, "y": 60 },
+            "size": { "width": 30, "height": 25 },
+            "rotation": 0,
+            "properties": {
+              "description": "High-end women's fashion boutique",
+              "category": "Fashion",
+              "icon": "shirt",
+              "color": "#ec4899"
+            }
+          },
+          {
+            "id": "luxury-fashion-2",
+            "type": "store",
+            "name": "Gentleman's Quarters",
+            "position": { "x": 90, "y": 60 },
+            "size": { "width": 30, "height": 25 },
+            "rotation": 0,
+            "properties": {
+              "description": "Luxury men's clothing and accessories",
+              "category": "Fashion",
+              "icon": "shirt",
+              "color": "#0284c7"
+            }
+          },
+          {
+            "id": "luxury-fashion-3",
+            "type": "store",
+            "name": "Haute Couture",
+            "position": { "x": 130, "y": 60 },
+            "size": { "width": 30, "height": 25 },
+            "rotation": 0,
+            "properties": {
+              "description": "Designer fashion from renowned fashion houses",
+              "category": "Fashion",
+              "icon": "shirt",
+              "color": "#8b5cf6"
+            }
+          },
+          {
+            "id": "jewelry-1",
+            "type": "store",
+            "name": "Diamond Essence",
+            "position": { "x": 50, "y": 95 },
+            "size": { "width": 25, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fine jewelry and diamonds",
+              "category": "Jewelry",
+              "icon": "gem",
+              "color": "#eab308"
+            }
+          },
+          {
+            "id": "watches",
+            "type": "store",
+            "name": "Timepiece Gallery",
+            "position": { "x": 85, "y": 95 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Luxury watches and timepieces",
+              "category": "Jewelry",
+              "icon": "clock",
+              "color": "#a855f7"
+            }
+          },
+          {
+            "id": "perfume",
+            "type": "store",
+            "name": "Scent & Sensibility",
+            "position": { "x": 125, "y": 95 },
+            "size": { "width": 25, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Exclusive perfumes and fragrances",
+              "category": "Beauty",
+              "icon": "spray-can",
+              "color": "#f43f5e"
+            }
+          },
+          {
+            "id": "elevator-g",
+            "type": "elevator",
+            "name": "Glass Elevator",
+            "position": { "x": 100, "y": 125 },
+            "size": { "width": 10, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Panoramic glass elevator to upper floor",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-up-g",
+            "type": "escalator",
+            "name": "Escalator Up",
+            "position": { "x": 120, "y": 125 },
+            "size": { "width": 15, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to upper floor",
+              "direction": "up",
+              "icon": "move-up",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-g",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 80, "y": 125 },
+            "size": { "width": 10, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Luxury restrooms with attendant",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "concierge",
+            "type": "facility",
+            "name": "Concierge Desk",
+            "position": { "x": 100, "y": 145 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Concierge services and shopping assistance",
+              "icon": "bell",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "cafe-g",
+            "type": "food",
+            "name": "Café Élégant",
+            "position": { "x": 60, "y": 145 },
+            "size": { "width": 25, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Upscale café with pastries and light fare",
+              "category": "Cafe",
+              "icon": "coffee",
+              "color": "#78350f"
+            }
+          },
+          {
+            "id": "champagne-bar",
+            "type": "food",
+            "name": "Champagne Lounge",
+            "position": { "x": 130, "y": 145 },
+            "size": { "width": 25, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Champagne and wine bar",
+              "category": "Bar",
+              "icon": "wine",
+              "color": "#a855f7"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 100, "y": 35, "connections": [[100, 50]] },
+          { "x": 100, "y": 50, "connections": [[100, 35], [65, 60], [105, 60], [145, 60]] },
+          { "x": 65, "y": 60, "connections": [[100, 50], [50, 60]] },
+          { "x": 50, "y": 60, "connections": [[65, 60], [50, 95]] },
+          { "x": 105, "y": 60, "connections": [[100, 50], [90, 60], [130, 60]] },
+          { "x": 90, "y": 60, "connections": [[105, 60], [90, 85]] },
+          { "x": 130, "y": 60, "connections": [[105, 60], [130, 85]] },
+          { "x": 90, "y": 85, "connections": [[90, 60], [85, 95]] },
+          { "x": 130, "y": 85, "connections": [[130, 60], [125, 95]] },
+          { "x": 50, "y": 95, "connections": [[50, 60], [62, 95]] },
+          { "x": 62, "y": 95, "connections": [[50, 95], [85, 95]] },
+          { "x": 85, "y": 95, "connections": [[90, 85], [62, 95], [100, 95]] },
+          { "x": 100, "y": 95, "connections": [[85, 95], [125, 95]] },
+          { "x": 125, "y": 95, "connections": [[130, 85], [100, 95], [125, 115]] },
+          { "x": 125, "y": 115, "connections": [[125, 95], [120, 125]] },
+          { "x": 80, "y": 125, "connections": [[85, 95], [100, 125]] },
+          { "x": 100, "y": 125, "connections": [[80, 125], [120, 125], [100, 145]] },
+          { "x": 120, "y": 125, "connections": [[125, 115], [100, 125], [130, 145]] },
+          { "x": 60, "y": 145, "connections": [[80, 125], [72, 145]] },
+          { "x": 72, "y": 145, "connections": [[60, 145], [100, 145]] },
+          { "x": 100, "y": 145, "connections": [[100, 125], [72, 145], [130, 145]] },
+          { "x": 130, "y": 145, "connections": [[120, 125], [100, 145], [142, 145]] },
+          { "x": 142, "y": 145, "connections": [[130, 145]] }
+        ]
+      },
+      {
+        "id": "upper-floor",
+        "name": "Upper Floor",
+        "level": 2,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 200,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "designer-home",
+            "type": "store",
+            "name": "Maison de Luxe",
+            "position": { "x": 50, "y": 60 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Luxury home decor and furnishings",
+              "category": "Home",
+              "icon": "lamp",
+              "color": "#84cc16"
+            }
+          },
+          {
+            "id": "art-gallery",
+            "type": "store",
+            "name": "Galleria d'Arte",
+            "position": { "x": 100, "y": 60 },
+            "size": { "width": 30, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fine art gallery and auction house",
+              "category": "Art",
+              "icon": "image",
+              "color": "#a855f7"
+            }
+          },
+          {
+            "id": "antiques",
+            "type": "store",
+            "name": "Heritage Antiques",
+            "position": { "x": 140, "y": 60 },
+            "size": { "width": 30, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Rare antiques and collectibles",
+              "category": "Antiques",
+              "icon": "hourglass",
+              "color": "#b45309"
+            }
+          },
+          {
+            "id": "bespoke-tailor",
+            "type": "store",
+            "name": "Bespoke Atelier",
+            "position": { "x": 50, "y": 100 },
+            "size": { "width": 30, "height": 25 },
+            "rotation": 0,
+            "properties": {
+              "description": "Custom tailoring and bespoke clothing",
+              "category": "Fashion",
+              "icon": "scissors",
+              "color": "#0284c7"
+            }
+          },
+          {
+            "id": "leather-goods",
+            "type": "store",
+            "name": "Fine Leather",
+            "position": { "x": 90, "y": 100 },
+            "size": { "width": 30, "height": 25 },
+            "rotation": 0,
+            "properties": {
+              "description": "Luxury leather goods and accessories",
+              "category": "Accessories",
+              "icon": "briefcase",
+              "color": "#b45309"
+            }
+          },
+          {
+            "id": "crystal-glass",
+            "type": "store",
+            "name": "Crystal & Glass",
+            "position": { "x": 130, "y": 100 },
+            "size": { "width": 30, "height": 25 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fine crystal and glassware",
+              "category": "Home",
+              "icon": "glass-water",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "elevator-u",
+            "type": "elevator",
+            "name": "Glass Elevator",
+            "position": { "x": 100, "y": 135 },
+            "size": { "width": 10, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Panoramic glass elevator to ground floor",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-down-u",
+            "type": "escalator",
+            "name": "Escalator Down",
+            "position": { "x": 120, "y": 135 },
+            "size": { "width": 15, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to ground floor",
+              "direction": "down",
+              "icon": "move-down",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-u",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 80, "y": 135 },
+            "size": { "width": 10, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Luxury restrooms with attendant",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "gourmet-restaurant",
+            "type": "food",
+            "name": "L'Élégance",
+            "position": { "x": 70, "y": 155 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fine dining restaurant with renowned chef",
+              "category": "Restaurant",
+              "icon": "utensils",
+              "color": "#ef4444"
+            }
+          },
+          {
+            "id": "tea-room",
+            "type": "food",
+            "name": "The Tea Salon",
+            "position": { "x": 120, "y": 155 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elegant tea room with premium teas",
+              "category": "Cafe",
+              "icon": "cup-soda",
+              "color": "#84cc16"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 70, "y": 60, "connections": [[50, 60], [100, 60]] },
+          { "x": 50, "y": 60, "connections": [[70, 60], [50, 90]] },
+          { "x": 50, "y": 90, "connections": [[50, 60], [50, 100]] },
+          { "x": 100, "y": 60, "connections": [[70, 60], [115, 60]] },
+          { "x": 115, "y": 60, "connections": [[100, 60], [140, 60]] },
+          { "x": 140, "y": 60, "connections": [[115, 60], [140, 90]] },
+          { "x": 140, "y": 90, "connections": [[140, 60], [130, 100]] },
+          { "x": 50, "y": 100, "connections": [[50, 90], [65, 100]] },
+          { "x": 65, "y": 100, "connections": [[50, 100], [90, 100]] },
+          { "x": 90, "y": 100, "connections": [[65, 100], [105, 100]] },
+          { "x": 105, "y": 100, "connections": [[90, 100], [130, 100]] },
+          { "x": 130, "y": 100, "connections": [[140, 90], [105, 100], [130, 125]] },
+          { "x": 130, "y": 125, "connections": [[130, 100], [120, 135]] },
+          { "x": 80, "y": 135, "connections": [[90, 100], [100, 135]] },
+          { "x": 100, "y": 135, "connections": [[80, 135], [120, 135], [90, 155]] },
+          { "x": 120, "y": 135, "connections": [[130, 125], [100, 135], [120, 155]] },
+          { "x": 70, "y": 155, "connections": [[80, 135], [90, 155]] },
+          { "x": 90, "y": 155, "connections": [[100, 135], [70, 155], [120, 155]] },
+          { "x": 120, "y": 155, "connections": [[120, 135], [90, 155], [135, 155]] },
+          { "x": 135, "y": 155, "connections": [[120, 155]] }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "id": "fashion-week",
+        "name": "Exclusive Fashion Week",
+        "description": "Preview of designer collections with champagne reception",
+        "startDate": "2023-09-20T00:00:00Z",
+        "endDate": "2023-09-26T23:59:59Z",
+        "location": "Throughout the Galleria",
+        "image": "/placeholder.svg?height=200&width=300"
+      },
+      {
+        "id": "art-exhibition",
+        "name": "Contemporary Masters Exhibition",
+        "description": "Curated exhibition of contemporary art masterpieces",
+        "startDate": "2023-08-05T00:00:00Z",
+        "endDate": "2023-09-15T23:59:59Z",
+        "location": "Galleria d'Arte, Upper Floor",
+        "image": "/placeholder.svg?height=200&width=300"
+      },
+      {
+        "id": "wine-tasting",
+        "name": "Sommelier's Selection",
+        "description": "Exclusive wine tasting event with renowned sommeliers",
+        "startDate": "2023-07-15T18:00:00Z",
+        "endDate": "2023-07-15T21:00:00Z",
+        "location": "Champagne Lounge, Ground Floor",
+        "image": "/placeholder.svg?height=200&width=300"
+      }
+    ],
+    "promotions": [
+      {
+        "id": "vip-membership",
+        "storeId": "concierge",
+        "name": "VIP Membership Program",
+        "description": "Exclusive membership with personal shopping services and private events",
+        "startDate": "2023-01-01T00:00:00Z",
+        "endDate": "2023-12-31T23:59:59Z",
+        "image": "/placeholder.svg?height=150&width=250"
+      },
+      {
+        "id": "jewelry-showcase",
+        "storeId": "jewelry-1",
+        "name": "Rare Gems Collection",
+        "description": "Limited showcase of rare and exotic gemstones",
+        "startDate": "2023-07-10T00:00:00Z",
+        "endDate": "2023-07-20T23:59:59Z",
+        "image": "/placeholder.svg?height=150&width=250"
+      },
+      {
+        "id": "dining-experience",
+        "storeId": "gourmet-restaurant",
+        "name": "Chef's Table Experience",
+        "description": "Exclusive dining experience with our master chef",
+        "startDate": "2023-08-01T00:00:00Z",
+        "endDate": "2023-09-30T23:59:59Z",
+        "image": "/placeholder.svg?height=150&width=250"
+      }
+    ],
+    "createdAt": "2023-03-01T09:45:00Z",
+    "updatedAt": "2023-06-10T14:20:00Z",
+    "publishedAt": "2023-06-15T10:00:00Z",
+    "version": "1.0.0",
+    "status": "published"
+  }
+  

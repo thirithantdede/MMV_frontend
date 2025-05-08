@@ -84,13 +84,13 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   // Map settings - load from localStorage if available
   const [mapSettings, setMapSettings] = useState<MapSettings>(() =>
     loadFromStorage("mall-map-settings", {
-      width: 3000,
-      height: 2000,
+      width: 1600,
+      height: 1000,
       gridSize: 20,
       showGrid: true,
       // Building footprint defaults
-      buildingWidth: 1600,
-      buildingHeight: 1200,
+      buildingWidth: 1200,
+      buildingHeight: 800,
       buildingX: 700,
       buildingY: 400,
       restrictToBuilding: true,

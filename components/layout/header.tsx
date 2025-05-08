@@ -1,12 +1,14 @@
 "use client"
 
-import { memo, useCallback } from "react"
-import { Building, Settings, Eye, LayoutDashboard } from "lucide-react"
+import { memo, useCallback, useState } from "react"
+import { Building, Settings, Eye, LayoutDashboard, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { BuildingFootprintToolbar } from "@/components/building-footprint-toolbar"
 import { UserNav } from "@/components/user-nav"
 import { useRouter } from "next/navigation"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import LayoutManager from "@/components/layout-manager"
 
 interface HeaderProps {
   onOpenSettings: () => void
@@ -16,6 +18,7 @@ interface HeaderProps {
 // Use React.memo to cache the header component
 export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: HeaderProps) {
   const router = useRouter()
+  const [layoutManagerOpen, setLayoutManagerOpen] = useState(false)
 
   const handleEnterPreview = useCallback(() => {
     router.push("/preview")
@@ -47,6 +50,17 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
+              <Button variant="outline" size="icon" onClick={() => setLayoutManagerOpen(true)}>
+                <Download className="h-4 w-4" />
+                <span className="sr-only">Import/Export Layouts</span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Import/Export Layouts</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
               <Button variant="outline" onClick={handleEnterPreview}>
                 <Eye className="mr-2 h-4 w-4" />
                 Preview
@@ -69,6 +83,13 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
         <Button onClick={onOpenPublish}>Publish</Button>
         <UserNav />
       </div>
+
+      {/* Layout Manager Dialog */}
+      <Dialog open={layoutManagerOpen} onOpenChange={setLayoutManagerOpen}>
+        <DialogContent className="sm:max-w-md">
+          <LayoutManager />
+        </DialogContent>
+      </Dialog>
     </header>
   )
 })

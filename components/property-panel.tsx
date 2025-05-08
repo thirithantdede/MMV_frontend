@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Trash2 } from "lucide-react"
+import { Trash2, Copy, CopyPlus } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Slider } from "@/components/ui/slider"
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface PropertyPanelProps {
   selectedElement: any
@@ -18,6 +20,7 @@ interface PropertyPanelProps {
 
 export function PropertyPanel({ selectedElement, onElementUpdate }: PropertyPanelProps) {
   const [elementProperties, setElementProperties] = useState<any>(null)
+  const { handleDelete, handleCopy, handleDuplicate } = useKeyboardShortcuts()
 
   useEffect(() => {
     if (selectedElement) {
@@ -58,10 +61,46 @@ export function PropertyPanel({ selectedElement, onElementUpdate }: PropertyPane
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Properties</h3>
-        <Button variant="destructive" size="sm">
-          <Trash2 className="mr-1 h-4 w-4" />
-          Delete
-        </Button>
+        <div className="flex space-x-2">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={handleCopy}>
+                  <Copy className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Copy (Ctrl+C)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" size="sm" onClick={handleDuplicate}>
+                  <CopyPlus className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Duplicate (Ctrl+D)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="destructive" size="sm" onClick={handleDelete}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Delete (Delete)</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       <Tabs defaultValue="general">

@@ -1,0 +1,1298 @@
+{
+    "id": "mega-mall",
+    "name": "Mega Mall & Entertainment Complex",
+    "description": "The largest shopping and entertainment destination in the region",
+    "address": "500 Commerce Blvd, Metropolis",
+    "contact": {
+      "phone": "+1 (555) 987-6543",
+      "email": "info@megamall.com",
+      "website": "https://megamall.com"
+    },
+    "hours": {
+      "monday": "10:00 AM - 10:00 PM",
+      "tuesday": "10:00 AM - 10:00 PM",
+      "wednesday": "10:00 AM - 10:00 PM",
+      "thursday": "10:00 AM - 10:00 PM",
+      "friday": "10:00 AM - 11:00 PM",
+      "saturday": "9:00 AM - 11:00 PM",
+      "sunday": "10:00 AM - 9:00 PM"
+    },
+    "buildingFootprint": {
+      "points": [{ "x": 20, "y": 20 }, { "x": 280, "y": 20 }, { "x": 280, "y": 180 }, { "x": 20, "y": 180 }],
+      "style": {
+        "fillColor": "#f0fdf4",
+        "strokeColor": "#16a34a",
+        "strokeWidth": 2
+      }
+    },
+    "floors": [
+      {
+        "id": "basement",
+        "name": "Basement",
+        "level": 0,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 300,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "parking-entrance",
+            "type": "entrance",
+            "name": "Parking Entrance",
+            "position": { "x": 150, "y": 20 },
+            "size": { "width": 30, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Vehicle entrance to underground parking",
+              "icon": "car",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "supermarket",
+            "type": "store",
+            "name": "Fresh Market",
+            "position": { "x": 50, "y": 50 },
+            "size": { "width": 80, "height": 60 },
+            "rotation": 0,
+            "properties": {
+              "description": "Large supermarket with fresh produce and groceries",
+              "category": "Grocery",
+              "icon": "shopping-cart",
+              "color": "#16a34a"
+            }
+          },
+          {
+            "id": "electronics-warehouse",
+            "type": "store",
+            "name": "ElectroWorld",
+            "position": { "x": 150, "y": 50 },
+            "size": { "width": 60, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Warehouse-style electronics store",
+              "category": "Electronics",
+              "icon": "tv",
+              "color": "#3b82f6"
+            }
+          },
+          {
+            "id": "home-improvement",
+            "type": "store",
+            "name": "Home Fix",
+            "position": { "x": 220, "y": 50 },
+            "size": { "width": 50, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Home improvement and DIY supplies",
+              "category": "Home",
+              "icon": "hammer",
+              "color": "#f59e0b"
+            }
+          },
+          {
+            "id": "elevator-b",
+            "type": "elevator",
+            "name": "Main Elevator",
+            "position": { "x": 150, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elevator to all floors",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-up-b",
+            "type": "escalator",
+            "name": "Escalator Up",
+            "position": { "x": 180, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to ground floor",
+              "direction": "up",
+              "icon": "move-up",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-b",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 120, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Public restrooms",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "storage-lockers",
+            "type": "facility",
+            "name": "Storage Lockers",
+            "position": { "x": 90, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Self-service storage lockers",
+              "icon": "lock",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "pet-store",
+            "type": "store",
+            "name": "Pet Paradise",
+            "position": { "x": 50, "y": 130 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Pet supplies and services",
+              "category": "Pets",
+              "icon": "paw-print",
+              "color": "#f97316"
+            }
+          },
+          {
+            "id": "discount-outlet",
+            "type": "store",
+            "name": "Bargain Outlet",
+            "position": { "x": 100, "y": 140 },
+            "size": { "width": 60, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Discount clothing and accessories",
+              "category": "Fashion",
+              "icon": "tag",
+              "color": "#ef4444"
+            }
+          },
+          {
+            "id": "furniture-warehouse",
+            "type": "store",
+            "name": "Furniture Warehouse",
+            "position": { "x": 180, "y": 140 },
+            "size": { "width": 70, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Large furniture showroom",
+              "category": "Furniture",
+              "icon": "sofa",
+              "color": "#a855f7"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 150, "y": 25, "connections": [[150, 50]] },
+          { "x": 150, "y": 50, "connections": [[150, 25], [90, 50], [180, 50], [150, 90]] },
+          { "x": 90, "y": 50, "connections": [[150, 50], [50, 50]] },
+          { "x": 50, "y": 50, "connections": [[90, 50], [50, 80]] },
+          { "x": 50, "y": 80, "connections": [[50, 50], [50, 130]] },
+          { "x": 180, "y": 50, "connections": [[150, 50], [220, 50]] },
+          { "x": 220, "y": 50, "connections": [[180, 50], [220, 90]] },
+          { "x": 220, "y": 90, "connections": [[220, 50], [180, 110]] },
+          { "x": 150, "y": 90, "connections": [[150, 50], [120, 110], [150, 110]] },
+          { "x": 120, "y": 110, "connections": [[150, 90], [90, 110]] },
+          { "x": 90, "y": 110, "connections": [[120, 110], [100, 140]] },
+          { "x": 150, "y": 110, "connections": [[150, 90], [180, 110]] },
+          { "x": 180, "y": 110, "connections": [[150, 110], [220, 90], [180, 140]] },
+          { "x": 50, "y": 130, "connections": [[50, 80], [100, 140]] },
+          { "x": 100, "y": 140, "connections": [[50, 130], [90, 110], [180, 140]] },
+          { "x": 180, "y": 140, "connections": [[180, 110], [100, 140], [215, 160]] },
+          { "x": 215, "y": 160, "connections": [[180, 140]] }
+        ]
+      },
+      {
+        "id": "ground-floor",
+        "name": "Ground Floor",
+        "level": 1,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 300,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "main-entrance-1",
+            "type": "entrance",
+            "name": "Main Entrance North",
+            "position": { "x": 150, "y": 20 },
+            "size": { "width": 40, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Main entrance with revolving doors",
+              "icon": "door-open",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "main-entrance-2",
+            "type": "entrance",
+            "name": "Main Entrance South",
+            "position": { "x": 150, "y": 180 },
+            "size": { "width": 40, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Main entrance with automatic doors",
+              "icon": "door-open",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "department-store-1",
+            "type": "store",
+            "name": "Luxe Department Store",
+            "position": { "x": 50, "y": 50 },
+            "size": { "width": 70, "height": 60 },
+            "rotation": 0,
+            "properties": {
+              "description": "Premium department store with designer brands",
+              "category": "Department Store",
+              "icon": "building-store",
+              "color": "#0284c7"
+            }
+          },
+          {
+            "id": "food-court-g",
+            "type": "food",
+            "name": "International Food Court",
+            "position": { "x": 150, "y": 50 },
+            "size": { "width": 80, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Food court with international cuisine options",
+              "icon": "utensils",
+              "color": "#f97316"
+            }
+          },
+          {
+            "id": "fashion-boutique-1",
+            "type": "store",
+            "name": "Elite Fashion",
+            "position": { "x": 240, "y": 50 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "High-end fashion boutique",
+              "category": "Fashion",
+              "icon": "shirt",
+              "color": "#8b5cf6"
+            }
+          },
+          {
+            "id": "fashion-boutique-2",
+            "type": "store",
+            "name": "Style Studio",
+            "position": { "x": 240, "y": 80 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Contemporary fashion for young professionals",
+              "category": "Fashion",
+              "icon": "shirt",
+              "color": "#8b5cf6"
+            }
+          },
+          {
+            "id": "elevator-g",
+            "type": "elevator",
+            "name": "Main Elevator",
+            "position": { "x": 150, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elevator to all floors",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-up-g",
+            "type": "escalator",
+            "name": "Escalator Up",
+            "position": { "x": 180, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to first floor",
+              "direction": "up",
+              "icon": "move-up",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-down-g",
+            "type": "escalator",
+            "name": "Escalator Down",
+            "position": { "x": 120, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to basement",
+              "direction": "down",
+              "icon": "move-down",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-g",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 90, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Public restrooms",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "information-desk-g",
+            "type": "facility",
+            "name": "Information",
+            "position": { "x": 210, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Mall information and customer service",
+              "icon": "info",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "jewelry-store-g",
+            "type": "store",
+            "name": "Diamond Gallery",
+            "position": { "x": 50, "y": 130 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fine jewelry and watches",
+              "category": "Jewelry",
+              "icon": "gem",
+              "color": "#eab308"
+            }
+          },
+          {
+            "id": "cosmetics-store",
+            "type": "store",
+            "name": "Beauty Bar",
+            "position": { "x": 90, "y": 130 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Premium cosmetics and skincare",
+              "category": "Beauty",
+              "icon": "sparkles",
+              "color": "#ec4899"
+            }
+          },
+          {
+            "id": "accessories-store",
+            "type": "store",
+            "name": "Accessorize",
+            "position": { "x": 130, "y": 130 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fashion accessories and bags",
+              "category": "Accessories",
+              "icon": "shopping-bag",
+              "color": "#f43f5e"
+            }
+          },
+          {
+            "id": "footwear-store",
+            "type": "store",
+            "name": "Shoe Haven",
+            "position": { "x": 170, "y": 130 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Designer and casual footwear",
+              "category": "Footwear",
+              "icon": "footprints",
+              "color": "#a855f7"
+            }
+          },
+          {
+            "id": "tech-gadgets",
+            "type": "store",
+            "name": "Gadget Zone",
+            "position": { "x": 210, "y": 130 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Latest tech gadgets and accessories",
+              "category": "Electronics",
+              "icon": "smartphone",
+              "color": "#3b82f6"
+            }
+          },
+          {
+            "id": "cafe-g",
+            "type": "food",
+            "name": "Café Aroma",
+            "position": { "x": 250, "y": 130 },
+            "size": { "width": 20, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Coffee shop with pastries",
+              "category": "Cafe",
+              "icon": "coffee",
+              "color": "#78350f"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 150, "y": 25, "connections": [[150, 50]] },
+          { "x": 150, "y": 50, "connections": [[150, 25], [85, 50], [190, 50], [150, 80]] },
+          { "x": 85, "y": 50, "connections": [[150, 50], [50, 50]] },
+          { "x": 50, "y": 50, "connections": [[85, 50], [50, 80]] },
+          { "x": 50, "y": 80, "connections": [[50, 50], [50, 110]] },
+          { "x": 190, "y": 50, "connections": [[150, 50], [240, 50]] },
+          { "x": 240, "y": 50, "connections": [[190, 50], [240, 80]] },
+          { "x": 240, "y": 80, "connections": [[240, 50], [240, 110]] },
+          { "x": 150, "y": 80, "connections": [[150, 50], [90, 110], [120, 110], [150, 110], [180, 110], [210, 110]] },
+          { "x": 50, "y": 110, "connections": [[50, 80], [90, 110]] },
+          { "x": 90, "y": 110, "connections": [[50, 110], [150, 80], [90, 130]] },
+          { "x": 120, "y": 110, "connections": [[150, 80], [150, 110]] },
+          { "x": 150, "y": 110, "connections": [[150, 80], [120, 110], [180, 110], [150, 130]] },
+          { "x": 180, "y": 110, "connections": [[150, 80], [150, 110], [210, 110]] },
+          { "x": 210, "y": 110, "connections": [[150, 80], [180, 110], [240, 110]] },
+          { "x": 240, "y": 110, "connections": [[240, 80], [210, 110], [250, 130]] },
+          { "x": 50, "y": 130, "connections": [[50, 110], [90, 130]] },
+          { "x": 90, "y": 130, "connections": [[90, 110], [50, 130], [130, 130]] },
+          { "x": 130, "y": 130, "connections": [[90, 130], [150, 130]] },
+          { "x": 150, "y": 130, "connections": [[150, 110], [130, 130], [170, 130]] },
+          { "x": 170, "y": 130, "connections": [[150, 130], [210, 130]] },
+          { "x": 210, "y": 130, "connections": [[210, 110], [170, 130], [250, 130]] },
+          { "x": 250, "y": 130, "connections": [[240, 110], [210, 130], [250, 160]] },
+          { "x": 250, "y": 160, "connections": [[250, 130], [150, 175]] },
+          { "x": 150, "y": 175, "connections": [[250, 160], [150, 180]] },
+          { "x": 150, "y": 180, "connections": [[150, 175]] }
+        ]
+      },
+      {
+        "id": "first-floor",
+        "name": "First Floor",
+        "level": 2,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 300,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "department-store-2",
+            "type": "store",
+            "name": "Fashion Emporium",
+            "position": { "x": 50, "y": 50 },
+            "size": { "width": 70, "height": 60 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fashion department store with multiple brands",
+              "category": "Department Store",
+              "icon": "building-store",
+              "color": "#0284c7"
+            }
+          },
+          {
+            "id": "electronics-store-1",
+            "type": "store",
+            "name": "Tech Universe",
+            "position": { "x": 140, "y": 50 },
+            "size": { "width": 50, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Electronics and computer store",
+              "category": "Electronics",
+              "icon": "laptop",
+              "color": "#3b82f6"
+            }
+          },
+          {
+            "id": "bookstore-1",
+            "type": "store",
+            "name": "Book Haven",
+            "position": { "x": 200, "y": 50 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Bookstore with reading cafe",
+              "category": "Books",
+              "icon": "book",
+              "color": "#a855f7"
+            }
+          },
+          {
+            "id": "sports-store-1",
+            "type": "store",
+            "name": "Sports World",
+            "position": { "x": 250, "y": 50 },
+            "size": { "width": 30, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Sports equipment and athletic wear",
+              "category": "Sports",
+              "icon": "dumbbell",
+              "color": "#22c55e"
+            }
+          },
+          {
+            "id": "elevator-1",
+            "type": "elevator",
+            "name": "Main Elevator",
+            "position": { "x": 150, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elevator to all floors",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-up-1",
+            "type": "escalator",
+            "name": "Escalator Up",
+            "position": { "x": 180, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to second floor",
+              "direction": "up",
+              "icon": "move-up",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-down-1",
+            "type": "escalator",
+            "name": "Escalator Down",
+            "position": { "x": 120, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to ground floor",
+              "direction": "down",
+              "icon": "move-down",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-1",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 90, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Public restrooms",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "kids-fashion",
+            "type": "store",
+            "name": "Kids Kingdom",
+            "position": { "x": 50, "y": 130 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Children's clothing and toys",
+              "category": "Kids",
+              "icon": "baby",
+              "color": "#f97316"
+            }
+          },
+          {
+            "id": "home-decor-1",
+            "type": "store",
+            "name": "Home & Design",
+            "position": { "x": 100, "y": 130 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Home decor and interior design",
+              "category": "Home",
+              "icon": "lamp",
+              "color": "#84cc16"
+            }
+          },
+          {
+            "id": "restaurant-1f",
+            "type": "food",
+            "name": "Gourmet Bistro",
+            "position": { "x": 150, "y": 130 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fine dining restaurant",
+              "category": "Restaurant",
+              "icon": "utensils",
+              "color": "#ef4444"
+            }
+          },
+          {
+            "id": "gift-shop",
+            "type": "store",
+            "name": "Gift Emporium",
+            "position": { "x": 200, "y": 130 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Gifts and souvenirs",
+              "category": "Gifts",
+              "icon": "gift",
+              "color": "#f43f5e"
+            }
+          },
+          {
+            "id": "luggage-store",
+            "type": "store",
+            "name": "Travel Gear",
+            "position": { "x": 240, "y": 130 },
+            "size": { "width": 30, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "description": "Luggage and travel accessories",
+              "category": "Travel",
+              "icon": "luggage",
+              "color": "#0ea5e9"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 85, "y": 50, "connections": [[50, 50], [140, 50]] },
+          { "x": 50, "y": 50, "connections": [[85, 50], [50, 80]] },
+          { "x": 50, "y": 80, "connections": [[50, 50], [50, 110]] },
+          { "x": 140, "y": 50, "connections": [[85, 50], [165, 50], [140, 80]] },
+          { "x": 165, "y": 50, "connections": [[140, 50], [200, 50]] },
+          { "x": 200, "y": 50, "connections": [[165, 50], [250, 50], [200, 80]] },
+          { "x": 250, "y": 50, "connections": [[200, 50], [250, 80]] },
+          { "x": 140, "y": 80, "connections": [[140, 50], [150, 110]] },
+          { "x": 200, "y": 80, "connections": [[200, 50], [180, 110]] },
+          { "x": 250, "y": 80, "connections": [[250, 50], [240, 130]] },
+          { "x": 50, "y": 110, "connections": [[50, 80], [90, 110], [50, 130]] },
+          { "x": 90, "y": 110, "connections": [[50, 110], [120, 110]] },
+          { "x": 120, "y": 110, "connections": [[90, 110], [150, 110]] },
+          { "x": 150, "y": 110, "connections": [[140, 80], [120, 110], [180, 110], [150, 130]] },
+          { "x": 180, "y": 110, "connections": [[200, 80], [150, 110], [200, 130]] },
+          { "x": 50, "y": 130, "connections": [[50, 110], [70, 130]] },
+          { "x": 70, "y": 130, "connections": [[50, 130], [100, 130]] },
+          { "x": 100, "y": 130, "connections": [[70, 130], [120, 130]] },
+          { "x": 120, "y": 130, "connections": [[100, 130], [150, 130]] },
+          { "x": 150, "y": 130, "connections": [[150, 110], [120, 130], [170, 130]] },
+          { "x": 170, "y": 130, "connections": [[150, 130], [200, 130]] },
+          { "x": 200, "y": 130, "connections": [[180, 110], [170, 130], [240, 130]] },
+          { "x": 240, "y": 130, "connections": [[250, 80], [200, 130], [240, 150]] },
+          { "x": 240, "y": 150, "connections": [[240, 130]] }
+        ]
+      },
+      {
+        "id": "second-floor",
+        "name": "Second Floor",
+        "level": 3,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 300,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "cinema-complex",
+            "type": "entertainment",
+            "name": "Mega Cineplex",
+            "position": { "x": 50, "y": 40 },
+            "size": { "width": 80, "height": 60 },
+            "rotation": 0,
+            "properties": {
+              "description": "10-screen cinema with IMAX",
+              "icon": "film",
+              "color": "#4b5563"
+            }
+          },
+          {
+            "id": "arcade",
+            "type": "entertainment",
+            "name": "Game Zone",
+            "position": { "x": 140, "y": 40 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Video games and arcade",
+              "icon": "gamepad-2",
+              "color": "#8b5cf6"
+            }
+          },
+          {
+            "id": "bowling-alley",
+            "type": "entertainment",
+            "name": "Strike Lanes",
+            "position": { "x": 190, "y": 40 },
+            "size": { "width": 60, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Bowling alley with 16 lanes",
+              "icon": "circle",
+              "color": "#f97316"
+            }
+          },
+          {
+            "id": "elevator-2",
+            "type": "elevator",
+            "name": "Main Elevator",
+            "position": { "x": 150, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elevator to all floors",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-up-2",
+            "type": "escalator",
+            "name": "Escalator Up",
+            "position": { "x": 180, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to third floor",
+              "direction": "up",
+              "icon": "move-up",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-down-2",
+            "type": "escalator",
+            "name": "Escalator Down",
+            "position": { "x": 120, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to first floor",
+              "direction": "down",
+              "icon": "move-down",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-2",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 90, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Public restrooms",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "food-court-2",
+            "type": "food",
+            "name": "Entertainment Food Court",
+            "position": { "x": 90, "y": 140 },
+            "size": { "width": 60, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Food court serving the entertainment area",
+              "icon": "utensils",
+              "color": "#f97316"
+            }
+          },
+          {
+            "id": "vr-experience",
+            "type": "entertainment",
+            "name": "VR Adventure",
+            "position": { "x": 160, "y": 140 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Virtual reality gaming experience",
+              "icon": "glasses",
+              "color": "#3b82f6"
+            }
+          },
+          {
+            "id": "karaoke-rooms",
+            "type": "entertainment",
+            "name": "Melody Karaoke",
+            "position": { "x": 210, "y": 140 },
+            "size": { "width": 30, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Private karaoke rooms",
+              "icon": "mic",
+              "color": "#ec4899"
+            }
+          },
+          {
+            "id": "ice-cream-parlor",
+            "type": "food",
+            "name": "Sweet Treats",
+            "position": { "x": 250, "y": 140 },
+            "size": { "width": 20, "height": 20 },
+            "rotation": 0,
+            "properties": {
+              "  {\"width": 20,
+              "height": 20
+            },
+            "rotation": 0,
+            "properties": {
+              "description": "Ice cream and dessert parlor",
+              "category": "Dessert",
+              "icon": "ice-cream",
+              "color": "#f43f5e"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 90, "y": 40, "connections": [[50, 40], [140, 40]] },
+          { "x": 50, "y": 40, "connections": [[90, 40], [50, 70]] },
+          { "x": 50, "y": 70, "connections": [[50, 40], [50, 100]] },
+          { "x": 140, "y": 40, "connections": [[90, 40], [190, 40], [140, 70]] },
+          { "x": 190, "y": 40, "connections": [[140, 40], [220, 40]] },
+          { "x": 220, "y": 40, "connections": [[190, 40], [220, 70]] },
+          { "x": 140, "y": 70, "connections": [[140, 40], [150, 110]] },
+          { "x": 220, "y": 70, "connections": [[220, 40], [180, 110]] },
+          { "x": 50, "y": 100, "connections": [[50, 70], [90, 110], [90, 140]] },
+          { "x": 90, "y": 110, "connections": [[50, 100], [120, 110]] },
+          { "x": 120, "y": 110, "connections": [[90, 110], [150, 110]] },
+          { "x": 150, "y": 110, "connections": [[140, 70], [120, 110], [180, 110], [160, 140]] },
+          { "x": 180, "y": 110, "connections": [[220, 70], [150, 110], [210, 140]] },
+          { "x": 90, "y": 140, "connections": [[50, 100], [120, 140]] },
+          { "x": 120, "y": 140, "connections": [[90, 140], [160, 140]] },
+          { "x": 160, "y": 140, "connections": [[150, 110], [120, 140], [180, 140]] },
+          { "x": 180, "y": 140, "connections": [[160, 140], [210, 140]] },
+          { "x": 210, "y": 140, "connections": [[180, 110], [180, 140], [250, 140]] },
+          { "x": 250, "y": 140, "connections": [[210, 140], [260, 150]] },
+          { "x": 260, "y": 150, "connections": [[250, 140]] }
+        ]
+      },
+      {
+        "id": "third-floor",
+        "name": "Third Floor",
+        "level": 4,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 300,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "fitness-center-3",
+            "type": "facility",
+            "name": "Elite Fitness",
+            "position": { "x": 50, "y": 40 },
+            "size": { "width": 60, "height": 50 },
+            "rotation": 0,
+            "properties": {
+              "description": "Premium fitness center with pool",
+              "icon": "dumbbell",
+              "color": "#22c55e"
+            }
+          },
+          {
+            "id": "spa-wellness",
+            "type": "facility",
+            "name": "Tranquility Spa",
+            "position": { "x": 120, "y": 40 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Spa and wellness center",
+              "icon": "spa",
+              "color": "#8b5cf6"
+            }
+          },
+          {
+            "id": "medical-clinic",
+            "type": "facility",
+            "name": "Wellness Clinic",
+            "position": { "x": 170, "y": 40 },
+            "size": { "width": 30, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Medical and wellness services",
+              "icon": "stethoscope",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "art-gallery-3",
+            "type": "entertainment",
+            "name": "Contemporary Gallery",
+            "position": { "x": 210, "y": 40 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Art gallery with rotating exhibitions",
+              "icon": "image",
+              "color": "#a855f7"
+            }
+          },
+          {
+            "id": "elevator-3",
+            "type": "elevator",
+            "name": "Main Elevator",
+            "position": { "x": 150, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elevator to all floors",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-up-3",
+            "type": "escalator",
+            "name": "Escalator Up",
+            "position": { "x": 180, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to fourth floor",
+              "direction": "up",
+              "icon": "move-up",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-down-3",
+            "type": "escalator",
+            "name": "Escalator Down",
+            "position": { "x": 120, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to second floor",
+              "direction": "down",
+              "icon": "move-down",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-3",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 90, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Public restrooms",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "yoga-studio",
+            "type": "facility",
+            "name": "Zen Yoga",
+            "position": { "x": 50, "y": 140 },
+            "size": { "width": 30, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Yoga and meditation studio",
+              "icon": "heart-pulse",
+              "color": "#84cc16"
+            }
+          },
+          {
+            "id": "cooking-school",
+            "type": "entertainment",
+            "name": "Culinary Academy",
+            "position": { "x": 90, "y": 140 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Cooking classes and demonstrations",
+              "icon": "chef-hat",
+              "color": "#f97316"
+            }
+          },
+          {
+            "id": "event-space",
+            "type": "facility",
+            "name": "Sky Venue",
+            "position": { "x": 140, "y": 140 },
+            "size": { "width": 60, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Event space with panoramic views",
+              "icon": "calendar",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "observation-deck",
+            "type": "facility",
+            "name": "City View Deck",
+            "position": { "x": 210, "y": 140 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Observation deck with city views",
+              "icon": "mountain",
+              "color": "#64748b"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 80, "y": 40, "connections": [[50, 40], [120, 40]] },
+          { "x": 50, "y": 40, "connections": [[80, 40], [50, 70]] },
+          { "x": 50, "y": 70, "connections": [[50, 40], [50, 100]] },
+          { "x": 120, "y": 40, "connections": [[80, 40], [140, 40]] },
+          { "x": 140, "y": 40, "connections": [[120, 40], [170, 40]] },
+          { "x": 170, "y": 40, "connections": [[140, 40], [210, 40], [170, 70]] },
+          { "x": 210, "y": 40, "connections": [[170, 40], [230, 40]] },
+          { "x": 230, "y": 40, "connections": [[210, 40], [230, 70]] },
+          { "x": 170, "y": 70, "connections": [[170, 40], [150, 110]] },
+          { "x": 230, "y": 70, "connections": [[230, 40], [180, 110]] },
+          { "x": 50, "y": 100, "connections": [[50, 70], [90, 110], [50, 140]] },
+          { "x": 90, "y": 110, "connections": [[50, 100], [120, 110]] },
+          { "x": 120, "y": 110, "connections": [[90, 110], [150, 110]] },
+          { "x": 150, "y": 110, "connections": [[170, 70], [120, 110], [180, 110], [140, 140]] },
+          { "x": 180, "y": 110, "connections": [[230, 70], [150, 110], [210, 140]] },
+          { "x": 50, "y": 140, "connections": [[50, 100], [65, 140]] },
+          { "x": 65, "y": 140, "connections": [[50, 140], [90, 140]] },
+          { "x": 90, "y": 140, "connections": [[65, 140], [110, 140]] },
+          { "x": 110, "y": 140, "connections": [[90, 140], [140, 140]] },
+          { "x": 140, "y": 140, "connections": [[150, 110], [110, 140], [170, 140]] },
+          { "x": 170, "y": 140, "connections": [[140, 140], [210, 140]] },
+          { "x": 210, "y": 140, "connections": [[180, 110], [170, 140], [230, 155]] },
+          { "x": 230, "y": 155, "connections": [[210, 140]] }
+        ]
+      },
+      {
+        "id": "fourth-floor",
+        "name": "Fourth Floor",
+        "level": 5,
+        "gridSize": 10,
+        "dimensions": {
+          "width": 300,
+          "height": 200
+        },
+        "elements": [
+          {
+            "id": "hotel-lobby",
+            "type": "facility",
+            "name": "Skyview Hotel Lobby",
+            "position": { "x": 50, "y": 40 },
+            "size": { "width": 60, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Lobby for the mall's integrated hotel",
+              "icon": "hotel",
+              "color": "#0284c7"
+            }
+          },
+          {
+            "id": "conference-center",
+            "type": "facility",
+            "name": "Business Conference Center",
+            "position": { "x": 120, "y": 40 },
+            "size": { "width": 80, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Conference and meeting facilities",
+              "icon": "presentation",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "executive-lounge",
+            "type": "facility",
+            "name": "Executive Lounge",
+            "position": { "x": 210, "y": 40 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Premium lounge for business travelers",
+              "icon": "armchair",
+              "color": "#a855f7"
+            }
+          },
+          {
+            "id": "elevator-4",
+            "type": "elevator",
+            "name": "Main Elevator",
+            "position": { "x": 150, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Elevator to all floors",
+              "icon": "elevator",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "escalator-down-4",
+            "type": "escalator",
+            "name": "Escalator Down",
+            "position": { "x": 180, "y": 110 },
+            "size": { "width": 20, "height": 10 },
+            "rotation": 0,
+            "properties": {
+              "description": "Escalator to third floor",
+              "direction": "down",
+              "icon": "move-down",
+              "color": "#64748b"
+            }
+          },
+          {
+            "id": "restroom-4",
+            "type": "facility",
+            "name": "Restrooms",
+            "position": { "x": 120, "y": 110 },
+            "size": { "width": 15, "height": 15 },
+            "rotation": 0,
+            "properties": {
+              "description": "Public restrooms",
+              "icon": "bath",
+              "color": "#0ea5e9"
+            }
+          },
+          {
+            "id": "rooftop-restaurant",
+            "type": "food",
+            "name": "Skyline Restaurant",
+            "position": { "x": 80, "y": 140 },
+            "size": { "width": 60, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Fine dining with panoramic views",
+              "category": "Restaurant",
+              "icon": "utensils",
+              "color": "#ef4444"
+            }
+          },
+          {
+            "id": "rooftop-bar",
+            "type": "food",
+            "name": "Cloud 9 Lounge",
+            "position": { "x": 150, "y": 140 },
+            "size": { "width": 40, "height": 30 },
+            "rotation": 0,
+            "properties": {
+              "description": "Rooftop bar and lounge",
+              "category": "Bar",
+              "icon": "wine",
+              "color": "#8b5cf6"
+            }
+          },
+          {
+            "id": "sky-garden",
+            "type": "facility",
+            "name": "Rooftop Garden",
+            "position": { "x": 200, "y": 140 },
+            "size": { "width": 50, "height": 40 },
+            "rotation": 0,
+            "properties": {
+              "description": "Landscaped garden with city views",
+              "icon": "flower",
+              "color": "#84cc16"
+            }
+          }
+        ],
+        "walkingPaths": [
+          { "x": 80, "y": 40, "connections": [[50, 40], [120, 40]] },
+          { "x": 50, "y": 40, "connections": [[80, 40], [50, 70]] },
+          { "x": 50, "y": 70, "connections": [[50, 40], [50, 100]] },
+          { "x": 120, "y": 40, "connections": [[80, 40], [160, 40]] },
+          { "x": 160, "y": 40, "connections": [[120, 40], [210, 40], [160, 70]] },
+          { "x": 210, "y": 40, "connections": [[160, 40], [230, 40]] },
+          { "x": 230, "y": 40, "connections": [[210, 40], [230, 70]] },
+          { "x": 160, "y": 70, "connections": [[160, 40], [150, 110]] },
+          { "x": 230, "y": 70, "connections": [[230, 40], [180, 110]] },
+          { "x": 50, "y": 100, "connections": [[50, 70], [80, 140]] },
+          { "x": 120, "y": 110, "connections": [[150, 110]] },
+          { "x": 150, "y": 110, "connections": [[160, 70], [120, 110], [180, 110], [150, 140]] },
+          { "x": 180, "y": 110, "connections": [[230, 70], [150, 110], [200, 140]] },
+          { "x": 80, "y": 140, "connections": [[50, 100], [110, 140]] },
+          { "x": 110, "y": 140, "connections": [[80, 140], [150, 140]] },
+          { "x": 150, "y": 140, "connections": [[150, 110], [110, 140], [170, 140]] },
+          { "x": 170, "y": 140, "connections": [[150, 140], [200, 140]] },
+          { "x": 200, "y": 140, "connections": [[180, 110], [170, 140], [225, 160]] },
+          { "x": 225, "y": 160, "connections": [[200, 140]] }
+        ]
+      }
+    ],
+    "events": [
+      {
+        "id": "holiday-festival",
+        "name": "Winter Wonderland Festival",
+        "description": "Annual holiday celebration with decorations, performances, and special promotions",
+        "startDate": "2023-12-01T00:00:00Z",
+        "endDate": "2023-12-31T23:59:59Z",
+        "location": "Throughout the mall",
+        "image": "/placeholder.svg?height=200&width=300"
+      },
+      {
+        "id": "food-festival",
+        "name": "International Food Festival",
+        "description": "Culinary event featuring dishes from around the world",
+        "startDate": "2023-10-15T00:00:00Z",
+        "endDate": "2023-10-22T23:59:59Z",
+        "location": "Food courts on Ground and Second floors",
+        "image": "/placeholder.svg?height=200&width=300"
+      },
+      {
+        "id": "tech-expo",
+        "name": "Future Tech Expo",
+        "description": "Exhibition of the latest technology and gadgets",
+        "startDate": "2023-09-05T00:00:00Z",
+        "endDate": "2023-09-10T23:59:59Z",
+        "location": "First Floor, Tech Universe",
+        "image": "/placeholder.svg?height=200&width=300"
+      }
+    ],
+    "promotions": [
+      {
+        "id": "hotel-package",
+        "storeId": "hotel-lobby",
+        "name": "Shop & Stay Package",
+        "description": "Special hotel rates for shoppers with purchases over $200",
+        "startDate": "2023-07-01T00:00:00Z",
+        "endDate": "2023-09-30T23:59:59Z",
+        "image": "/placeholder.svg?height=150&width=250"
+      },
+      {
+        "id": "cinema-deal",
+        "storeId": "cinema-complex",
+        "name": "Dinner & Movie Deal",
+        "description": "Discounted movie tickets with restaurant receipt",
+        "startDate": "2023-08-01T00:00:00Z",
+        "endDate": "2023-10-31T23:59:59Z",
+        "image": "/placeholder.svg?height=150&width=250"
+      },
+      {
+        "id": "fitness-promo",
+        "storeId": "fitness-center-3",
+        "name": "Summer Fitness Challenge",
+        "description": "Join the 30-day fitness challenge for prizes and discounts",
+        "startDate": "2023-06-01T00:00:00Z",
+        "endDate": "2023-07-31T23:59:59Z",
+        "image": "/placeholder.svg?height=150&width=250"
+      }
+    ],
+    "createdAt": "2022-05-10T08:15:00Z",
+    "updatedAt": "2023-05-15T11:30:00Z",
+    "publishedAt": "2023-05-20T09:00:00Z",
+    "version": "2.5.0",
+    "status": "published"
+  }
+  

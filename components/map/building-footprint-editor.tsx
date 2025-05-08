@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useMapEditor } from "@/context/map-editor-context"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,79 +12,39 @@ export function BuildingFootprintEditor() {
   const { mapSettings, updateMapSettings, isEditingFootprint } = useMapEditor()
   const { buildingWidth, buildingHeight, buildingX, buildingY, gridSize } = mapSettings
 
+  const [localWidth, setLocalWidth] = useState(buildingWidth)
+  const [localHeight, setLocalHeight] = useState(buildingHeight)
+  const [localX, setLocalX] = useState(buildingX)
+  const [localY, setLocalY] = useState(buildingY)
+
   useEffect(() => {
-    // Clean up any event listeners when component unmounts
-    return () => {
-      // Cleanup
-    }
-  }, [])
+    setLocalWidth(buildingWidth)
+    setLocalHeight(buildingHeight)
+    setLocalX(buildingX)
+    setLocalY(buildingY)
+  }, [buildingWidth, buildingHeight, buildingX, buildingY])
 
   if (!isEditingFootprint) return null
 
-  // Handle input change
-  const handleInputChange = (property: string, value: string) => {
-    const numValue = Number.parseInt(value, 10)
-    if (isNaN(numValue)) return
-
+  const handleSave = () => {
     const updates: any = {}
-    updates[property] = numValue
 
-    // Apply minimum constraints
-    if (property === "buildingWidth" && numValue < gridSize * 5) {
-      updates[property] = gridSize * 5
-    }
-    if (property === "buildingHeight" && numValue < gridSize * 5) {
-      updates[property] = gridSize * 5
-    }
+    updates.buildingWidth = Math.max(gridSize * 5, Math.min(mapSettings.width - localX, localWidth))
+    updates.buildingHeight = Math.max(gridSize * 5, Math.min(mapSettings.height - localY, localHeight))
+    updates.buildingX = Math.max(0, Math.min(mapSettings.width - updates.buildingWidth, localX))
+    updates.buildingY = Math.max(0, Math.min(mapSettings.height - updates.buildingHeight, localY))
 
-    // Keep within map bounds
-    if (property === "buildingX") {
-      updates[property] = Math.max(0, Math.min(numValue, mapSettings.width - buildingWidth))
-    }
-    if (property === "buildingY") {
-      updates[property] = Math.max(0, Math.min(numValue, mapSettings.height - buildingHeight))
-    }
+    // dont't let more than 10000px
+    updates.buildingWidth = Math.min(10000, updates.buildingWidth)
+    updates.buildingHeight = Math.min(10000, updates.buildingHeight)
+    updates.buildingX = Math.min(10000, updates.buildingX)
+    updates.buildingY = Math.min(10000, updates.buildingY)
 
     updateMapSettings(updates)
   }
 
-  // Move building by grid size
-  const moveBuilding = (direction: "left" | "right" | "up" | "down") => {
-    let newX = buildingX
-    let newY = buildingY
-
-    switch (direction) {
-      case "left":
-        newX = Math.max(0, buildingX - gridSize)
-        break
-      case "right":
-        newX = Math.min(mapSettings.width - buildingWidth, buildingX + gridSize)
-        break
-      case "up":
-        newY = Math.max(0, buildingY - gridSize)
-        break
-      case "down":
-        newY = Math.min(mapSettings.height - buildingHeight, buildingY + gridSize)
-        break
-    }
-
-    updateMapSettings({
-      buildingX: newX,
-      buildingY: newY,
-    })
-  }
-
-  // Resize building by grid size
-  const resizeBuilding = (dimension: "width" | "height", increase: boolean) => {
-    const change = increase ? gridSize : -gridSize
-
-    if (dimension === "width") {
-      const newWidth = Math.max(gridSize * 5, Math.min(mapSettings.width - buildingX, buildingWidth + change))
-      updateMapSettings({ buildingWidth: newWidth })
-    } else {
-      const newHeight = Math.max(gridSize * 5, Math.min(mapSettings.height - buildingY, buildingHeight + change))
-      updateMapSettings({ buildingHeight: newHeight })
-    }
+  const handleInputChange = (setter: Function) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    setter(Number(e.target.value))
   }
 
   return (
@@ -97,115 +57,55 @@ export function BuildingFootprintEditor() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="building-width">Width (px)</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => resizeBuilding("width", false)}
-                  disabled={buildingWidth <= gridSize * 5}
-                >
-                  -
-                </Button>
-                <Input
-                  id="building-width"
-                  type="number"
-                  value={buildingWidth}
-                  onChange={(e) => handleInputChange("buildingWidth", e.target.value)}
-                  min={gridSize * 5}
-                  step={gridSize}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => resizeBuilding("width", true)}
-                  disabled={buildingWidth >= mapSettings.width - buildingX}
-                >
-                  +
-                </Button>
-              </div>
+              <Input
+                id="building-width"
+                type="number"
+                value={localWidth}
+                min={gridSize * 5}
+                step={gridSize}
+                onChange={handleInputChange(setLocalWidth)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="building-height">Height (px)</Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => resizeBuilding("height", false)}
-                  disabled={buildingHeight <= gridSize * 5}
-                >
-                  -
-                </Button>
-                <Input
-                  id="building-height"
-                  type="number"
-                  value={buildingHeight}
-                  onChange={(e) => handleInputChange("buildingHeight", e.target.value)}
-                  min={gridSize * 5}
-                  step={gridSize}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => resizeBuilding("height", true)}
-                  disabled={buildingHeight >= mapSettings.height - buildingY}
-                >
-                  +
-                </Button>
-              </div>
+              <Input
+                id="building-height"
+                type="number"
+                value={localHeight}
+                min={gridSize * 5}
+                step={gridSize}
+                onChange={handleInputChange(setLocalHeight)}
+              />
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="building-x">X Position</Label>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => moveBuilding("left")} disabled={buildingX <= 0}>
-                  <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <Input
-                  id="building-x"
-                  type="number"
-                  value={buildingX}
-                  onChange={(e) => handleInputChange("buildingX", e.target.value)}
-                  min={0}
-                  max={mapSettings.width - buildingWidth}
-                  step={gridSize}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => moveBuilding("right")}
-                  disabled={buildingX >= mapSettings.width - buildingWidth}
-                >
-                  <ArrowRight className="h-4 w-4" />
-                </Button>
-              </div>
+              <Input
+                id="building-x"
+                type="number"
+                value={localX}
+                min={0}
+                step={gridSize}
+                onChange={handleInputChange(setLocalX)}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="building-y">Y Position</Label>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" size="icon" onClick={() => moveBuilding("up")} disabled={buildingY <= 0}>
-                  <ArrowUp className="h-4 w-4" />
-                </Button>
-                <Input
-                  id="building-y"
-                  type="number"
-                  value={buildingY}
-                  onChange={(e) => handleInputChange("buildingY", e.target.value)}
-                  min={0}
-                  max={mapSettings.height - buildingHeight}
-                  step={gridSize}
-                />
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => moveBuilding("down")}
-                  disabled={buildingY >= mapSettings.height - buildingHeight}
-                >
-                  <ArrowDown className="h-4 w-4" />
-                </Button>
-              </div>
+              <Input
+                id="building-y"
+                type="number"
+                value={localY}
+                min={0}
+                step={gridSize}
+                onChange={handleInputChange(setLocalY)}
+              />
             </div>
+          </div>
+
+          <div className="flex justify-end">
+            <Button onClick={handleSave}>Save</Button>
           </div>
 
           <div className="text-xs text-muted-foreground mt-2">All values snap to the grid size ({gridSize}px)</div>
