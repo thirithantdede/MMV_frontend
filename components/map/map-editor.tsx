@@ -62,7 +62,7 @@ export function MapEditor() {
 
   // Filter elements for current floor - memoized for performance
   const currentFloorElements = useMemo(
-    () => elements.filter((element) => element.floor === currentFloor),
+    () => elements.filter((element) => element.floor === currentFloor || element.floor === 0),
     [elements, currentFloor],
   )
 
@@ -84,10 +84,11 @@ export function MapEditor() {
           const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
           const width = item.defaultWidth || 100
           const height = item.defaultHeight || 100
+          const rotation = item.rotation || 0
 
           // Special case for doors - they must be on the building border
           if (item.type === "door") {
-            return isOnBuildingBorder(x, y, width, height)
+            return isOnBuildingBorder(x, y, width, height,rotation)
           }
 
           // Check if the new element would overlap with existing elements
@@ -111,9 +112,10 @@ export function MapEditor() {
           const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.gridSize) * mapSettings.gridSize
           const width = item.defaultWidth || 100
           const height = item.defaultHeight || 100
+          const rotation = item.rotation || 0
 
           // Special case for doors - they must be on the building border
-          if (item.type === "door" && !isOnBuildingBorder(x, y, width, height)) {
+          if (item.type === "door" && !isOnBuildingBorder(x, y, width, height,rotation)) {
             return
           }
 
@@ -144,6 +146,9 @@ export function MapEditor() {
                 }
               : {}
 
+          const isTransportationElement = ["elevator", "escalator", "stairs"].includes(item.type)
+          const floor = isTransportationElement ? 0 : currentFloor
+
           const newElement: MapElement = {
             id: `element-${Date.now()}`,
             type: item.type,
@@ -153,7 +158,7 @@ export function MapEditor() {
             height,
             name: item.name || `New ${item.type}`,
             color: item.color || "#e2e8f0",
-            floor: currentFloor,
+            floor: floor,
             walkable: item.type === "floor" || item.type === "pathway",
             ...additionalFields,
           }

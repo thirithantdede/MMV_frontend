@@ -12,7 +12,7 @@ export const FloatingFloorIndicator = memo(function FloatingFloorIndicator() {
 
   return (
     <div
-      className="absolute bg-primary text-white px-4 py-2 rounded-lg shadow-lg z-10 font-bold text-lg w-28"
+      className="absolute bg-primary text-white px-4 py-2 rounded-lg shadow-lg z-10 font-bold text-lg whitespace-nowrap"
       style={{
         left: positionX,
         top: positionY,

@@ -22,7 +22,7 @@ import {
 
 import { Separator } from "@/components/ui/separator"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
-import type { DraggableItem } from "@/types"
+import type { DraggableItem, TransportationElementType } from "@/types"
 
 interface DraggableElementProps {
   item: DraggableItem
@@ -106,7 +106,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
 // Facility elements data - moved outside component
 const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   {
-    type: "elevator",
+    type: "elevator" as TransportationElementType,
     name: "Elevator",
     icon: <Elevator className="h-4 w-4" />,
     color: "#fef3c7",
@@ -114,7 +114,7 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     defaultHeight: 40,
   },
   {
-    type: "stairs",
+    type: "stairs" as TransportationElementType,
     name: "Stairs",
     icon: <Stairs className="h-4 w-4" />,
     color: "#fef3c7",
@@ -122,7 +122,7 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     defaultHeight: 40,
   },
   {
-    type: "escalator",
+    type: "escalator" as TransportationElementType,
     name: "Escalator",
     icon: <Escalator className="h-4 w-4" />,
     color: "#fef3c7",
@@ -142,8 +142,8 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     name: "Door",
     icon: <DoorOpen className="h-4 w-4" />,
     color: "#fef9c3",
-    defaultWidth: 40,
-    defaultHeight: 10,
+    defaultWidth: 60,
+    defaultHeight: 30,
   },
   {
     type: "info",

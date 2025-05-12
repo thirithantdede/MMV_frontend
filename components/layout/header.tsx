@@ -4,7 +4,6 @@ import { memo, useCallback, useState } from "react"
 import { Building, Settings, Eye, LayoutDashboard, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { BuildingFootprintToolbar } from "@/components/building-footprint-toolbar"
 import { UserNav } from "@/components/user-nav"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -35,7 +34,7 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
         <h1 className="text-lg font-semibold">MMV</h1>
       </div>
       <div className="ml-auto flex items-center gap-2">
-        <BuildingFootprintToolbar />
+
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

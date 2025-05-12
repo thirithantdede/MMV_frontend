@@ -40,7 +40,11 @@ export const PreviewHeader = memo(function PreviewHeader({
         </Button>
 
         {/* Floor navigation */}
-        <div className="bg-white rounded-md shadow-md p-2 flex items-center gap-2">
+
+
+        <div className="flex items-center gap-2">
+
+                  <div className="bg-white rounded-md border-[1px] flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -70,8 +74,7 @@ export const PreviewHeader = memo(function PreviewHeader({
             <ChevronUp className="h-4 w-4" />
           </Button>
         </div>
-
-        <div className="flex items-center gap-2">
+        
           <Button variant="outline" onClick={onOpenPromotionsDialog} className="gap-2">
             <Ticket className="h-4 w-4" />
             Promotions

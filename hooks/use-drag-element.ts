@@ -49,7 +49,7 @@ export function useDragElement({
   const isOverlapping = useCallback(
     (x: number, y: number, width: number, height: number, elementId: string) => {
       // Only check elements on the current floor
-      const floorElements = elements.filter((el) => el.floor === currentFloor && el.id !== elementId)
+      const floorElements = elements.filter((el) => (el.floor === currentFloor && el.id !== elementId) || el.floor == 0 && el.id !== elementId)
 
       for (const element of floorElements) {
         // Check if rectangles overlap
@@ -70,17 +70,39 @@ export function useDragElement({
 
   // Check if position is on building border (for doors)
   const isOnBuildingBorder = useCallback(
-    (x: number, y: number, width: number, height: number) => {
-      const { buildingX, buildingY, buildingWidth, buildingHeight } = mapSettings
+    (x: number, y: number, width: number, height: number,rotation : number) => {
+      const { buildingX, buildingY, buildingWidth, buildingHeight,restrictToBuilding} = mapSettings
 
-      // Door must be fully within the building footprint
-      if (!isWithinBuilding(x, y, width, height)) return false
+      const allowX = [90,270];
+      const allowY = [0,180];
 
+      const midX = buildingX + (buildingWidth / 2);
+      const midY = buildingY + (buildingHeight / 2);
+      const isLeft = x < midX;
+      const isTop = y < midY;
+
+      let currentX = x;
+      let currentY = y;
+      let currentBuildingX = buildingX;
+      let toleranceX = 10;
+      let toleranceY = 10;
+
+      if (allowX.includes(rotation)) {
+        currentX = isLeft ? x + height : x - height;
+        toleranceX = isLeft ? 20 : 80;
+        currentBuildingX = isLeft ? buildingX : buildingX ; 
+      } else if (allowY.includes(rotation)) {
+        currentY = isTop ? currentY : currentY - (height /2);
+      }
+
+      if (!isWithinBuilding(currentX, currentY, width, height)){
+        return false
+      }
       // Check if the element touches any of the building borders
-      const touchesLeftBorder = Math.abs(x - buildingX) < 5
-      const touchesRightBorder = Math.abs(x + width - (buildingX + buildingWidth)) < 5
+      const touchesLeftBorder = Math.abs(currentX - currentBuildingX) < toleranceX
+      const touchesRightBorder = Math.abs(currentX + height - (currentBuildingX + buildingWidth+height)) < toleranceX
       const touchesTopBorder = Math.abs(y - buildingY) < 5
-      const touchesBottomBorder = Math.abs(y + height - (buildingY + buildingHeight)) < 5
+      const touchesBottomBorder = Math.abs((currentY + height) - (buildingY + buildingHeight)) < 10
 
       return touchesLeftBorder || touchesRightBorder || touchesTopBorder || touchesBottomBorder
     },
@@ -123,10 +145,11 @@ export function useDragElement({
         // Adjust for zoom level
         const x = Math.floor((e.clientX - mapRect.left - dragOffset.x) / zoomLevel / gridSize) * gridSize
         const y = Math.floor((e.clientY - mapRect.top - dragOffset.y) / zoomLevel / gridSize) * gridSize
+        const rotation = element.rotation || 0
 
         // Special case for doors - they must stay on the building border
         if (element.type === "door") {
-          if (!isOnBuildingBorder(x, y, element.width, element.height)) {
+          if (!isOnBuildingBorder(x, y, element.width, element.height, rotation)) {
             return
           }
         } else {

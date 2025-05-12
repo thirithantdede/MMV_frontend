@@ -34,10 +34,6 @@ export function MapSettingsDialog({ open, onOpenChange, mapWidth, mapHeight, onS
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Map Settings</DialogTitle>
-          <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={() => onOpenChange(false)}>
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid grid-cols-4 items-center gap-4">

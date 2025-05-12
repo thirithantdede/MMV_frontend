@@ -90,7 +90,7 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
           className="w-full"
         />
         <div className="absolute right-10 top-1">
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          {/* <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="h-7 w-[100px] text-xs">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
@@ -102,7 +102,7 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+          </Select> */}
         </div>
       </form>
 

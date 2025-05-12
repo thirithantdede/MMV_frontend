@@ -14,15 +14,20 @@ export interface MapElement {
   borderRadius?: number
   category?: string
   notes?: string
-  // Add side rotation properties
   topRotation?: number
   rightRotation?: number
   bottomRotation?: number
   leftRotation?: number
-  // Store properties
+  created_at?: string
+  updated_at?: string
+  is_foc?: boolean
+  isClosed?: boolean
+  walkable?: boolean
+}
+
+export interface MainElement extends MapElement {
   openHours?: string
   closedDates?: string[]
-  isClosed?: boolean
   closedDay?: string
   hasPromotion?: boolean
   promotionDetails?: string
@@ -33,22 +38,18 @@ export interface MapElement {
     twitter?: string
     website?: string
   }
-  // Event properties
+}
+
+export interface EventElement extends MapElement {
   eventDate?: string
   eventDescription?: string
-  // Event space additional fields
   start_date?: string
   end_date?: string
   start_time?: string
   end_time?: string
   is_active?: boolean
-  created_at?: string
-  updated_at?: string
   host?: string
   company?: string
-  is_foc?: boolean
-  // Pathfinding properties
-  walkable?: boolean
 }
 
 export interface MapSettings {
@@ -64,10 +65,10 @@ export interface MapSettings {
   restrictToBuilding: boolean
 }
 
+export type TransportationElementType = "elevator" | "escalator" | "stairs";
+
 export type ElementType =
   | "store"
-  | "elevator"
-  | "escalator"
   | "room"
   | "pathway"
   | "door"
@@ -78,7 +79,8 @@ export type ElementType =
   | "security"
   | "promotion"
   | "floor"
-  | "stairs"
+  | TransportationElementType;
+
 
 export interface DraggableItem {
   type: ElementType

@@ -1,8 +1,5 @@
 "use client"
-
 import { useState, useEffect } from "react"
-import { X } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
@@ -75,10 +72,6 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Map Settings</DialogTitle>
-          <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={() => onOpenChange(false)}>
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
         </DialogHeader>
 
         <Tabs defaultValue="map">
@@ -150,6 +143,7 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
                 value={buildingWidth}
                 onChange={(e) => setBuildingWidth(Number(e.target.value))}
                 min={400}
+                max={3000}
                 className="col-span-3"
               />
             </div>
@@ -163,48 +157,11 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
                 value={buildingHeight}
                 onChange={(e) => setBuildingHeight(Number(e.target.value))}
                 min={300}
+                max={2000}
                 className="col-span-3"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="building-x" className="col-span-1">
-                X Position
-              </Label>
-              <Input
-                id="building-x"
-                type="number"
-                value={buildingX}
-                onChange={(e) => setBuildingX(Number(e.target.value))}
-                min={0}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="building-y" className="col-span-1">
-                Y Position
-              </Label>
-              <Input
-                id="building-y"
-                type="number"
-                value={buildingY}
-                onChange={(e) => setBuildingY(Number(e.target.value))}
-                min={0}
-                className="col-span-3"
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="restrict-to-building" className="col-span-1">
-                Restrict Elements
-              </Label>
-              <div className="col-span-3 flex items-center gap-2">
-                <Switch
-                  id="restrict-to-building"
-                  checked={restrictToBuilding}
-                  onCheckedChange={setRestrictToBuilding}
-                />
-                <span className="text-sm text-muted-foreground">Only allow elements inside building footprint</span>
-              </div>
-            </div>
+         
             <div className="text-xs text-muted-foreground">
               The building footprint defines the area where elements can be placed
             </div>

@@ -31,7 +31,7 @@ export const PreviewMapContent = memo(function PreviewMapContent({
   highlightedElement, // Add this prop
 }: PreviewMapContentProps) {
   return (
-    <div ref={containerRef} className="h-full w-full overflow-auto pt-14 touch-manipulation">
+    <div ref={containerRef} className="relative h-full w-full overflow-auto bg-white will-change-transform touch-manipulation">
       <div
         className="relative origin-top-left bg-white"
         style={{
@@ -39,6 +39,7 @@ export const PreviewMapContent = memo(function PreviewMapContent({
           width: `${mapSettings.width}px`,
           transform: `scale(${zoomLevel})`,
           transformOrigin: "top left",
+          willChange: "transform",
         }}
       >
         <Grid mapSettings={mapSettings} />
