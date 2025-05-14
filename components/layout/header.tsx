@@ -8,6 +8,10 @@ import { UserNav } from "@/components/user-nav"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import LayoutManager from "@/components/layout-manager"
+// import LogoIcon from "@/public/imgs/logo-icon.png"
+import LogoText from "@/public/imgs/logo-text.png"
+import Image from "next/image"
+
 
 interface HeaderProps {
   onOpenSettings: () => void
@@ -29,9 +33,9 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
 
   return (
     <header className="flex h-14 items-center border-b px-4 lg:px-6">
-      <div className="flex items-center gap-2">
-        <Building className="h-6 w-6" />
-        <h1 className="text-lg font-semibold">MMV</h1>
+      <div className="flex items-center">
+        {/* <Image src={LogoIcon} alt="Logo" width={40} /> */}
+        <Image src={LogoText} alt="Logo" width={240} />
       </div>
       <div className="ml-auto flex items-center gap-2">
 
@@ -85,6 +89,7 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
 
       {/* Layout Manager Dialog */}
       <Dialog open={layoutManagerOpen} onOpenChange={setLayoutManagerOpen}>
+        <DialogTitle>Import/Export Layouts</DialogTitle>
         <DialogContent className="sm:max-w-md">
           <LayoutManager />
         </DialogContent>

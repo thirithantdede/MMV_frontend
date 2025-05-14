@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useRef, useState, useCallback, memo } from "react"
+import { useRef, useState, useCallback, memo, useMemo } from "react"
 import { useDrop } from "react-dnd"
 import { Store, CableCarIcon as Escalator, CableCarIcon as Elevator, RouteIcon as Road } from "lucide-react"
 
@@ -100,7 +100,11 @@ export function MapEditor({
   const gridSize = 20
 
   // Memoize the filtered elements to prevent unnecessary recalculations
-  const currentFloorElements = elements.filter((element) => element.floor === currentFloor)
+  const currentFloorElements = useMemo(
+     () => elements.filter((element) => element.floor === currentFloor || element.floor === 0),
+     [elements, currentFloor],
+   )
+ 
 
   // Handle dropped elements
   const [{ isOver }, drop] = useDrop(
@@ -244,7 +248,7 @@ export function MapEditor({
         drop(node)
         mapRef.current = node as HTMLDivElement
       }}
-      className="relative h-full w-full overflow-auto bg-white will-change-transform"
+      className="relative h-full w-full overflow-hidden bg-white will-change-transform"
       onClick={handleMapClick}
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}

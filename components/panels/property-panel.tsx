@@ -14,12 +14,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Slider } from "@/components/ui/slider"
 import { Switch } from "@/components/ui/switch"
 import { useMapEditor } from "@/context/map-editor-context"
-import type { MapElement } from "@/types"
+import type { EventElement, MainElement, MapElement } from "@/types"
 
 // Import the new StorePropertiesPanel component
 import { StorePropertiesPanel } from "@/components/panels/store-properties-panel"
 
-// Memoized property section components for better performance
+
 const GeneralProperties = memo(function GeneralProperties({
   element,
   onPropertyChange,
@@ -27,7 +27,16 @@ const GeneralProperties = memo(function GeneralProperties({
   element: MapElement
   onPropertyChange: (property: string, value: any) => void
 }) {
-  // Memoize element types to prevent recreation on each render
+  // Local state for inputs
+  const [formData, setFormData] = useState({
+    name: element.name || "",
+    type: element.type || "",
+    x: element.x || 0,
+    y: element.y || 0,
+    width: element.width || 100,
+    height: element.height || 100,
+  })
+
   const elementTypes = useMemo(
     () => [
       { value: "store", label: "Store" },
@@ -46,44 +55,37 @@ const GeneralProperties = memo(function GeneralProperties({
     [],
   )
 
-  // Optimize handlers with useCallback
-  const handleNameChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("name", e.target.value),
-    [onPropertyChange],
-  )
+  // Handle input changes
+  const handleChange = (key: keyof typeof formData, value: any) => {
+    setFormData((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+  }
 
-  const handleTypeChange = useCallback((value: string) => onPropertyChange("type", value), [onPropertyChange])
-
-  const handleXChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("x", Number.parseInt(e.target.value)),
-    [onPropertyChange],
-  )
-
-  const handleYChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("y", Number.parseInt(e.target.value)),
-    [onPropertyChange],
-  )
-
-  const handleWidthChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("width", Number.parseInt(e.target.value)),
-    [onPropertyChange],
-  )
-
-  const handleHeightChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("height", Number.parseInt(e.target.value)),
-    [onPropertyChange],
-  )
+  const handleApply = () => {
+    Object.entries(formData).forEach(([key, value]) => {
+      onPropertyChange(key, value)
+    })
+  }
 
   return (
     <div className="space-y-4 pt-4">
       <div className="grid gap-2">
         <Label htmlFor="element-name">Name</Label>
-        <Input id="element-name" value={element.name || ""} onChange={handleNameChange} />
+        <Input
+          id="element-name"
+          value={formData.name}
+          onChange={(e) => handleChange("name", e.target.value)}
+        />
       </div>
 
       <div className="grid gap-2">
         <Label htmlFor="element-type">Type</Label>
-        <Select value={element.type} onValueChange={handleTypeChange}>
+        <Select
+          value={formData.type}
+          onValueChange={(value) => handleChange("type", value)}
+        >
           <SelectTrigger id="element-type">
             <SelectValue placeholder="Select type" />
           </SelectTrigger>
@@ -97,40 +99,63 @@ const GeneralProperties = memo(function GeneralProperties({
         </Select>
       </div>
 
-      <div className="grid gap-2 mt-4">
-        <Label htmlFor="element-floor">Floor</Label>
-        <div className="flex items-center gap-2 h-10 w-full rounded-md border border-input bg-background px-3 py-2">
-          <span className="text-sm">{element.floor || 1}</span>
-        </div>
-        <p className="text-xs text-muted-foreground">Elements are assigned to the floor they were created on</p>
-      </div>
-
       <Separator />
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
           <Label htmlFor="element-x">X Position</Label>
-          <Input id="element-x" type="number" value={element.x || 0} onChange={handleXChange} />
+          <Input
+            id="element-x"
+            type="number"
+            value={formData.x}
+            onChange={(e) => handleChange("x", parseInt(e.target.value) || 0)}
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="element-y">Y Position</Label>
-          <Input id="element-y" type="number" value={element.y || 0} onChange={handleYChange} />
+          <Input
+            id="element-y"
+            type="number"
+            value={formData.y}
+            onChange={(e) => handleChange("y", parseInt(e.target.value) || 0)}
+          />
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="grid gap-2">
           <Label htmlFor="element-width">Width</Label>
-          <Input id="element-width" type="number" value={element.width || 100} onChange={handleWidthChange} />
+          <Input
+            id="element-width"
+            type="number"
+            value={formData.width}
+            onChange={(e) => handleChange("width", parseInt(e.target.value) || 0)}
+          />
         </div>
         <div className="grid gap-2">
           <Label htmlFor="element-height">Height</Label>
-          <Input id="element-height" type="number" value={element.height || 100} onChange={handleHeightChange} />
+          <Input
+            id="element-height"
+            type="number"
+            value={formData.height}
+            onChange={(e) => handleChange("height", parseInt(e.target.value) || 0)}
+          />
         </div>
+      </div>
+
+      <div className="pt-4">
+            <Button
+              variant="default"
+              onClick={handleApply}
+              className="w-full float-right"
+              >
+              Apply 
+              </Button>
       </div>
     </div>
   )
 })
+
 
 const StyleProperties = memo(function StyleProperties({
   element,
@@ -178,7 +203,7 @@ const StyleProperties = memo(function StyleProperties({
 
   const rotateElement = useCallback(() => {
     const currentRotation = element.rotation || 0
-    const newRotation = (currentRotation + 45) % 360
+    const newRotation = (currentRotation + 90) % 360
     onPropertyChange("rotation", newRotation)
   }, [element.rotation, onPropertyChange])
 
@@ -266,7 +291,7 @@ const StyleProperties = memo(function StyleProperties({
                 id="element-rotation"
                 value={[element.rotation || 0]}
                 max={360}
-                step={45}
+                step={90}
                 onValueChange={handleRotationChange}
               />
             </div>
@@ -304,7 +329,7 @@ const StoreProperties = memo(function StoreProperties({
   element,
   onPropertyChange,
 }: {
-  element: MapElement
+  element: MainElement
   onPropertyChange: (property: string, value: any) => void
 }) {
   // Memoize closed days to prevent recreation on each render
@@ -413,7 +438,7 @@ const EventProperties = memo(function EventProperties({
   element,
   onPropertyChange,
 }: {
-  element: MapElement
+  element: EventElement
   onPropertyChange: (property: string, value: any) => void
 }) {
   // Optimize handlers with useCallback

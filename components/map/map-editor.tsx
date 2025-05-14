@@ -326,21 +326,22 @@ export function MapEditor() {
   return (
     <div
       ref={containerRef}
-      className="relative h-full w-full overflow-auto bg-white will-change-transform touch-manipulation"
+      className="relative w-full h-full  overflow-auto bg-white will-change-transform touch-manipulation"
       onClick={handleMapClick}
       onMouseMove={handleMapMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={handleMouseUp}
       style={{
         WebkitOverflowScrolling: "touch", // Smooth scrolling on iOS
+    
       }}
     >
       <div
         ref={setDropTargetRef}
-        className="relative origin-top-left"
+        className="relative origin-top-left  "
         style={{
-          height: `${mapSettings.height}px`,
-          width: `${mapSettings.width}px`,
+          height: `${mapSettings.height + (mapSettings.buildingWidth * (zoomLevel / 2)) }px`,
+          width: `${mapSettings.width + (mapSettings.buildingWidth * (zoomLevel / 2))}px`,
           transform: `scale(${zoomLevel})`,
           transformOrigin: "top left",
           willChange: "transform", // Optimize for animations

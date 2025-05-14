@@ -12,7 +12,7 @@ import type { MapElement, MapSettings, RouteInfo } from "@/types"
 interface PreviewMapContentProps {
   mapSettings: MapSettings
   floorElements: MapElement[]
-  previewFloor: number
+  currentFloor: number
   zoomLevel: number
   routeInfo: RouteInfo
   onElementClick: (element: MapElement) => void
@@ -23,7 +23,7 @@ interface PreviewMapContentProps {
 export const PreviewMapContent = memo(function PreviewMapContent({
   mapSettings,
   floorElements,
-  previewFloor,
+  currentFloor,
   zoomLevel,
   routeInfo,
   onElementClick,
@@ -45,14 +45,14 @@ export const PreviewMapContent = memo(function PreviewMapContent({
         <Grid mapSettings={mapSettings} />
 
         {/* Floor Walking Paths */}
-        <FloorWalkingPaths mapSettings={mapSettings} previewFloor={previewFloor} />
+        <FloorWalkingPaths mapSettings={mapSettings} currentFloor={currentFloor} />
 
         {/* Building Footprint */}
-        <BuildingFootprint mapSettings={mapSettings} previewFloor={previewFloor} />
+        <BuildingFootprint mapSettings={mapSettings} currentFloor={currentFloor} />
 
         {/* Route path visualization - moved before elements so it appears underneath */}
         {routeInfo.sourceStore && routeInfo.targetStore && (
-          <RoutePath routeInfo={routeInfo} currentFloor={previewFloor} />
+          <RoutePath routeInfo={routeInfo} currentFloor={currentFloor} />
         )}
 
         {/* Map elements - with click handler for guest mode */}
@@ -76,17 +76,17 @@ export const PreviewMapContent = memo(function PreviewMapContent({
 // Smaller components for better organization
 const FloorWalkingPaths = memo(function FloorWalkingPaths({
   mapSettings,
-  previewFloor,
+  currentFloor,
 }: {
   mapSettings: MapSettings
-  previewFloor: number
+  currentFloor: number
 }) {
   return (
     <div className="absolute" style={{ left: 0, top: 0 }}>
       {Array.from({ length: Math.floor(mapSettings.buildingHeight / mapSettings.gridSize) }).map((_, row) =>
         Array.from({ length: Math.floor(mapSettings.buildingWidth / mapSettings.gridSize) }).map((_, col) => (
           <div
-            key={`floor-${previewFloor}-${row}-${col}`}
+            key={`floor-${currentFloor}-${row}-${col}`}
             className="absolute border border-gray-100"
             style={{
               left: mapSettings.buildingX + col * mapSettings.gridSize,
@@ -96,7 +96,7 @@ const FloorWalkingPaths = memo(function FloorWalkingPaths({
               backgroundColor: "rgba(240, 240, 240, 0.3)",
             }}
             data-walkable="true"
-            data-floor={previewFloor}
+            data-floor={currentFloor}
             data-x={mapSettings.buildingX + col * mapSettings.gridSize}
             data-y={mapSettings.buildingY + row * mapSettings.gridSize}
           />
@@ -108,10 +108,10 @@ const FloorWalkingPaths = memo(function FloorWalkingPaths({
 
 const BuildingFootprint = memo(function BuildingFootprint({
   mapSettings,
-  previewFloor,
+  currentFloor,
 }: {
   mapSettings: MapSettings
-  previewFloor: number
+  currentFloor: number
 }) {
   return (
     <div
@@ -128,12 +128,11 @@ const BuildingFootprint = memo(function BuildingFootprint({
         Building Footprint
       </div>
 
-      {/* Floor 2 label - only show when on floor 2 */}
-      {previewFloor === 2 && (
-        <div className="absolute -top-8 right-0 bg-blue-600 text-white text-xs px-3 py-1 rounded-md shadow-md">
-          Floor 2
+    {      
+        <div className="absolute -top-8 right-0 bg-gray-800 text-white text-xs px-3 py-1 rounded-md shadow-md">
+          Floor {currentFloor}
         </div>
-      )}
+      }
     </div>
   )
 })

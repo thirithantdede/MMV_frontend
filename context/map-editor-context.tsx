@@ -88,7 +88,6 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       height: 1000,
       gridSize: 20,
       showGrid: true,
-      // Building footprint defaults
       buildingWidth: 1200,
       buildingHeight: 800,
       buildingX: 700,

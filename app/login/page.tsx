@@ -10,6 +10,9 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import Image from "next/image"
+import LogoIcon from "@/public/imgs/logo-icon.png"
+import LogoText from "@/public/imgs/logo-text.png"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -42,15 +45,12 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md ">
         <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <Building className="h-10 w-10 text-primary" />
+          <div className="flex flex-col items-center justify-center">
+              <Image src={LogoIcon} alt="Logo" width={100} />
+              <Image src={LogoText} alt="Logo" width={280} />
           </div>
-          <CardTitle className="text-2xl text-center">Mall Map Viewer</CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials to access the mall map editor
-          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">

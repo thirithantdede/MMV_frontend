@@ -8,7 +8,7 @@ import type { MapElement } from "@/types"
 
 interface PreviewHeaderProps {
   onExitPreview: () => void
-  previewFloor: number
+  currentFloor: number
   totalFloors: number
   goToPrevFloor: () => void
   goToNextFloor: () => void
@@ -21,7 +21,7 @@ interface PreviewHeaderProps {
 
 export const PreviewHeader = memo(function PreviewHeader({
   onExitPreview,
-  previewFloor,
+  currentFloor,
   totalFloors,
   goToPrevFloor,
   goToNextFloor,
@@ -49,8 +49,8 @@ export const PreviewHeader = memo(function PreviewHeader({
             variant="ghost"
             size="icon"
             onClick={goToPrevFloor}
-            disabled={previewFloor <= 1 || isFloorTransitioning}
-            className={hasRouteOnOtherFloors && previewFloor > 1 ? "animate-bounce-gentle" : ""}
+            disabled={currentFloor <= 1 || isFloorTransitioning}
+            className={hasRouteOnOtherFloors && currentFloor > 1 ? "animate-bounce-gentle" : ""}
           >
             <ChevronDown className="h-4 w-4" />
           </Button>
@@ -61,15 +61,15 @@ export const PreviewHeader = memo(function PreviewHeader({
                 <span>Loading...</span>
               </div>
             ) : (
-              `Floor ${previewFloor}`
+              `Floor ${currentFloor}`
             )}
           </span>
           <Button
             variant="ghost"
             size="icon"
             onClick={goToNextFloor}
-            disabled={previewFloor >= totalFloors || isFloorTransitioning}
-            className={hasRouteOnOtherFloors && previewFloor < totalFloors ? "animate-bounce-gentle" : ""}
+            disabled={currentFloor >= totalFloors || isFloorTransitioning}
+            className={hasRouteOnOtherFloors && currentFloor < totalFloors ? "animate-bounce-gentle" : ""}
           >
             <ChevronUp className="h-4 w-4" />
           </Button>

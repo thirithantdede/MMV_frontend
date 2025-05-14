@@ -13,8 +13,7 @@ import { PromotionsList } from "@/components/guest-mode/promotions-list"
 import type { MapElement, RouteInfo } from "@/types"
 
 export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
-  const { elements, mapSettings, currentFloor, totalFloors } = useMapEditor()
-  const [previewFloor, setPreviewFloor] = useState(currentFloor)
+  const { elements, mapSettings, currentFloor, totalFloors,setCurrentFloor } = useMapEditor()
   const [zoomLevel, setZoomLevel] = useState(1)
   const [showInfo, setShowInfo] = useState(true)
   const [showRouteDialog, setShowRouteDialog] = useState(false)
@@ -27,7 +26,6 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
     targetStore: null,
     path: [],
   })
-
   // Add a new state variable for highlighted element
   const [highlightedElement, setHighlightedElement] = useState<MapElement | null>(null)
 
@@ -35,10 +33,13 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
   const touchStartRef = useRef<{ x1: number; y1: number; x2: number; y2: number; dist: number } | null>(null)
 
   // Filter elements for current floor
-  const floorElements = useMemo(
-    () => elements.filter((element) => element.floor === previewFloor),
-    [elements, previewFloor],
-  )
+  const floorElements =  useMemo(
+      () => {
+        console.log("Filtering elements for floor:", currentFloor)
+        return elements.filter((element) => element.floor === currentFloor || element.floor === 0)
+      },
+      [elements, currentFloor],
+    )
 
   // Add floor transition state
   const [isFloorTransitioning, setIsFloorTransitioning] = useState(false)
@@ -48,20 +49,21 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
 
   // Floor navigation
   const goToNextFloor = useCallback(() => {
-    if (previewFloor < totalFloors && !isFloorTransitioning) {
+    if (currentFloor < totalFloors && !isFloorTransitioning) {
       setIsFloorTransitioning(true)
-      setPreviewFloor(previewFloor + 1)
+      setCurrentFloor(currentFloor + 1);
       setIsFloorTransitioning(false)
     }
-  }, [previewFloor, totalFloors, isFloorTransitioning])
+  }, [currentFloor, totalFloors, isFloorTransitioning])
 
   const goToPrevFloor = useCallback(() => {
-    if (previewFloor > 1 && !isFloorTransitioning) {
+    if (currentFloor > 1 && !isFloorTransitioning) {
       setIsFloorTransitioning(true)
-      setPreviewFloor(previewFloor - 1)
+      setCurrentFloor(currentFloor - 1);
+
       setIsFloorTransitioning(false)
     }
-  }, [previewFloor, isFloorTransitioning])
+  }, [currentFloor, isFloorTransitioning])
 
   // Handle wheel zoom
   const handleWheel = useCallback(
@@ -138,11 +140,11 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
       })
 
       // If the route starts on a different floor, automatically switch to that floor
-      if (source && source.floor !== previewFloor) {
-        setPreviewFloor(source.floor)
+      if (source && source.floor !== currentFloor) {
+        setCurrentFloor(source.floor)
       }
     },
-    [previewFloor],
+    [currentFloor],
   )
 
   // Add handler for canceling route
@@ -168,8 +170,8 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
   const handleStoreSelect = useCallback(
     (store: MapElement) => {
       // If the store is on a different floor, switch to that floor
-      if (store.floor !== previewFloor) {
-        setPreviewFloor(store.floor)
+      if (store.floor !== currentFloor) {
+        setCurrentFloor(store.floor)
       }
 
       // Highlight the store
@@ -184,7 +186,7 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
         setHighlightedElement(null)
       }, 3000)
     },
-    [previewFloor],
+    [currentFloor],
   )
 
   // Auto-hide info panel after 5 seconds
@@ -217,14 +219,14 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
 
   // Check if there's a route on another floor that the user should see
   const hasRouteOnOtherFloors =
-    routeInfo.path.some((point) => point.floor !== previewFloor) && routeInfo.path.length > 0
+    routeInfo.path.some((point) => point.floor !== currentFloor) && routeInfo.path.length > 0
 
   // Memoize the header component to improve performance
   const MemoizedHeader = useMemo(
     () => (
       <PreviewHeader
         onExitPreview={onExitPreview}
-        previewFloor={previewFloor}
+        currentFloor={currentFloor}
         totalFloors={totalFloors}
         goToPrevFloor={goToPrevFloor}
         goToNextFloor={goToNextFloor}
@@ -237,7 +239,7 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
     ),
     [
       onExitPreview,
-      previewFloor,
+      currentFloor,
       totalFloors,
       goToPrevFloor,
       goToNextFloor,
@@ -271,7 +273,7 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
       <PreviewMapContent
         mapSettings={mapSettings}
         floorElements={floorElements}
-        previewFloor={previewFloor}
+        currentFloor={currentFloor}
         zoomLevel={zoomLevel}
         routeInfo={routeInfo}
         onElementClick={handleElementClick}
@@ -313,7 +315,7 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
       />
 
       {/* Notification for routes that span multiple floors */}
-      <FloorRouteNotification path={routeInfo.path} currentFloor={previewFloor} show={hasRouteOnOtherFloors} />
+      <FloorRouteNotification path={routeInfo.path} currentFloor={currentFloor} show={hasRouteOnOtherFloors} />
     </div>
   )
 }

@@ -52,15 +52,18 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
     const finalBuildingWidth = Math.min(buildingWidth, finalWidth - buildingX)
     const finalBuildingHeight = Math.min(buildingHeight, finalHeight - buildingY)
 
+    const bx = Math.max(0, Math.min(buildingX, finalWidth - finalBuildingWidth));
+    const by = Math.max(0, Math.min(buildingY, finalHeight - finalBuildingHeight));
+
     updateMapSettings({
       width: finalWidth,
       height: finalHeight,
       gridSize: finalGridSize,
       showGrid,
-      buildingWidth: finalBuildingWidth,
-      buildingHeight: finalBuildingHeight,
-      buildingX,
-      buildingY,
+      buildingWidth: buildingWidth,
+      buildingHeight: buildingHeight,
+      buildingX: bx,
+      buildingY: by,
       restrictToBuilding,
     })
 

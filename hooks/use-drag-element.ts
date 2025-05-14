@@ -85,14 +85,13 @@ export function useDragElement({
       let currentY = y;
       let currentBuildingX = buildingX;
       let toleranceX = 10;
-      let toleranceY = 10;
 
       if (allowX.includes(rotation)) {
         currentX = isLeft ? x + height : x - height;
         toleranceX = isLeft ? 20 : 80;
         currentBuildingX = isLeft ? buildingX : buildingX ; 
       } else if (allowY.includes(rotation)) {
-        currentY = isTop ? currentY : currentY - (height /2);
+        currentY = isTop ? currentY : currentY - (height / 2) ;
       }
 
       if (!isWithinBuilding(currentX, currentY, width, height)){
