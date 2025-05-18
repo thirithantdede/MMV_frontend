@@ -30,34 +30,48 @@ export function useDragElement({
 
   // Check if position is within building footprint
   const isWithinBuilding = useCallback(
-    (x: number, y: number, width: number, height: number) => {
+    (x: number, y: number, width: number, height: number,rotation : number) => {
       if (!mapSettings.restrictToBuilding) return true
 
       const { buildingX, buildingY, buildingWidth, buildingHeight } = mapSettings
 
-      return (
+      // For 90° and 270° rotations, swap width and height for boundary check
+      const isRotated = rotation === 90 || rotation === 270
+      const effectiveWidth = isRotated ? height : width
+      const effectiveHeight = isRotated ? width : height
+
+       return (
         x >= buildingX &&
         y >= buildingY &&
-        x + width <= buildingX + buildingWidth &&
-        y + height <= buildingY + buildingHeight
+        x + effectiveWidth <= buildingX + buildingWidth &&
+        y + effectiveHeight <= buildingY + buildingHeight
       )
     },
     [mapSettings],
   )
 
-  // Check if position overlaps with other elements
   const isOverlapping = useCallback(
-    (x: number, y: number, width: number, height: number, elementId: string) => {
+    (x: number, y: number, width: number, height: number, elementId: string, rotation = 0) => {
       // Only check elements on the current floor
-      const floorElements = elements.filter((el) => (el.floor === currentFloor && el.id !== elementId) || el.floor == 0 && el.id !== elementId)
+      const floorElements = elements.filter((el) => el.floor === currentFloor && el.id !== elementId)
+
+      // For 90° and 270° rotations, swap width and height for overlap check
+      const isRotated = rotation === 90 || rotation === 270
+      const effectiveWidth = isRotated ? height : width
+      const effectiveHeight = isRotated ? width : height
 
       for (const element of floorElements) {
-        // Check if rectangles overlap
+        // Check if the other element is rotated
+        const isElementRotated = element.rotation === 90 || element.rotation === 270
+        const elementEffectiveWidth = isElementRotated ? element.height : element.width
+        const elementEffectiveHeight = isElementRotated ? element.width : element.height
+
+        // Check if rectangles overlap using effective dimensions
         if (
-          x < element.x + element.width &&
-          x + width > element.x &&
-          y < element.y + element.height &&
-          y + height > element.y
+          x < element.x + elementEffectiveWidth &&
+          x + effectiveWidth > element.x &&
+          y < element.y + elementEffectiveHeight &&
+          y + effectiveHeight > element.y
         ) {
           return true
         }
@@ -87,14 +101,16 @@ export function useDragElement({
       let toleranceX = 10;
 
       if (allowX.includes(rotation)) {
-        currentX = isLeft ? x + height : x - height;
-        toleranceX = isLeft ? 20 : 80;
+        currentX = isLeft ? x + width - height  : x - width + height;
+        toleranceX = isLeft ? 30 : 80;
         currentBuildingX = isLeft ? buildingX : buildingX ; 
       } else if (allowY.includes(rotation)) {
-        currentY = isTop ? currentY : currentY - (height / 2) ;
+        currentY = isTop ? currentY : currentY  ;
       }
 
-      if (!isWithinBuilding(currentX, currentY, width, height)){
+
+      if (!isWithinBuilding(currentX, currentY, width, height,rotation)){
+        console.log('out of buiding');
         return false
       }
       // Check if the element touches any of the building borders
@@ -155,8 +171,8 @@ export function useDragElement({
           // For other elements, they must stay within the building footprint
           // and not overlap with other elements
           if (
-            !isWithinBuilding(x, y, element.width, element.height) ||
-            isOverlapping(x, y, element.width, element.height, element.id)
+            !isWithinBuilding(x, y, element.width, element.height,rotation) ||
+            isOverlapping(x, y, element.width, element.height, element.id,rotation)
           ) {
             return
           }

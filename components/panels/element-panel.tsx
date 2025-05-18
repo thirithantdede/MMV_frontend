@@ -1,5 +1,3 @@
-"use client"
-
 import type React from "react"
 
 import { memo, useMemo } from "react"
@@ -41,7 +39,7 @@ const DraggableElement = memo(function DraggableElement({ item, icon }: Draggabl
 
   return (
     <div
-      ref={drag}
+      ref={drag as any}
       className={`flex cursor-grab items-center gap-2 rounded-md border p-2 select-none ${isDragging ? "opacity-50" : ""}`}
       style={{ backgroundColor: item.color }}
     >
@@ -117,14 +115,6 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     type: "stairs" as TransportationElementType,
     name: "Stairs",
     icon: <Stairs className="h-4 w-4" />,
-    color: "#fef3c7",
-    defaultWidth: 60,
-    defaultHeight: 40,
-  },
-  {
-    type: "escalator" as TransportationElementType,
-    name: "Escalator",
-    icon: <Escalator className="h-4 w-4" />,
     color: "#fef3c7",
     defaultWidth: 60,
     defaultHeight: 40,

@@ -92,11 +92,11 @@ export function MapEditor() {
           }
 
           // Check if the new element would overlap with existing elements
-          if (isOverlapping(x, y, width, height, "new-element")) {
+          if (isOverlapping(x, y, width, height, "new-element",rotation)) {
             return false
           }
-          isWithinBuilding(x, y, width, height) ? setIsValid(true) : setIsValid(false)
-          return isWithinBuilding(x, y, width, height)
+          isWithinBuilding(x, y, width, height,rotation) ? setIsValid(true) : setIsValid(false)
+          return isWithinBuilding(x, y, width, height,rotation)
         },
         drop: (item: any, monitor) => {
           if (isEditingFootprint) return
@@ -120,12 +120,12 @@ export function MapEditor() {
           }
 
           // Check if the new element would overlap with existing elements
-          if (isOverlapping(x, y, width, height, "new-element")) {
+          if (isOverlapping(x, y, width, height, "new-element",rotation)) {
             return
           }
 
           // For other elements, they must be within the building footprint
-          if (item.type !== "door" && !isWithinBuilding(x, y, width, height)) {
+          if (item.type !== "door" && !isWithinBuilding(x, y, width, height,rotation)) {
             return
           }
 

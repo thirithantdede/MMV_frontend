@@ -2,17 +2,27 @@
 
 import type React from "react"
 
-import { memo, useCallback } from "react"
+import { memo, useCallback, useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
-import { Calendar } from "lucide-react"
-import type { MapElement } from "@/types"
+import { Facebook, Instagram, Twitter, Globe, Calendar } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import type { MainElement, MapElement } from "@/types"
 
 interface StorePropertiesPanelProps {
-  element: MapElement
+  element: MainElement
   onPropertyChange: (property: string, value: any) => void
 }
 
@@ -74,16 +84,28 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
     [onPropertyChange],
   )
 
-  const handleSocialMediaChange = useCallback(
-    (platform: string, value: string) => {
-      const socialMedia = element.socialMedia || {}
-      onPropertyChange("socialMedia", {
-        ...socialMedia,
-        [platform]: value,
-      })
-    },
-    [element.socialMedia, onPropertyChange],
-  )
+  // State for social media dialog
+  const [showSocialMediaDialog, setShowSocialMediaDialog] = useState(false)
+  const [tempSocialMedia, setTempSocialMedia] = useState<MainElement['socialMedia']>(element.socialMedia || {})
+
+  // Update temporary social media state
+  const handleTempSocialMediaChange = useCallback((platform: string, value: string) => {
+    setTempSocialMedia((prev) => ({
+      ...prev,
+      [platform]: value,
+    }))
+  }, [])
+
+  // Apply social media changes
+  const handleApplySocialMedia = useCallback(() => {
+    onPropertyChange("socialMedia", tempSocialMedia)
+    setShowSocialMediaDialog(false)
+  }, [tempSocialMedia, onPropertyChange])
+
+  // Update temp social media when element changes
+  useEffect(() => {
+    setTempSocialMedia(element.socialMedia || {})
+  }, [element.socialMedia])
 
   return (
     <div className="space-y-4 pt-4">
@@ -185,48 +207,106 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
 
       {/* Social Media Section */}
       <div className="space-y-4">
-        <h3 className="text-sm font-medium">Social Media Links</h3>
-
-        <div className="grid gap-2">
-          <Label htmlFor="social-website">Website</Label>
-          <Input
-            id="social-website"
-            placeholder="https://example.com"
-            value={element.socialMedia?.website || ""}
-            onChange={(e) => handleSocialMediaChange("website", e.target.value)}
-          />
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-medium">Social Media Links</h3>
+          <Button variant="outline" size="sm" onClick={() => setShowSocialMediaDialog(true)}>
+            Edit Links
+          </Button>
         </div>
 
-        <div className="grid gap-2">
-          <Label htmlFor="social-facebook">Facebook</Label>
-          <Input
-            id="social-facebook"
-            placeholder="https://facebook.com/storename"
-            value={element.socialMedia?.facebook || ""}
-            onChange={(e) => handleSocialMediaChange("facebook", e.target.value)}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="social-instagram">Instagram</Label>
-          <Input
-            id="social-instagram"
-            placeholder="https://instagram.com/storename"
-            value={element.socialMedia?.instagram || ""}
-            onChange={(e) => handleSocialMediaChange("instagram", e.target.value)}
-          />
-        </div>
-
-        <div className="grid gap-2">
-          <Label htmlFor="social-twitter">Twitter</Label>
-          <Input
-            id="social-twitter"
-            placeholder="https://twitter.com/storename"
-            value={element.socialMedia?.twitter || ""}
-            onChange={(e) => handleSocialMediaChange("twitter", e.target.value)}
-          />
-        </div>
+        {/* Preview of social media links */}
+        {element.socialMedia && Object.keys(element.socialMedia).some((key) => element.socialMedia?.[key]) && (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {element.socialMedia.website && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Globe className="h-3 w-3" />
+                Website
+              </Badge>
+            )}
+            {element.socialMedia.facebook && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Facebook className="h-3 w-3" />
+                Facebook
+              </Badge>
+            )}
+            {element.socialMedia.instagram && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Instagram className="h-3 w-3" />
+                Instagram
+              </Badge>
+            )}
+            {element.socialMedia.twitter && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <Twitter className="h-3 w-3" />
+                Twitter
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Social Media Dialog */}
+      <Dialog open={showSocialMediaDialog} onOpenChange={setShowSocialMediaDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Edit Social Media Links</DialogTitle>
+            <DialogDescription>
+              Add social media links for {element.name}. These will be visible to mall visitors.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="grid gap-3">
+              <div className="grid gap-2">
+                <Label htmlFor="social-website">Website</Label>
+                <Input
+                  id="social-website"
+                  placeholder="https://example.com"
+                  value={tempSocialMedia!.website || ""}
+                  onChange={(e) => handleTempSocialMediaChange("website", e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="social-facebook">Facebook</Label>
+                <Input
+                  id="social-facebook"
+                  placeholder="https://facebook.com/storename"
+                  value={tempSocialMedia!.facebook || ""}
+                  onChange={(e) => handleTempSocialMediaChange("facebook", e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="social-instagram">Instagram</Label>
+                <Input
+                  id="social-instagram"
+                  placeholder="https://instagram.com/storename"
+                  value={tempSocialMedia!.instagram || ""}
+                  onChange={(e) => handleTempSocialMediaChange("instagram", e.target.value)}
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="social-twitter">Twitter</Label>
+                <Input
+                  id="social-twitter"
+                  placeholder="https://twitter.com/storename"
+                  value={tempSocialMedia!.twitter || ""}
+                  onChange={(e) => handleTempSocialMediaChange("twitter", e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSocialMediaDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleApplySocialMedia}>Apply Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 })
