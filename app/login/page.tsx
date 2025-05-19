@@ -13,8 +13,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import Image from "next/image"
 import LogoIcon from "@/public/imgs/logo-icon.png"
 import LogoText from "@/public/imgs/logo-text.png"
+import { useAuth } from "@/context/auth-context"
 
 export default function LoginPage() {
+  const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
@@ -26,21 +28,7 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
-
-      // Simple validation
-      if (email && password.length >= 6) {
-        // Set authentication flag
-        localStorage.setItem("hasLoggedIn", "true")
-
-        // Redirect to main page
-        router.push("/")
-      } else {
-        setError("Invalid email or password. Password must be at least 6 characters.")
-      }
-    }, 1500)
+    const response = await login(email,password,setError)
   }
 
   return (

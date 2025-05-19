@@ -8,9 +8,9 @@ import { UserNav } from "@/components/user-nav"
 import { useRouter } from "next/navigation"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import LayoutManager from "@/components/layout-manager"
-// import LogoIcon from "@/public/imgs/logo-icon.png"
 import LogoText from "@/public/imgs/logo-text.png"
 import Image from "next/image"
+import { Avatar } from "../ui/avatar"
 
 
 interface HeaderProps {
@@ -89,7 +89,9 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
 
       {/* Layout Manager Dialog */}
       <Dialog open={layoutManagerOpen} onOpenChange={setLayoutManagerOpen}>
-        <DialogTitle>Import/Export Layouts</DialogTitle>
+        <DialogTitle>
+          <Avatar  />
+        </DialogTitle>
         <DialogContent className="sm:max-w-md">
           <LayoutManager />
         </DialogContent>

@@ -132,3 +132,16 @@ export interface ShopInformation {
   }
   logo?: string
 }
+
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+}
+
+
+export interface UserGlobal {
+  isAuth: boolean;
+  user: null | User;
+}

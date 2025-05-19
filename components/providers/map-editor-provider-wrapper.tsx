@@ -2,11 +2,20 @@
 
 import type { ReactNode } from "react"
 import { CachedMapEditorProvider } from "@/components/providers/cached-map-editor-provider"
+import { Provider } from "react-redux"
+import { userStore } from "@/redux/stores/user-store"
+import { AuthProvider } from "@/context/auth-context"
 
 interface MapEditorProviderWrapperProps {
   children: ReactNode
 }
 
 export function MapEditorProviderWrapper({ children }: MapEditorProviderWrapperProps) {
-  return <CachedMapEditorProvider>{children}</CachedMapEditorProvider>
+  return <Provider store={userStore}>
+    <AuthProvider>
+      <CachedMapEditorProvider>
+        {children}
+      </CachedMapEditorProvider>
+    </AuthProvider>
+  </Provider>
 }

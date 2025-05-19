@@ -1,8 +1,8 @@
+
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import "@/styles/element-sides.css"
-import { AuthProvider } from "@/context/auth-context"
 import { MapEditorProviderWrapper } from "@/components/providers/map-editor-provider-wrapper"
 
 export const metadata: Metadata = {
@@ -19,9 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AuthProvider>
-          <MapEditorProviderWrapper>{children}</MapEditorProviderWrapper>
-        </AuthProvider>
+            <MapEditorProviderWrapper>{children}</MapEditorProviderWrapper>
       </body>
     </html>
   )

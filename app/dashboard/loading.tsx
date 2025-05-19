@@ -1,3 +1,5 @@
+'use client';
+
 import { Building } from "lucide-react"
 import { Skeleton } from "@/components/ui/skeleton"
 
