@@ -18,7 +18,6 @@ const baseQuery = fetchBaseQuery({
   },
 },
 
-
 );
 
 export const queryApi = createApi({
@@ -42,7 +41,6 @@ export const queryApi = createApi({
           url,
           method: method || "POST", 
           body: body,
-          redirect: "manual",
         };
       },
       

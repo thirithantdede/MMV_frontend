@@ -1,9 +1,9 @@
 'use client';
-import { toast } from "@/components/ui/use-toast"
 import config from "@/config"
 import useMutate, { useMutateCallbackType } from "@/hooks/use-mutate"
 import useSecureStorage from "@/hooks/use-secure-storage"
 import useServerValidation from "@/hooks/use-server-validation"
+import { useToast } from "@/hooks/use-toast";
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 interface User {
@@ -17,19 +17,22 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (email: string, password: string,setError : any) => Promise<boolean>
   logout: () => void
+  isInitializing: "initializing" | "authenticated" | "unauthenticated"
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { set, remove } = useSecureStorage()
+  const { get,set, remove } = useSecureStorage()
   const [user, setUser] = useState<User | null>(null)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isInitializing, setIsInitializing] = useState<"initializing" | "authenticated" | "unauthenticated">("initializing")
   const { handleServerErrors } = useServerValidation()
+  const { toast } = useToast()
+
 
   const loginOnSuccess: useMutateCallbackType = (response: any) => {
     set("auth-token", response.token)
-    set("auth-type", "user")
     localStorage.setItem("expiresAt", (new Date().getTime() + config.userExpireIn).toString())
 
     set("user", JSON.stringify(response.user))
@@ -51,12 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string,setError : any): Promise<boolean> => {
     const response = await postLogin("login", { email, password }) as any
-    console.log('here',response);
     if (response?.status != "success") {
       handleServerErrors(response.error, setError)
       toast({
-        title:"Login Fail",
-        description:"faile",
+        title:"Login Failed",
+        description:response?.error?.data?.message,
         variant:"destructive"
       })
       return false
@@ -66,7 +68,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = () => {
     remove("auth-token")
-    remove("auth-type")
     remove("user")
     localStorage.removeItem("expiresAt")
 
@@ -83,12 +84,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/login"
   }
 
+  const initUser = () => {
+    const user = get("user")
+    console.log(user);
+    if(user){
+      setUser(JSON.parse(user))
+      remove("hasLoggedIn")
+      remove("has-seen-loading")
+      setIsAuthenticated(true)
+      setIsInitializing("authenticated")
+    }else{
+      setIsInitializing("unauthenticated")
+    }
+  }
+
   useEffect(() => {
-    setIsAuthenticated(!!user)
-  }, [user])
+    initUser()
+  }, [])
 
   return (
-    <AuthContext.Provider  value={{ user, isAuthenticated, login, logout }}>
+    <AuthContext.Provider  value={{ user, isAuthenticated, login, logout, isInitializing }}>
       {children}
     </AuthContext.Provider>
   )

@@ -16,7 +16,7 @@ type ReturnType = [
   { isLoading: boolean }
 ];
 
-type CallbackType = (value: any, router: ReturnType<typeof useRouter>) => void;
+type CallbackType = (value: any, router: any) => void;
 
 type ParamsType = {
   callback?: CallbackType;

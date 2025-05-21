@@ -1,19 +1,19 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import {  useState } from "react"
 import { useRouter } from "next/navigation"
-import { Building, Mail, Lock, Loader2 } from "lucide-react"
+import { Mail, Lock, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Image from "next/image"
 import LogoIcon from "@/public/imgs/logo-icon.png"
 import LogoText from "@/public/imgs/logo-text.png"
 import { useAuth } from "@/context/auth-context"
+import { Toaster } from "@/components/ui/toaster"
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -21,7 +21,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
-  const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,10 +28,12 @@ export default function LoginPage() {
     setIsLoading(true)
 
     const response = await login(email,password,setError)
+    setIsLoading(false)
   }
 
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+    <div className="relative flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Card className="w-full max-w-md ">
         <CardHeader className="space-y-1">
           <div className="flex flex-col items-center justify-center">
@@ -94,6 +95,7 @@ export default function LoginPage() {
           </CardFooter>
         </form>
       </Card>
+      <Toaster />
     </div>
   )
 }

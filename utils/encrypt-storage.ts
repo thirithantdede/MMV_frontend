@@ -8,19 +8,19 @@ export class EncryptStorage {
   }
   set(key: string, value: string, expires: number | undefined = undefined) {
     const encryptedValue = AES.encrypt(value, this.secretKey as string).toString();
-    window.localStorage.setItem(key, encryptedValue);
+    localStorage.setItem(key, encryptedValue);
     if (expires) {
       const expirationTimestamp = Date.now() + expires * 60 * 1000;
-      window.localStorage.setItem(`expiresAt`, expirationTimestamp.toString());
+      localStorage.setItem(`expiresAt`, expirationTimestamp.toString());
     }
   }
   get(key: string) {
-    const value = window.localStorage.getItem(key);
-    const expirationTimestamp = window.localStorage.getItem(`expiresAt`);
+    const value = localStorage.getItem(key);
+    const expirationTimestamp = localStorage.getItem(`expiresAt`);
     if (!value) return null;
     if (expirationTimestamp && Date.now() > parseInt(expirationTimestamp, 10)) {
-      window.localStorage.removeItem(key);
-      window.localStorage.removeItem(`expiresAt`);
+      localStorage.removeItem(key);
+      localStorage.removeItem(`expiresAt`);
       return null;
     }
     const decryptedValue = AES.decrypt(value, this.secretKey as string).toString(
@@ -29,6 +29,6 @@ export class EncryptStorage {
     return decryptedValue;
   }
   remove(key: string) {
-    window.localStorage.removeItem(key);
+    localStorage.removeItem(key);
   }
 }

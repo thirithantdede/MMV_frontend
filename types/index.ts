@@ -11,18 +11,22 @@ export interface MapElement {
   rotation?: number
   opacity?: number
   borderStyle?: string
-  borderRadius?: number
+  borderRadius: borderRadius
   category?: string
   notes?: string
-  topRotation?: number
-  rightRotation?: number
-  bottomRotation?: number
-  leftRotation?: number
   created_at?: string
   updated_at?: string
   is_foc?: boolean
   isClosed?: boolean
   walkable?: boolean
+  isSynced : boolean
+}
+
+export interface borderRadius {
+  topLeft : number
+  topRight : number
+  bottomRight : number
+  bottomLeft : number
 }
 
 export interface MainElement extends MapElement {

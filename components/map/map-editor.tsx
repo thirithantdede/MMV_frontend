@@ -160,6 +160,13 @@ export function MapEditor() {
             color: item.color || "#e2e8f0",
             floor: floor,
             walkable: item.type === "floor" || item.type === "pathway",
+            borderRadius :{
+              bottomRight:0,
+              bottomLeft:0,
+              topRight:0,
+              topLeft:0
+            },
+            isSynced:false,
             ...additionalFields,
           }
 

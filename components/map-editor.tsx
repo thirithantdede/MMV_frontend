@@ -5,6 +5,7 @@ import type React from "react"
 import { useRef, useState, useCallback, memo, useMemo } from "react"
 import { useDrop } from "react-dnd"
 import { Store, CableCarIcon as Escalator, CableCarIcon as Elevator, RouteIcon as Road } from "lucide-react"
+import { MapElement } from "@/types"
 
 interface MapEditorProps {
   currentFloor: number
@@ -15,18 +16,6 @@ interface MapEditorProps {
   mapWidth: number
   mapHeight: number
   onMapSizeChange?: (width: number, height: number) => void
-}
-
-interface MapElement {
-  id: string
-  type: string
-  x: number
-  y: number
-  width: number
-  height: number
-  name: string
-  color: string
-  floor: number
 }
 
 // Memoized map element component for better performance
@@ -69,6 +58,10 @@ const MapElementComponent = memo(
           width: element.width,
           height: element.height,
           backgroundColor: element.color,
+          borderTopLeftRadius:element.borderRadius.topLeft,
+          borderTopRightRadius:element.borderRadius.topRight,
+          borderBottomRightRadius:element.borderRadius.bottomRight,
+          borderBottomLeftRadius: element.borderRadius.bottomLeft,
           transform: "translate3d(0,0,0)", // Force GPU acceleration
         }}
         onClick={onClick}
@@ -130,6 +123,13 @@ export function MapEditor({
           name: item.name || `New ${item.type}`,
           color: item.color || "#e2e8f0",
           floor: currentFloor,
+          borderRadius :{
+            bottomRight:0,
+            bottomLeft:0,
+            topRight:0,
+            topLeft:0
+          },
+          isSynced:false
         }
 
         setElements((prev) => [...prev, newElement])

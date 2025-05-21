@@ -5,6 +5,7 @@ import { CachedMapEditorProvider } from "@/components/providers/cached-map-edito
 import { Provider } from "react-redux"
 import { userStore } from "@/redux/stores/user-store"
 import { AuthProvider } from "@/context/auth-context"
+import ProtectedRoute from "../auth/protected-route"
 
 interface MapEditorProviderWrapperProps {
   children: ReactNode

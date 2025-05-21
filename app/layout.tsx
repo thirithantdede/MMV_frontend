@@ -4,7 +4,7 @@ import type { Metadata } from "next"
 import "./globals.css"
 import "@/styles/element-sides.css"
 import { MapEditorProviderWrapper } from "@/components/providers/map-editor-provider-wrapper"
-
+import { Toaster } from "@/components/ui/toaster"
 export const metadata: Metadata = {
   title: "MMV - Mall Map Viewer",
   description: "Interactive shopping mall map editor and viewer",
@@ -19,7 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-            <MapEditorProviderWrapper>{children}</MapEditorProviderWrapper>
+            <MapEditorProviderWrapper>
+              {children}
+              <Toaster />
+            </MapEditorProviderWrapper>
       </body>
     </html>
   )

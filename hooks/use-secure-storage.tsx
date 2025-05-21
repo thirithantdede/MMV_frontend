@@ -4,7 +4,7 @@ import CryptoJS from "crypto-js";
 import { useCallback } from "react";
 
 const useSecureStorage = () => {
-  const secretKey = config.secretKey;
+  const secretKey = config.secretKey!;
   const set = useCallback(
     (key: string, value: string) => {
       const encryptedValue = AES.encrypt(value, secretKey).toString();
