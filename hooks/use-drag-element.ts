@@ -31,9 +31,9 @@ export function useDragElement({
   // Check if position is within building footprint
   const isWithinBuilding = useCallback(
     (x: number, y: number, width: number, height: number,rotation : number) => {
-      if (!mapSettings.restrictToBuilding) return true
+      if (!mapSettings.restricted) return true
 
-      const { buildingX, buildingY, buildingWidth, buildingHeight } = mapSettings
+      const { building_x, building_y, building_width, building_height } = mapSettings
 
       // For 90° and 270° rotations, swap width and height for boundary check
       const isRotated = rotation === 90 || rotation === 270
@@ -41,10 +41,10 @@ export function useDragElement({
       const effectiveHeight = isRotated ? width : height
 
        return (
-        x >= buildingX &&
-        y >= buildingY &&
-        x + effectiveWidth <= buildingX + buildingWidth &&
-        y + effectiveHeight <= buildingY + buildingHeight
+        x >= building_x &&
+        y >= building_y &&
+        x + effectiveWidth <= building_x + building_width &&
+        y + effectiveHeight <= building_y + building_height
       )
     },
     [mapSettings],
@@ -85,25 +85,25 @@ export function useDragElement({
   // Check if position is on building border (for doors)
   const isOnBuildingBorder = useCallback(
     (x: number, y: number, width: number, height: number,rotation : number) => {
-      const { buildingX, buildingY, buildingWidth, buildingHeight,restrictToBuilding} = mapSettings
+      const { building_x, building_y, building_width, building_height,restricted} = mapSettings
 
       const allowX = [90,270];
       const allowY = [0,180];
 
-      const midX = buildingX + (buildingWidth / 2);
-      const midY = buildingY + (buildingHeight / 2);
+      const midX = building_x + (building_width / 2);
+      const midY = building_y + (building_height / 2);
       const isLeft = x < midX;
       const isTop = y < midY;
 
       let currentX = x;
       let currentY = y;
-      let currentBuildingX = buildingX;
+      let currentbuilding_x = building_x;
       let toleranceX = 10;
 
       if (allowX.includes(rotation)) {
         currentX = isLeft ? x + width - height  : x - width + height;
         toleranceX = isLeft ? 30 : 80;
-        currentBuildingX = isLeft ? buildingX : buildingX ; 
+        currentbuilding_x = isLeft ? building_x : building_x ; 
       } else if (allowY.includes(rotation)) {
         currentY = isTop ? currentY : currentY  ;
       }
@@ -114,10 +114,10 @@ export function useDragElement({
         return false
       }
       // Check if the element touches any of the building borders
-      const touchesLeftBorder = Math.abs(currentX - currentBuildingX) < toleranceX
-      const touchesRightBorder = Math.abs(currentX + height - (currentBuildingX + buildingWidth+height)) < toleranceX
-      const touchesTopBorder = Math.abs(y - buildingY) < 5
-      const touchesBottomBorder = Math.abs((currentY + height) - (buildingY + buildingHeight)) < 10
+      const touchesLeftBorder = Math.abs(currentX - currentbuilding_x) < toleranceX
+      const touchesRightBorder = Math.abs(currentX + height - (currentbuilding_x + building_width+height)) < toleranceX
+      const touchesTopBorder = Math.abs(y - building_y) < 5
+      const touchesBottomBorder = Math.abs((currentY + height) - (building_y + building_height)) < 10
 
       return touchesLeftBorder || touchesRightBorder || touchesTopBorder || touchesBottomBorder
     },

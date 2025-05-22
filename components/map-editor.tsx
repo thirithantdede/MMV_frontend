@@ -58,10 +58,10 @@ const MapElementComponent = memo(
           width: element.width,
           height: element.height,
           backgroundColor: element.color,
-          borderTopLeftRadius:element.borderRadius.topLeft,
-          borderTopRightRadius:element.borderRadius.topRight,
-          borderBottomRightRadius:element.borderRadius.bottomRight,
-          borderBottomLeftRadius: element.borderRadius.bottomLeft,
+          borderTopLeftRadius:element.border_radius.topLeft,
+          borderTopRightRadius:element.border_radius.topRight,
+          borderBottomRightRadius:element.border_radius.bottomRight,
+          borderBottomLeftRadius: element.border_radius.bottomLeft,
           transform: "translate3d(0,0,0)", // Force GPU acceleration
         }}
         onClick={onClick}
@@ -123,7 +123,8 @@ export function MapEditor({
           name: item.name || `New ${item.type}`,
           color: item.color || "#e2e8f0",
           floor: currentFloor,
-          borderRadius :{
+          border_style:"solid",
+          border_radius :{
             bottomRight:0,
             bottomLeft:0,
             topRight:0,

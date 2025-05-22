@@ -16,7 +16,7 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   login: (email: string, password: string,setError : any) => Promise<boolean>
-  logout: () => void
+  logout: (unauthenticated : boolean) => void
   isInitializing: "initializing" | "authenticated" | "unauthenticated"
 }
 
@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginOnSuccess: useMutateCallbackType = (response: any) => {
     set("auth-token", response.token)
     localStorage.setItem("expiresAt", (new Date().getTime() + config.userExpireIn).toString())
-
+    console.log('here');
     set("user", JSON.stringify(response.user))
     setUser(response.user)
     setIsAuthenticated(true)
@@ -54,7 +54,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string,setError : any): Promise<boolean> => {
     const response = await postLogin("login", { email, password }) as any
-    if (response?.status != "success") {
+    console.log('response',response)
+    if (response.error || response?.status != "success") {
       handleServerErrors(response.error, setError)
       toast({
         title:"Login Failed",
@@ -66,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return true
   }
 
-  const logout = () => {
+  const logout = (unauthenticated = false) => {
     remove("auth-token")
     remove("user")
     localStorage.removeItem("expiresAt")
@@ -75,13 +76,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false)
 
     toast({
-      title: "Logged out",
-      description: "You have been logged out successfully.",
-      variant: "default",
+      title: unauthenticated ? "Unauthenticated" : "Logged out!",
+      description: unauthenticated ? "Please Log in Again" : "You have been logged out successfully.",
+      variant: "destructive",
     })
 
     // Redirect to login page or home
-    window.location.href = "/login"
+    setTimeout(() => {
+      window.location.href = "/login"
+    }, 2000);
   }
 
   const initUser = () => {

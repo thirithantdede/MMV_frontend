@@ -7,12 +7,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { exportMallLayout } from "@/utils/localStorage-utils"
 import { Download, Check, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { useMapEditor } from "@/context/map-editor-context"
 
 export function LayoutExport() {
   const [layoutName, setLayoutName] = useState("")
   const [exportStatus, setExportStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
   const [isExporting, setIsExporting] = useState(false)
+  const {totalFloors} = useMapEditor();
 
   const handleExport = () => {
     setIsExporting(true)
@@ -20,7 +22,7 @@ export function LayoutExport() {
     setErrorMessage("")
 
     try {
-      const exportSuccess = exportMallLayout(layoutName)
+      const exportSuccess = exportMallLayout(layoutName,totalFloors);
 
       if (exportSuccess) {
         setExportStatus("success")

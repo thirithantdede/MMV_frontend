@@ -24,7 +24,7 @@ export const MapElementComponent = memo(function MapElementComponent({
   isHighlighted = false,
 }: MapElementProps) {
   const isVerticalTransport = ["elevator", "escalator", "stairs"].includes(element.type)
-  const isClosed = element.isClosed || false
+  const isClosed = element.is_closed || false
 
   return (
     <div
@@ -42,11 +42,11 @@ export const MapElementComponent = memo(function MapElementComponent({
         height: element.height,
         backgroundColor: element.color,
         opacity: element.opacity ? element.opacity / 100 : 1,
-        borderTopLeftRadius:`${element.borderRadius.topLeft}px`,
-        borderTopRightRadius:`${element.borderRadius.topRight}px`,
-        borderBottomRightRadius:`${element.borderRadius.bottomRight}px`,
-        borderBottomLeftRadius: `${element.borderRadius.bottomLeft}px`,
-        borderStyle: element.borderStyle || "solid",
+        borderTopLeftRadius:`${element.border_radius.topLeft}px`,
+        borderTopRightRadius:`${element.border_radius.topRight}px`,
+        borderBottomRightRadius:`${element.border_radius.bottomRight}px`,
+        borderBottomLeftRadius: `${element.border_radius.bottomLeft}px`,
+        borderStyle: element.border_style || "solid",
         transform: element.rotation ? `rotate(${element.rotation}deg) translate3d(0,0,0)` : "translate3d(0,0,0)",
         willChange: "transform, left, top, opacity",
         userSelect: "none",

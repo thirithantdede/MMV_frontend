@@ -10,35 +10,35 @@ import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown } from "lucide-react"
 
 export function BuildingFootprintEditor() {
   const { mapSettings, updateMapSettings, isEditingFootprint } = useMapEditor()
-  const { buildingWidth, buildingHeight, buildingX, buildingY, gridSize } = mapSettings
+  const { building_width, building_height, building_x, building_y, grid_size } = mapSettings
 
-  const [localWidth, setLocalWidth] = useState(buildingWidth)
-  const [localHeight, setLocalHeight] = useState(buildingHeight)
-  const [localX, setLocalX] = useState(buildingX)
-  const [localY, setLocalY] = useState(buildingY)
+  const [localWidth, setLocalWidth] = useState(building_width)
+  const [localHeight, setLocalHeight] = useState(building_height)
+  const [localX, setLocalX] = useState(building_x)
+  const [localY, setLocalY] = useState(building_y)
 
   useEffect(() => {
-    setLocalWidth(buildingWidth)
-    setLocalHeight(buildingHeight)
-    setLocalX(buildingX)
-    setLocalY(buildingY)
-  }, [buildingWidth, buildingHeight, buildingX, buildingY])
+    setLocalWidth(building_width)
+    setLocalHeight(building_height)
+    setLocalX(building_x)
+    setLocalY(building_y)
+  }, [building_width, building_height, building_x, building_y])
 
   if (!isEditingFootprint) return null
 
   const handleSave = () => {
     const updates: any = {}
 
-    updates.buildingWidth = Math.max(gridSize * 5, Math.min(mapSettings.width - localX, localWidth))
-    updates.buildingHeight = Math.max(gridSize * 5, Math.min(mapSettings.height - localY, localHeight))
-    updates.buildingX = Math.max(0, Math.min(mapSettings.width - updates.buildingWidth, localX))
-    updates.buildingY = Math.max(0, Math.min(mapSettings.height - updates.buildingHeight, localY))
+    updates.building_width = Math.max(grid_size * 5, Math.min(mapSettings.width - localX, localWidth))
+    updates.building_height = Math.max(grid_size * 5, Math.min(mapSettings.height - localY, localHeight))
+    updates.building_x = Math.max(0, Math.min(mapSettings.width - updates.building_width, localX))
+    updates.building_y = Math.max(0, Math.min(mapSettings.height - updates.building_height, localY))
 
     // dont't let more than 10000px
-    updates.buildingWidth = Math.min(10000, updates.buildingWidth)
-    updates.buildingHeight = Math.min(10000, updates.buildingHeight)
-    updates.buildingX = Math.min(10000, updates.buildingX)
-    updates.buildingY = Math.min(10000, updates.buildingY)
+    updates.building_width = Math.min(10000, updates.building_width)
+    updates.building_height = Math.min(10000, updates.building_height)
+    updates.building_x = Math.min(10000, updates.building_x)
+    updates.building_y = Math.min(10000, updates.building_y)
 
     updateMapSettings(updates)
   }
@@ -61,8 +61,8 @@ export function BuildingFootprintEditor() {
                 id="building-width"
                 type="number"
                 value={localWidth}
-                min={gridSize * 5}
-                step={gridSize}
+                min={grid_size * 5}
+                step={grid_size}
                 onChange={handleInputChange(setLocalWidth)}
               />
             </div>
@@ -72,8 +72,8 @@ export function BuildingFootprintEditor() {
                 id="building-height"
                 type="number"
                 value={localHeight}
-                min={gridSize * 5}
-                step={gridSize}
+                min={grid_size * 5}
+                step={grid_size}
                 onChange={handleInputChange(setLocalHeight)}
               />
             </div>
@@ -87,7 +87,7 @@ export function BuildingFootprintEditor() {
                 type="number"
                 value={localX}
                 min={0}
-                step={gridSize}
+                step={grid_size}
                 onChange={handleInputChange(setLocalX)}
               />
             </div>
@@ -98,7 +98,7 @@ export function BuildingFootprintEditor() {
                 type="number"
                 value={localY}
                 min={0}
-                step={gridSize}
+                step={grid_size}
                 onChange={handleInputChange(setLocalY)}
               />
             </div>
@@ -108,7 +108,7 @@ export function BuildingFootprintEditor() {
             <Button onClick={handleSave}>Save</Button>
           </div>
 
-          <div className="text-xs text-muted-foreground mt-2">All values snap to the grid size ({gridSize}px)</div>
+          <div className="text-xs text-muted-foreground mt-2">All values snap to the grid size ({grid_size}px)</div>
         </CardContent>
       </Card>
     </div>

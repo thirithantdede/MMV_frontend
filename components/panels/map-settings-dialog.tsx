@@ -17,28 +17,28 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
   const { mapSettings, updateMapSettings } = useMapEditor()
   const [width, setWidth] = useState(mapSettings.width)
   const [height, setHeight] = useState(mapSettings.height)
-  const [gridSize, setGridSize] = useState(mapSettings.gridSize)
+  const [grid_size, setgrid_size] = useState(mapSettings.grid_size)
   const [showGrid, setShowGrid] = useState(mapSettings.showGrid)
 
   // Building footprint settings
-  const [buildingWidth, setBuildingWidth] = useState(mapSettings.buildingWidth)
-  const [buildingHeight, setBuildingHeight] = useState(mapSettings.buildingHeight)
-  const [buildingX, setBuildingX] = useState(mapSettings.buildingX)
-  const [buildingY, setBuildingY] = useState(mapSettings.buildingY)
-  const [restrictToBuilding, setRestrictToBuilding] = useState(mapSettings.restrictToBuilding)
+  const [building_width, setbuilding_width] = useState(mapSettings.building_width)
+  const [building_height, setbuilding_height] = useState(mapSettings.building_height)
+  const [building_x, setbuilding_x] = useState(mapSettings.building_x)
+  const [building_y, setbuilding_y] = useState(mapSettings.building_y)
+  const [restricted, setrestricted] = useState(mapSettings.restricted)
 
   // Update local state when dialog opens
   useEffect(() => {
     if (open) {
       setWidth(mapSettings.width)
       setHeight(mapSettings.height)
-      setGridSize(mapSettings.gridSize)
+      setgrid_size(mapSettings.grid_size)
       setShowGrid(mapSettings.showGrid)
-      setBuildingWidth(mapSettings.buildingWidth)
-      setBuildingHeight(mapSettings.buildingHeight)
-      setBuildingX(mapSettings.buildingX)
-      setBuildingY(mapSettings.buildingY)
-      setRestrictToBuilding(mapSettings.restrictToBuilding)
+      setbuilding_width(mapSettings.building_width)
+      setbuilding_height(mapSettings.building_height)
+      setbuilding_x(mapSettings.building_x)
+      setbuilding_y(mapSettings.building_y)
+      setrestricted(mapSettings.restricted)
     }
   }, [open, mapSettings])
 
@@ -46,25 +46,25 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
     // Ensure minimum dimensions
     const finalWidth = Math.max(width, 800)
     const finalHeight = Math.max(height, 600)
-    const finalGridSize = Math.max(gridSize, 5)
+    const finalgrid_size = Math.max(grid_size, 5)
 
     // Ensure building is within map bounds
-    const finalBuildingWidth = Math.min(buildingWidth, finalWidth - buildingX)
-    const finalBuildingHeight = Math.min(buildingHeight, finalHeight - buildingY)
+    const finalbuilding_width = Math.min(building_width, finalWidth - building_x)
+    const finalbuilding_height = Math.min(building_height, finalHeight - building_y)
 
-    const bx = Math.max(0, Math.min(buildingX, finalWidth - finalBuildingWidth));
-    const by = Math.max(0, Math.min(buildingY, finalHeight - finalBuildingHeight));
+    const bx = Math.max(0, Math.min(building_x, finalWidth - finalbuilding_width));
+    const by = Math.max(0, Math.min(building_y, finalHeight - finalbuilding_height));
 
     updateMapSettings({
       width: finalWidth,
       height: finalHeight,
-      gridSize: finalGridSize,
+      grid_size: finalgrid_size,
       showGrid,
-      buildingWidth: buildingWidth,
-      buildingHeight: buildingHeight,
-      buildingX: bx,
-      buildingY: by,
-      restrictToBuilding,
+      building_width: building_width,
+      building_height: building_height,
+      building_x: bx,
+      building_y: by,
+      restricted,
     })
 
     onOpenChange(false)
@@ -117,8 +117,8 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
               <Input
                 id="grid-size"
                 type="number"
-                value={gridSize}
-                onChange={(e) => setGridSize(Number(e.target.value))}
+                value={grid_size}
+                onChange={(e) => setgrid_size(Number(e.target.value))}
                 min={5}
                 max={50}
                 className="col-span-3"
@@ -143,8 +143,8 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
               <Input
                 id="building-width"
                 type="number"
-                value={buildingWidth}
-                onChange={(e) => setBuildingWidth(Number(e.target.value))}
+                value={building_width}
+                onChange={(e) => setbuilding_width(Number(e.target.value))}
                 min={400}
                 max={3000}
                 className="col-span-3"
@@ -157,8 +157,8 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
               <Input
                 id="building-height"
                 type="number"
-                value={buildingHeight}
-                onChange={(e) => setBuildingHeight(Number(e.target.value))}
+                value={building_height}
+                onChange={(e) => setbuilding_height(Number(e.target.value))}
                 min={300}
                 max={2000}
                 className="col-span-3"

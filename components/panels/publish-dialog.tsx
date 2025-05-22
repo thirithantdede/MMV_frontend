@@ -136,8 +136,8 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {mapSettings.width} × {mapSettings.height} pixels • {mapSettings.buildingWidth} ×{" "}
-                  {mapSettings.buildingHeight} building
+                  {mapSettings.width} × {mapSettings.height} pixels • {mapSettings.building_width} ×{" "}
+                  {mapSettings.building_height} building
                 </p>
               </div>
               <div className="text-xs text-muted-foreground">Last edited: {new Date().toLocaleDateString()}</div>

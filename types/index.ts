@@ -1,5 +1,6 @@
 export interface MapElement {
   id: string
+  old_element_id?: string
   type: string
   x: number
   y: number
@@ -10,16 +11,23 @@ export interface MapElement {
   floor: number
   rotation?: number
   opacity?: number
-  borderStyle?: string
-  borderRadius: borderRadius
-  category?: string
+  border_radius: borderRadius
+  border_style: string
   notes?: string
   created_at?: string
   updated_at?: string
-  is_foc?: boolean
-  isClosed?: boolean
+  is_closed?: boolean
   walkable?: boolean
   isSynced : boolean
+}
+
+export type FloorCollection = Floor[];
+
+export interface Floor {
+  id : string,
+  name : string,
+  level : number,
+  project_id : number,
 }
 
 export interface borderRadius {
@@ -59,14 +67,14 @@ export interface EventElement extends MapElement {
 export interface MapSettings {
   width: number
   height: number
-  gridSize: number
+  grid_size: number
   showGrid: boolean
   // Building footprint settings
-  buildingWidth: number
-  buildingHeight: number
-  buildingX: number
-  buildingY: number
-  restrictToBuilding: boolean
+  building_width: number
+  building_height: number
+  building_x: number
+  building_y: number
+  restricted: boolean
 }
 
 export type TransportationElementType = "elevator" | "escalator" | "stairs";
@@ -115,6 +123,7 @@ export interface ShopInformation {
   contactPerson: string
   contactEmail: string
   contactPhone: string
+  is_foc?: boolean
   openingHours: {
     monday: string
     tuesday: string

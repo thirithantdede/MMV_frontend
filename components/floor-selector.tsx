@@ -68,7 +68,7 @@ export const FloorSelector = memo(function FloorSelector() {
       />
 
       <div className="flex min-w-[80px] items-center justify-center px-2 font-medium">
-        <span className="bg-primary/10 px-2 py-1 rounded-md">Floor {currentFloor}</span> / {totalFloors}
+        <span className="">Floor {currentFloor}</span> &nbsp;/ {totalFloors}
       </div>
 
       <FloorButton

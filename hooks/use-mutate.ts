@@ -44,6 +44,7 @@ const useMutate = (params: ParamsType = {}): ReturnType => {
       const result = await mutate({ url, method, body: values ?? {} }) as any;
 
       if (result.error || result.errors) {
+        console.log('enter errro')
         if (result.error?.data?.message) {
           toast({
             title: "❗️Error",
@@ -78,6 +79,7 @@ const useMutate = (params: ParamsType = {}): ReturnType => {
       }
 
       if (callback) {
+        console.log(callback);
         return callback(result.data, router);
       }
 

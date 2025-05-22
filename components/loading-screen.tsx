@@ -1,8 +1,10 @@
 "use client"
 
-import { useState, useEffect, memo } from "react"
+import { useState, useEffect, memo, useCallback } from "react"
 import { Building, CloudIcon as CloudSync, Check } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
+import useQuery from "@/hooks/use-query"
+import { saveToStorage, useMapEditor } from "@/context/map-editor-context"
 
 interface LoadingScreenProps {
   onComplete: () => void
@@ -14,50 +16,84 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
   const [status, setStatus] = useState("Connecting to server...")
   const [isComplete, setIsComplete] = useState(false)
 
+  const { updateMapSettings, updateFloors, setFetchFromServer, } = useMapEditor()
+
+  const authQuery = useQuery("/auth-check")
+  const projectDataQuery = useQuery("/project-data", { enabled: authQuery.data && !authQuery.isLoading })
+  const projectElementsQuery = useQuery("/project-elements", { enabled: projectDataQuery.data && !projectDataQuery.isLoading })
+
+  // Sync to context + localStorage
+  const syncToLocal = useCallback(() => {
+    if (!projectDataQuery.data) return
+
+    const { building_footprint, floors } = projectDataQuery.data
+    const { elements } = projectElementsQuery?.data
+    updateMapSettings(building_footprint)
+    updateFloors(floors)
+
+    elements.forEach((element: any) => {
+      const updatedElements = element.elements.map((el: any) => ({
+        ...el,
+        isSynced: true,
+      }));
+
+      saveToStorage("mall-map-elements-" + element.level, updatedElements);
+    });
+
+  }, [projectDataQuery.data, projectElementsQuery.data, updateMapSettings, updateFloors])
+
+  // Step-by-step loading effect
   useEffect(() => {
-    // Skip loading if requested
     if (skipLoading) {
       onComplete()
       return
     }
 
-    // Simulate loading progress
-    const interval = setInterval(() => {
-      setProgress((prevProgress) => {
-        if (prevProgress >= 100) {
-          clearInterval(interval)
-          return 100
-        }
-        return prevProgress + 4 // Increase by 4% each time to reach 100% in about 3 seconds
-      })
-    }, 100)
+    const loadSteps = async () => {
+      setFetchFromServer(false);
+      if (authQuery.isLoading && projectDataQuery.isLoading) {
+        setStatus("Checking authentication...")
+        setProgress(30)
+        return
+      }
+      if (!authQuery.isLoading && projectDataQuery.isLoading) {
+        setStatus("Loading project data...")
+        setProgress(60)
 
-    // Update status messages
-    const statusMessages = [
-      { time: 0, message: "Connecting to server..." },
-      { time: 800, message: "Syncing project data..." },
-      { time: 1600, message: "Loading map elements..." },
-      { time: 2400, message: "Preparing editor..." },
-      { time: 3000, message: "Ready!" },
-    ]
+        return
+      }
 
-    // Set up timers for each status message
-    const timers = statusMessages.map(({ time, message }) =>
-      setTimeout(() => {
-        setStatus(message)
-        if (time === 3000) {
-          setIsComplete(true)
-          setTimeout(() => onComplete(), 500) // Wait a bit after showing "Ready!" before transitioning
-        }
-      }, time),
-    )
+      if (!authQuery.isLoading && !projectDataQuery.isLoading && projectElementsQuery.isLoading) {
+        setStatus("Loading map elements...")
+        setProgress(85)
 
-    // Clean up all timers
-    return () => {
-      clearInterval(interval)
-      timers.forEach(clearTimeout)
+        return
+      }
+
+      if (projectDataQuery.data && projectElementsQuery.data) {
+        setStatus("Syncing local storage...")
+        syncToLocal()
+
+        setStatus("Ready!")
+        setIsComplete(true)
+        setTimeout(onComplete, 600)
+        setProgress(100)
+        setFetchFromServer(true);
+      }
     }
-  }, [onComplete, skipLoading])
+
+    loadSteps()
+  }, [
+    skipLoading,
+    onComplete,
+    authQuery.data,
+    authQuery.isLoading,
+    projectDataQuery.data,
+    projectDataQuery.isLoading,
+    projectElementsQuery.data,
+    projectElementsQuery.isLoading,
+    syncToLocal,
+  ])
 
   if (skipLoading) return null
 

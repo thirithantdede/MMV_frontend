@@ -12,30 +12,31 @@ export const FloorWalkingPaths = memo(function FloorWalkingPaths({
   mapSettings,
   currentFloor,
 }: FloorWalkingPathsProps) {
-  const { buildingX, buildingY, buildingWidth, buildingHeight, gridSize } = mapSettings
+  const { building_width, building_height, building_x, building_y, grid_size } = mapSettings
+
 
   // Generate grid of walkable floor tiles
   const floorTiles = useMemo(() => {
     const tiles = []
-    const cols = Math.floor(buildingWidth / gridSize)
-    const rows = Math.floor(buildingHeight / gridSize)
+    const cols = Math.floor(building_width / grid_size)
+    const rows = Math.floor(building_height / grid_size)
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
-        const x = buildingX + col * gridSize
-        const y = buildingY + row * gridSize
+        const x = building_x + col * grid_size
+        const y = building_y + row * grid_size
 
         tiles.push({
           id: `floor-${currentFloor}-${row}-${col}`,
           x,
           y,
-          size: gridSize,
+          size: grid_size,
         })
       }
     }
 
     return tiles
-  }, [buildingX, buildingY, buildingWidth, buildingHeight, gridSize, currentFloor])
+  }, [building_x, building_y, building_width, building_height, grid_size, currentFloor])
 
   return (
     <div className="absolute pointer-events-none" style={{ left: 0, top: 0 }}>

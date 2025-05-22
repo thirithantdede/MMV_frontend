@@ -8,23 +8,23 @@ import { Separator } from "../ui/separator"
 import { RotateCw } from "lucide-react"
 import { Slider } from "../ui/slider"
 
-const getBorderRadiusEntries = (borderRadius:borderRadius) => {
+const getBorderRadiusEntries = (border_radius:borderRadius) => {
   return {
     "Top Right": {
-        "label" : "borderRadius.topRight",
-        "value" : borderRadius?.topRight
+        "label" : "border_radius.topRight",
+        "value" : border_radius?.topRight
     },
     "Top Left": {
-        "label" : "borderRadius.topLeft",
-        "value" : borderRadius?.topLeft 
+        "label" : "border_radius.topLeft",
+        "value" : border_radius?.topLeft 
     } ,
     "Bottom Right": {
-        "label" : "borderRadius.bottomRight",
-        "value" : borderRadius?.bottomRight
+        "label" : "border_radius.bottomRight",
+        "value" : border_radius?.bottomRight
     },
     "Bottom Left": {
-        "label" : "borderRadius.bottomLeft",
-        "value" : borderRadius?.bottomLeft 
+        "label" : "border_radius.bottomLeft",
+        "value" : border_radius?.bottomLeft 
     } 
    
   }
@@ -65,11 +65,11 @@ const StyleProperties = memo(function StyleProperties({
   const handleBorderRadiusChange = useCallback(
     (key: string, value: number) => {
       onPropertyChange("borderRadius", {
-        ...element.borderRadius,
+        ...element.border_radius,
         [key]: value,
       })
     },
-    [onPropertyChange, element.borderRadius],
+    [onPropertyChange, element.border_radius],
   )
 
   const handleRotationChange = useCallback(
@@ -90,12 +90,12 @@ const StyleProperties = memo(function StyleProperties({
   const handleRadiusChange = useCallback(
     (cornerKey: keyof borderRadius, value: number) => {
       const newRadius: borderRadius = {
-        ...element.borderRadius,
+        ...element.border_radius,
         [cornerKey]: value,
       }
-      onPropertyChange("borderRadius", newRadius)
+      onPropertyChange("border_radius", newRadius)
     },
-    [element.borderRadius, onPropertyChange]
+    [element.border_radius, onPropertyChange]
   )
   
 
@@ -132,7 +132,7 @@ const StyleProperties = memo(function StyleProperties({
 
       <div className="grid gap-2">
         <Label htmlFor="element-border">Border Style</Label>
-        <Select value={element.borderStyle || "solid"} onValueChange={handleBorderStyleChange}>
+        <Select value={element.border_style || "solid"} onValueChange={handleBorderStyleChange}>
           <SelectTrigger id="element-border">
             <SelectValue placeholder="Select border style" />
           </SelectTrigger>
@@ -148,7 +148,7 @@ const StyleProperties = memo(function StyleProperties({
 
       <div className="grid gap-2">
         <Label>Corner Radius</Label>
-        {Object.entries(getBorderRadiusEntries(element?.borderRadius)).map(([corner,value]) => (
+        {Object.entries(getBorderRadiusEntries(element?.border_radius)).map(([corner,value]) => (
           <div key={corner} className="flex items-center gap-4">
             <Label className="w-24">{corner}</Label>
             <Slider
@@ -182,7 +182,7 @@ const StyleProperties = memo(function StyleProperties({
               id="element-rotation"
               value={[element.rotation || 0]}
               max={360}
-              step={1}
+              step={90}
               onValueChange={handleRotationChange}
             />
           </div>
