@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react"
 import { FloorCollection, type MapElement, type MapSettings } from "@/types"
 import useMutate from "@/hooks/use-mutate"
+import { useDragElement } from "@/hooks/use-drag-element"
 
 interface MapEditorContextType {
   // Map elements
@@ -11,15 +12,18 @@ interface MapEditorContextType {
   updateElement: (element: MapElement) => void
   removeElement: (id: string) => void
 
-  fetchFromServer : boolean,
-  setFetchFromServer: (isFetchFromServer : boolean) => void
+  fetchFromServer: boolean,
+  setFetchFromServer: (isFetchFromServer: boolean) => void
   // Selection
   selectedElement: MapElement | null
   setSelectedElement: (element: MapElement | null) => void
 
+  isSyncing : boolean,
+  setIsSyncing: (isSyncing : boolean) => void
+
   // Floor management
-  floors : FloorCollection | null
-  updateFloors: (floors : FloorCollection) => void
+  floors: FloorCollection | null
+  updateFloors: (floors: FloorCollection) => void
   currentFloor: number
   totalFloors: number
   setCurrentFloor: (floor: number) => void
@@ -53,17 +57,42 @@ interface MapEditorContextType {
 const MapEditorContext = createContext<MapEditorContextType | undefined>(undefined)
 
 // Helper function to load state from localStorage
-const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
-  if (typeof window === "undefined") return defaultValue
+// Helper function to load state from localStorage
+const loadFromStorage = <T extends object>(
+  key: string,
+  defaultValue: T,
+  fe: boolean = false
+): T => {
+  if (typeof window === "undefined") return defaultValue;
 
   try {
-    const storedValue = localStorage.getItem(key)
-    return storedValue ? JSON.parse(storedValue) : defaultValue
+    const sv = localStorage.getItem(key);
+    const storedValue = sv ? JSON.parse(sv) : {};
+    
+    const floorRaw = localStorage.getItem("floor-elements");
+    const floorElements = floorRaw ? JSON.parse(floorRaw) : [];
+
+    if (fe) {
+      const isStoredEmpty = Object.keys(storedValue).length === 0;
+      const isFloorEmpty = Object.keys(floorElements).length === 0;
+
+      if (isStoredEmpty && isFloorEmpty) {
+        return [] as T;
+      }
+
+      return [
+        ...storedValue,
+        ...floorElements,
+       ] as T;
+    } else {
+      return storedValue as T;
+    }
   } catch (error) {
-    console.error(`Error loading ${key} from localStorage:`, error)
-    return defaultValue
+    console.error(`Error loading ${key} from localStorage:`, error);
+    return defaultValue;
   }
-}
+};
+
 
 
 
@@ -81,14 +110,13 @@ export const saveToStorage = <T,>(key: string, value: T): void => {
 export function MapEditorProvider({ children }: { children: ReactNode }) {
   // Elements state - load from localStorage if available
   const [currentFloor, setCurrentFloor] = useState(1)
-  const [elements, setElements] = useState<MapElement[]>(() => loadFromStorage("mall-map-elements-"+currentFloor, []))
+  const [elements, setElements] = useState<MapElement[]>(() => loadFromStorage("mall-map-elements-" + currentFloor, [],true))
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
-  const [fetchFromServer,setFetchFromServer] = useState<boolean>(true);
+  const [fetchFromServer, setFetchFromServer] = useState<boolean>(true);
 
-  const [floors,setFloors] = useState<FloorCollection | null>(null)
+  const [floors, setFloors] = useState<FloorCollection | null>(null)
   const [selectedElement, setSelectedElement] = useState<MapElement | null>(null)
-
   // Floor state
   const [totalFloors, setTotalFloors] = useState(2)
 
@@ -120,40 +148,19 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   // Add these new state variables to the useState declarations in the MapEditorProvider
   const [isFloorTransitioning, setIsFloorTransitioning] = useState(false)
 
-  const syncToServerOnSuccess = (response: any) => {
-    const responseElements: MapElement[] = response?.data ?? [];
-    const updated = elements.map(localEl => {
-      const matched = responseElements.find(serverEl =>
-        serverEl.old_element_id == localEl.id || serverEl.id == localEl.id
-      );
-      console.log(localEl);
-  
-      if (matched) {
-        return {
-          ...localEl,
-          ...matched, // serverEl contains ulid and updated props
-          id: matched.id, // ensure ID is updated if it's a new element
-          isSynced: true,
-        };
-      }
-  
-      return localEl;
-    });
-  
-    setElements(updated);
-  };
-  
-  
-  const [syncToServer, {isLoading}] = useMutate({callback:syncToServerOnSuccess});
+  const [syncToServer, { isLoading }] = useMutate({ callback: undefined });
 
   // Save elements to localStorage whenever they change
   useEffect(() => {
-    setElements(loadFromStorage("mall-map-elements-"+currentFloor,[]))
-  }, [currentFloor])
+    setElements(loadFromStorage("mall-map-elements-" + currentFloor, [],true))
+  }, [currentFloor,isSyncing])
 
-  useEffect(()=>{
-    saveToStorage("mall-map-elements-"+currentFloor,elements)
-  },[elements])
+  useEffect(() => {
+    const toSaveElements = elements.filter(el => el.floor != 0);
+    saveToStorage("mall-map-elements-" + currentFloor, toSaveElements)
+    const floorElements = elements.filter(el => el.floor == 0);
+    saveToStorage("floor-elements", floorElements)
+  }, [elements])
 
   // Save map settings to localStorage whenever they change
   useEffect(() => {
@@ -162,8 +169,9 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   // Element operations
   const addElement = useCallback((element: MapElement) => {
-    setElements((prev) => [...prev, element])
-  }, [])
+    setElements((prev) => [...prev, element]);
+}, [totalFloors]);
+
 
   const updateElement = useCallback((updatedElement: MapElement) => {
     updatedElement.isSynced = false;
@@ -195,10 +203,10 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
     setShowRightPanel((prev) => !prev)
   }, [])
 
-  const updateFloors = useCallback((floors : FloorCollection)=>{
-    setFloors((prev) => ({...prev,...floors}))
+  const updateFloors = useCallback((floors: FloorCollection) => {
+    setFloors((prev) => ({ ...prev, ...floors }))
     setTotalFloors(floors.length)
-  },[])
+  }, [])
 
   // Map settings update
   const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
@@ -214,27 +222,53 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
     setZoomLevel((prev) => Math.max(prev - 0.1, 0.3))
   }, [])
 
-    const syncUnsyncedElements = useCallback(async () => {
+  const syncUnsyncedElements = useCallback(async () => {
     try {
       for (let floor = 1; floor <= totalFloors; floor++) {
         const floorKey = "mall-map-elements-" + floor;
-        const storedElements: MapElement[] = loadFromStorage(floorKey, []);
+        const storedElements: MapElement[] = loadFromStorage(floorKey, [],true);
 
         const unsynced = storedElements.filter(el => !el.isSynced);
-
         if (unsynced.length > 0) {
-          await syncToServer("sync-elements", { elements: unsynced });
+          const response = await syncToServer("sync-elements", { elements: unsynced });
+          const responseElements: MapElement[] = response?.data ?? [];
+          const updated = storedElements.filter(localEl => localEl.floor !== 0).map(localEl => {
+            const matched = responseElements.find(serverEl =>
+            serverEl.old_element_id == localEl.id || serverEl.id == localEl.id 
+            )
+            if (matched) {
+              return {
+                ...localEl,
+                ...matched,
+                id: matched.id,
+                isSynced: true
+              }
+            }
 
-          const syncedElements = storedElements.map(el => {
-            const matched = unsynced.find(u => u.id === el.id);
-            return matched ? { ...el, isSynced: true } : el;
-          });
+            return localEl;
+          })
+          saveToStorage(floorKey, updated);
 
-          saveToStorage(floorKey, syncedElements);
+          const floorUpdated =storedElements.filter(localEl => localEl.floor == 0).map(localEl => {
+            const matched = responseElements.find(serverEl =>
+            serverEl.old_element_id == localEl.id || serverEl.id == localEl.id
+            )
+            if(matched){
+              return {
+                 ...localEl,
+                ...matched,
+                id: matched.id,
+                isSynced: true
+              }
+            }
+            return localEl
+          })
 
-          // If it's the current floor, also update in memory
-          if (floor === currentFloor) {
-            setElements(syncedElements);
+          saveToStorage("floor-elements",floorUpdated)
+
+          if (floor == currentFloor) {
+            const allUpdated = [...updated,...floorUpdated]
+            setElements(allUpdated as any);
           }
         }
       }
@@ -249,10 +283,10 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       console.log('syned')
       syncUnsyncedElements()
     }, 5000)
-  
+
     return () => clearInterval(interval)
   }, [syncUnsyncedElements])
-  
+
 
   // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
@@ -286,6 +320,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       // Add the new state variables to the contextValue object
       isFloorTransitioning,
       setIsFloorTransitioning,
+      isSyncing,
+      setIsSyncing
     }),
     [
       elements,
@@ -315,6 +351,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       setIsEditingFootprint,
       isFloorTransitioning,
       setIsFloorTransitioning,
+      isSyncing,
+      setIsSyncing
     ],
   )
 

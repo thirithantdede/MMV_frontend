@@ -4,6 +4,7 @@ import { LoadingScreen } from "@/components/loading-screen"
 import { CachedLayout } from "@/components/layout/cached-layout"
 import ProtectedRoute from "@/components/auth/protected-route"
 
+
 // Main layout component that uses the context
 export default function ShoppingMallMapEditor() {
   const [isLoading, setIsLoading] = useState(true)

@@ -1,32 +1,37 @@
 import { borderRadius, MapElement } from "@/types"
-import { memo, useCallback, useMemo } from "react"
+import { memo, useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Separator } from "../ui/separator"
 import { RotateCw } from "lucide-react"
 import { Slider } from "../ui/slider"
 
-const getBorderRadiusEntries = (border_radius:borderRadius) => {
+const getBorderRadiusEntries = (border_radius: borderRadius) => {
   return {
     "Top Right": {
-        "label" : "border_radius.topRight",
-        "value" : border_radius?.topRight
+      label: "topRight",
+      value: border_radius?.topRight || 0,
     },
     "Top Left": {
-        "label" : "border_radius.topLeft",
-        "value" : border_radius?.topLeft 
-    } ,
+      label: "topLeft",
+      value: border_radius?.topLeft || 0,
+    },
     "Bottom Right": {
-        "label" : "border_radius.bottomRight",
-        "value" : border_radius?.bottomRight
+      label: "bottomRight",
+      value: border_radius?.bottomRight || 0,
     },
     "Bottom Left": {
-        "label" : "border_radius.bottomLeft",
-        "value" : border_radius?.bottomLeft 
-    } 
-   
+      label: "bottomLeft",
+      value: border_radius?.bottomLeft || 0,
+    },
   }
 }
 
@@ -37,6 +42,19 @@ const StyleProperties = memo(function StyleProperties({
   element: MapElement
   onPropertyChange: (property: string, value: any) => void
 }) {
+  const [styleData, setStyleData] = useState({
+    color: element.color || "#e2e8f0",
+    opacity: element.opacity || 100,
+    border_style: element.border_style || "solid",
+    border_radius: element.border_radius || {
+      topRight: 0,
+      topLeft: 0,
+      bottomRight: 0,
+      bottomLeft: 0,
+    },
+    rotation: element.rotation || 0,
+  })
+
   const borderStyles = useMemo(
     () => [
       { value: "none", label: "None" },
@@ -47,57 +65,45 @@ const StyleProperties = memo(function StyleProperties({
     [],
   )
 
-  const handleColorChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("color", e.target.value),
-    [onPropertyChange],
-  )
+  const handleChange = (key: keyof typeof styleData, value: any) => {
+    setStyleData((prev) => ({
+      ...prev,
+      [key]: value,
+    }))
+  }
 
-  const handleOpacityChange = useCallback(
-    (value: number[]) => onPropertyChange("opacity", value[0]),
-    [onPropertyChange],
-  )
+  const handleBorderRadiusChange = (
+    corner: keyof borderRadius,
+    value: number,
+  ) => {
+    setStyleData((prev) => ({
+      ...prev,
+      border_radius: {
+        ...prev.border_radius,
+        [corner]: value,
+      },
+    }))
+  }
 
-  const handleBorderStyleChange = useCallback(
-    (value: string) => onPropertyChange("borderStyle", value),
-    [onPropertyChange],
-  )
+  const rotateElement = () => {
+    setStyleData((prev) => ({
+      ...prev,
+      rotation: (prev.rotation + 90) % 360,
+    }))
+  }
 
-  const handleBorderRadiusChange = useCallback(
-    (key: string, value: number) => {
-      onPropertyChange("borderRadius", {
-        ...element.border_radius,
-        [key]: value,
-      })
-    },
-    [onPropertyChange, element.border_radius],
-  )
+  const resetRotation = () => {
+    setStyleData((prev) => ({
+      ...prev,
+      rotation: 0,
+    }))
+  }
 
-  const handleRotationChange = useCallback(
-    (value: number[]) => onPropertyChange("rotation", value[0]),
-    [onPropertyChange],
-  )
-
-  const rotateElement = useCallback(() => {
-    const currentRotation = element.rotation || 0
-    const newRotation = (currentRotation + 90) % 360
-    onPropertyChange("rotation", newRotation)
-  }, [element.rotation, onPropertyChange])
-
-  const resetRotation = useCallback(() => {
-    onPropertyChange("rotation", 0)
-  }, [onPropertyChange])
-
-  const handleRadiusChange = useCallback(
-    (cornerKey: keyof borderRadius, value: number) => {
-      const newRadius: borderRadius = {
-        ...element.border_radius,
-        [cornerKey]: value,
-      }
-      onPropertyChange("border_radius", newRadius)
-    },
-    [element.border_radius, onPropertyChange]
-  )
-  
+  const handleApply = () => {
+    Object.entries(styleData).forEach(([key, value]) => {
+      onPropertyChange(key === "borderStyle" ? "border_style" : key, value)
+    })
+  }
 
   return (
     <div className="space-y-4 pt-4">
@@ -107,11 +113,14 @@ const StyleProperties = memo(function StyleProperties({
           <Input
             id="element-color"
             type="color"
-            value={element.color || "#e2e8f0"}
-            onChange={handleColorChange}
+            value={styleData.color}
+            onChange={(e) => handleChange("color", e.target.value)}
             className="w-12"
           />
-          <Input value={element.color || "#e2e8f0"} onChange={handleColorChange} />
+          <Input
+            value={styleData.color}
+            onChange={(e) => handleChange("color", e.target.value)}
+          />
         </div>
       </div>
 
@@ -120,19 +129,22 @@ const StyleProperties = memo(function StyleProperties({
         <div className="flex items-center gap-4">
           <Slider
             id="element-opacity"
-            value={[element.opacity || 100]}
+            value={[styleData.opacity]}
             max={100}
             step={1}
             className="flex-1"
-            onValueChange={handleOpacityChange}
+            onValueChange={(val) => handleChange("opacity", val[0])}
           />
-          <span className="w-12 text-right">{element.opacity || 100}%</span>
+          <span className="w-12 text-right">{styleData.opacity}%</span>
         </div>
       </div>
 
       <div className="grid gap-2">
         <Label htmlFor="element-border">Border Style</Label>
-        <Select value={element.border_style || "solid"} onValueChange={handleBorderStyleChange}>
+        <Select
+          value={styleData.border_style}
+          onValueChange={(val) => handleChange("border_style", val)}
+        >
           <SelectTrigger id="element-border">
             <SelectValue placeholder="Select border style" />
           </SelectTrigger>
@@ -148,21 +160,26 @@ const StyleProperties = memo(function StyleProperties({
 
       <div className="grid gap-2">
         <Label>Corner Radius</Label>
-        {Object.entries(getBorderRadiusEntries(element?.border_radius)).map(([corner,value]) => (
-          <div key={corner} className="flex items-center gap-4">
-            <Label className="w-24">{corner}</Label>
-            <Slider
-              value={[value.value]}
-              max={50}
-              step={5}
-              className="flex-1"
-              onValueChange={(val) =>
-                handleRadiusChange(value.label.split(".")[1] as keyof borderRadius, val[0])
-              }
-            />
-            <span className="w-12 text-right">{value.value}px</span>
-          </div>
-        ))}
+        {Object.entries(getBorderRadiusEntries(styleData.border_radius)).map(
+          ([corner, value]) => (
+            <div key={corner} className="flex items-center gap-4">
+              <Label className="w-24">{corner}</Label>
+              <Slider
+                value={[value.value]}
+                max={50}
+                step={5}
+                className="flex-1"
+                onValueChange={(val) =>
+                  handleBorderRadiusChange(
+                    value.label as keyof borderRadius,
+                    val[0],
+                  )
+                }
+              />
+              <span className="w-12 text-right">{value.value}px</span>
+            </div>
+          ),
+        )}
       </div>
 
       <Separator className="my-2" />
@@ -180,35 +197,28 @@ const StyleProperties = memo(function StyleProperties({
           <div className="flex-1">
             <Slider
               id="element-rotation"
-              value={[element.rotation || 0]}
+              value={[styleData.rotation]}
               max={360}
               step={90}
-              onValueChange={handleRotationChange}
+              onValueChange={(val) => handleChange("rotation", val[0])}
             />
           </div>
-          <span className="w-12 text-right">{element.rotation || 0}°</span>
-          <Button variant="secondary" size="icon" onClick={rotateElement} className="ml-1">
+          <span className="w-12 text-right">{styleData.rotation}°</span>
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={rotateElement}
+            className="ml-1"
+          >
             <RotateCw className="h-4 w-4" />
           </Button>
         </div>
+      </div>
 
-        <div className="flex justify-center mt-4">
-          <div
-            className="bg-muted/30 rounded-md p-4 flex items-center justify-center"
-            style={{ width: "120px", height: "80px" }}
-          >
-            <div
-              className="bg-background border-2 border-gray-300 flex items-center justify-center"
-              style={{
-                width: "80px",
-                height: "50px",
-                transform: element.rotation ? `rotate(${element.rotation}deg)` : "none",
-              }}
-            >
-              <span className="text-xs">Preview</span>
-            </div>
-          </div>
-        </div>
+      <div className="pt-4">
+        <Button variant="default" onClick={handleApply} className="w-full">
+          Apply
+        </Button>
       </div>
     </div>
   )

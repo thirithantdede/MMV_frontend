@@ -19,6 +19,7 @@ export interface MapElement {
   is_closed?: boolean
   walkable?: boolean
   isSynced : boolean
+  shop_information?: ShopInformation
 }
 
 export type FloorCollection = Floor[];
@@ -120,29 +121,30 @@ export interface ShopInformation {
   name: string
   description: string
   category: string
-  contactPerson: string
-  contactEmail: string
-  contactPhone: string
+  contact_person: string
+  contact_email: string
+  contact_phone: string
   is_foc?: boolean
-  openingHours: {
-    monday: string
-    tuesday: string
-    wednesday: string
-    thursday: string
-    friday: string
-    saturday: string
-    sunday: string
-  }
+
+  opening_hours: string 
+
+  closed_days: string | string[]
+
   website: string
-  socialMedia: {
-    facebook: string
-    instagram: string
-    twitter: string
+  store_category_id: number
+
+  social_media: {
+    facebook?: string
+    instagram?: string
+    twitter?: string
   }
+
   promotions: {
-    current: string
-    upcoming: string
+    is_now: boolean
+    end_date: string
+    detail: string
   }
+
   logo?: string
 }
 

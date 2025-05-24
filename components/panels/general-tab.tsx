@@ -3,7 +3,6 @@ import { memo, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "../ui/separator"
 
 const GeneralProperties = memo(function GeneralProperties({
@@ -23,23 +22,6 @@ const GeneralProperties = memo(function GeneralProperties({
       height: element.height || 100,
     })
   
-    const elementTypes = useMemo(
-      () => [
-        { value: "store", label: "Store" },
-        { value: "elevator", label: "Elevator" },
-        { value: "escalator", label: "Escalator" },
-        { value: "room", label: "Room" },
-        { value: "pathway", label: "Pathway" },
-        { value: "door", label: "Door" },
-        { value: "banner", label: "Banner" },
-        { value: "event", label: "Event" },
-        { value: "info", label: "Information" },
-        { value: "atm", label: "ATM" },
-        { value: "security", label: "Security" },
-        { value: "promotion", label: "Promotion" },
-      ],
-      [],
-    )
   
     // Handle input changes
     const handleChange = (key: keyof typeof formData, value: any) => {
@@ -64,25 +46,6 @@ const GeneralProperties = memo(function GeneralProperties({
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
           />
-        </div>
-  
-        <div className="grid gap-2">
-          <Label htmlFor="element-type">Type</Label>
-          <Select
-            value={formData.type}
-            onValueChange={(value) => handleChange("type", value)}
-          >
-            <SelectTrigger id="element-type">
-              <SelectValue placeholder="Select type" />
-            </SelectTrigger>
-            <SelectContent>
-              {elementTypes.map((type) => (
-                <SelectItem key={type.value} value={type.value}>
-                  {type.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
   
         <Separator />

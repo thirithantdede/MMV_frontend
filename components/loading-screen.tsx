@@ -16,7 +16,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
   const [status, setStatus] = useState("Connecting to server...")
   const [isComplete, setIsComplete] = useState(false)
 
-  const { updateMapSettings, updateFloors, setFetchFromServer, } = useMapEditor()
+  const { updateMapSettings, updateFloors, setFetchFromServer, setIsSyncing } = useMapEditor()
 
   const authQuery = useQuery("/auth-check")
   const projectDataQuery = useQuery("/project-data", { enabled: authQuery.data && !authQuery.isLoading })
@@ -32,13 +32,24 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
     updateFloors(floors)
 
     elements.forEach((element: any) => {
-      const updatedElements = element.elements.map((el: any) => ({
+      const updatedElements = element.elements.filter((ela: any) => ela.floor != 0).map((el: any) => ({
         ...el,
         isSynced: true,
       }));
 
+      if (element.level == 1) {
+        const floorElements = element.elements.filter((ela: any) => ela.floor == 0).map((el: any) => ({
+          ...el,
+          isSynced: true,
+        }));
+        saveToStorage("floor-elements", floorElements);
+
+      }
+
       saveToStorage("mall-map-elements-" + element.level, updatedElements);
     });
+
+    return true;
 
   }, [projectDataQuery.data, projectElementsQuery.data, updateMapSettings, updateFloors])
 
@@ -51,6 +62,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
 
     const loadSteps = async () => {
       setFetchFromServer(false);
+      setIsSyncing(false);
       if (authQuery.isLoading && projectDataQuery.isLoading) {
         setStatus("Checking authentication...")
         setProgress(30)
@@ -73,12 +85,15 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
       if (projectDataQuery.data && projectElementsQuery.data) {
         setStatus("Syncing local storage...")
         syncToLocal()
-
-        setStatus("Ready!")
         setIsComplete(true)
-        setTimeout(onComplete, 600)
+      }
+
+      if (isComplete) {
+        setStatus("Ready!")
+        setTimeout(onComplete, 1200)
         setProgress(100)
         setFetchFromServer(true);
+        setIsSyncing(true)
       }
     }
 
@@ -93,6 +108,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
     projectElementsQuery.data,
     projectElementsQuery.isLoading,
     syncToLocal,
+    isComplete
   ])
 
   if (skipLoading) return null

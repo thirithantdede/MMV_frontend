@@ -61,14 +61,14 @@ export function MapEditor() {
 
   // Filter elements for current floor - memoized for performance
   const currentFloorElements = useMemo(
-    () => elements.filter((element) => element.floor === currentFloor || element.floor === 0),
+    () => elements.filter((element) => element.floor == currentFloor || element.floor == 0),
     [elements, currentFloor],
   )
 
   // Memoize drop target configuration
     const [{ isOver, canDrop }, drop] = useDrop(
       () => ({
-        accept: ["store", "elevator", "escalator", "room", "pathway", "door", "floor", "event","stairs"],
+        accept: ["store", "elevator", "escalator", "room", "pathway", "door", "floor", "event","stairs","atm","security","info"],
         canDrop: (item: any, monitor) => {
           if (isEditingFootprint) return false
 

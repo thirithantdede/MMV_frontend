@@ -28,7 +28,7 @@ export function useKeyboardShortcuts() {
       // Create a new element based on the selected one
       const newElement: MapElement = {
         ...selectedElement,
-        id: `element-${Date.now()}`, // Generate a new unique ID
+        id: `new_element-${Date.now()}`, // Generate a new unique ID
         x: selectedElement.x + 20, // Offset slightly to make it visible
         y: selectedElement.y + 20,
         name: `${selectedElement.name} (Copy)`,
@@ -44,7 +44,7 @@ export function useKeyboardShortcuts() {
     if (copiedElementRef.current && !isEditingFootprint) {
       const newElement: MapElement = {
         ...copiedElementRef.current,
-        id: `element-${Date.now()}`, // Generate a new unique ID
+        id: `new_element-${Date.now()}`, // Generate a new unique ID
         x: copiedElementRef.current.x + 20, // Offset slightly
         y: copiedElementRef.current.y + 20,
         name: `${copiedElementRef.current.name} (Copy)`,

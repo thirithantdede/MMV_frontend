@@ -22,14 +22,10 @@ import { Badge } from "@/components/ui/badge"
 import type { MainElement, MapElement } from "@/types"
 
 interface StorePropertiesPanelProps {
-  element: MainElement
-  onPropertyChange: (property: string, value: any) => void
+  element: MapElement
+  onPropertyChange: (property: any, value: any) => void
 }
 
-export const StorePropertiesPanel = memo(function StorePropertiesPanel({
-  element,
-  onPropertyChange,
-}: StorePropertiesPanelProps) {
   // Memoize closed days to prevent recreation on each render
   const closedDays = [
     { value: "none", label: "None" },
@@ -52,6 +48,12 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
     { value: "electronics", label: "Electronics" },
     { value: "fashion", label: "Fashion" },
   ]
+
+export const StorePropertiesPanel = memo(function StorePropertiesPanel({
+  element,
+  onPropertyChange,
+}: StorePropertiesPanelProps) {
+
 
   // Optimize handlers with useCallback
   const handleOpenHoursChange = useCallback(
@@ -86,7 +88,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
 
   // State for social media dialog
   const [showSocialMediaDialog, setShowSocialMediaDialog] = useState(false)
-  const [tempSocialMedia, setTempSocialMedia] = useState<MainElement['socialMedia']>(element.socialMedia || {})
+  const [tempSocialMedia, setTempSocialMedia] = useState<MainElement['socialMedia']>(element.shop_information?.social_media || {})
 
   // Update temporary social media state
   const handleTempSocialMediaChange = useCallback((platform: string, value: string) => {
@@ -104,8 +106,8 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
 
   // Update temp social media when element changes
   useEffect(() => {
-    setTempSocialMedia(element.socialMedia || {})
-  }, [element.socialMedia])
+    setTempSocialMedia(element.shop_information?.social_media || {})
+  }, [element.shop_information?.social_media])
 
   return (
     <div className="space-y-4 pt-4">
@@ -114,7 +116,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
         <Input
           id="store-hours"
           placeholder="e.g. 10:00 AM - 9:00 PM"
-          value={element.openHours || ""}
+          value={element.shop_information?.opening_hours || ""}
           onChange={handleOpenHoursChange}
         />
         <p className="text-xs text-muted-foreground">Format: 10:00 AM - 9:00 PM</p>
@@ -123,14 +125,14 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
       <div className="grid gap-2">
         <div className="flex items-center justify-between">
           <Label htmlFor="store-closed">Store Closed</Label>
-          <Switch id="store-closed" checked={element.isClosed || false} onCheckedChange={handleIsClosedChange} />
+          <Switch id="store-closed" checked={element.is_closed || false} onCheckedChange={handleIsClosedChange} />
         </div>
         <p className="text-xs text-muted-foreground">Closed stores will appear grayed out on the map</p>
       </div>
 
       <div className="grid gap-2 mt-4">
         <Label htmlFor="store-closed-days">Closed Days</Label>
-        <Select value={element.closedDay || "sunday"} onValueChange={handleClosedDayChange}>
+        <Select value={element.shop_information?.closed_days || "sunday"} onValueChange={handleClosedDayChange}>
           <SelectTrigger id="store-closed-days">
             <SelectValue placeholder="Select closed day" />
           </SelectTrigger>
@@ -147,7 +149,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
 
       <div className="grid gap-2">
         <Label htmlFor="store-category">Store Category</Label>
-        <Select value={element.category || "retail"} onValueChange={handleCategoryChange}>
+        <Select value={element.shop_information?.store_category_id || "retail"} onValueChange={handleCategoryChange}>
           <SelectTrigger id="store-category">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
@@ -169,12 +171,12 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
           <Label htmlFor="store-has-promotion">Has Promotion</Label>
           <Switch
             id="store-has-promotion"
-            checked={element.hasPromotion || false}
+            checked={element.shop_information?.promotions.is_now || false}
             onCheckedChange={handleHasPromotionChange}
           />
         </div>
 
-        {element.hasPromotion && (
+        {element.shop_information?.promotions.is_now && (
           <>
             <div className="grid gap-2">
               <Label htmlFor="promotion-end-date">Promotion End Date</Label>
@@ -183,7 +185,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
                 <Input
                   id="promotion-end-date"
                   type="date"
-                  value={element.promotionEndDate || ""}
+                  value={element.shop_information.promotions.end_date || ""}
                   onChange={handlePromotionEndDateChange}
                 />
               </div>
@@ -195,7 +197,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
                 id="promotion-details"
                 className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Describe the promotion"
-                value={element.promotionDetails || ""}
+                value={element.shop_information.promotions.detail || ""}
                 onChange={handlePromotionDetailsChange}
               />
             </div>
@@ -215,27 +217,27 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
         </div>
 
         {/* Preview of social media links */}
-        {element.socialMedia && Object.keys(element.socialMedia).some((key) => element.socialMedia?.[key]) && (
+        {element!.shop_information.social_media && Object.keys(element?.shop_information.social_media).some((key) => element?.shop_information.social_media?.[key]) && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {element.socialMedia.website && (
+            {element?.shop_information.social_media.website && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Globe className="h-3 w-3" />
                 Website
               </Badge>
             )}
-            {element.socialMedia.facebook && (
+            {element?.shop_information.social_media.facebook && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Facebook className="h-3 w-3" />
                 Facebook
               </Badge>
             )}
-            {element.socialMedia.instagram && (
+            {element?.shop_information.social_media.instagram && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Instagram className="h-3 w-3" />
                 Instagram
               </Badge>
             )}
-            {element.socialMedia.twitter && (
+            {element?.shop_information.social_media.twitter && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Twitter className="h-3 w-3" />
                 Twitter
