@@ -6,7 +6,7 @@ import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMapEditor } from "@/context/map-editor-context"
-import type {  MapElement } from "@/types"
+import type { MapElement, ShopInformation } from "@/types"
 import { StorePropertiesPanel } from "@/components/panels/store-properties-panel"
 import GeneralProperties from "./general-tab"
 import StyleProperties from "./style-tab"
@@ -43,6 +43,31 @@ export function PropertyPanel() {
       }
     }
   }, [selectedElement])
+
+  const handleStoreInformationChange = useCallback(
+    (property: keyof ShopInformation, value: any) => {
+      setElementProperties((prev) => {
+        if (!prev || prev.type !== "store") return prev
+
+        const updatedShopInfo: any = {
+          ...prev.shop_information,
+          [property]: value,
+        }
+
+        const updatedElement: MapElement = {
+          ...prev,
+          shop_information: updatedShopInfo,
+          isSynced: false,
+        }
+
+        // Notify context of changes
+        updateElement(updatedElement)
+
+        return updatedElement
+      })
+    },
+    [updateElement]
+  )
 
   const handlePropertyChange = useCallback(
     (property: string, value: any) => {
@@ -127,7 +152,7 @@ export function PropertyPanel() {
 
         {showStoreTab && (
           <TabsContent value="store">
-            <StorePropertiesPanel element={elementProperties} onPropertyChange={handlePropertyChange} />
+            <StorePropertiesPanel element={elementProperties} onPropertyChange={handleStoreInformationChange} />
           </TabsContent>
         )}
 

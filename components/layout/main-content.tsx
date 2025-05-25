@@ -7,6 +7,7 @@ import { FloorSelector } from "@/components/floor-selector"
 import { ZoomControls } from "@/components/zoom-controls"
 import { MapEditor } from "@/components/map/map-editor"
 import { useMapEditor } from "@/context/map-editor-context"
+import { Toaster } from "../ui/toaster"
 
 interface MainContentProps {
   onToggleLeftPanel: () => void
@@ -45,6 +46,8 @@ export const MainContent = memo(function MainContent({ onToggleLeftPanel, onTogg
           <p className="text-xs text-muted-foreground">Drag handles to resize or move the building footprint</p>
         </div>
       )}
+
+
 
       <MapEditor />
     </div>

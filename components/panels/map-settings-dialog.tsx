@@ -18,7 +18,7 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
   const [width, setWidth] = useState(mapSettings.width)
   const [height, setHeight] = useState(mapSettings.height)
   const [grid_size, setgrid_size] = useState(mapSettings.grid_size)
-  const [showGrid, setShowGrid] = useState(mapSettings.showGrid)
+  const [showGrid, setShowGrid] = useState(mapSettings.show_grid)
 
   // Building footprint settings
   const [building_width, setbuilding_width] = useState(mapSettings.building_width)
@@ -33,7 +33,7 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
       setWidth(mapSettings.width)
       setHeight(mapSettings.height)
       setgrid_size(mapSettings.grid_size)
-      setShowGrid(mapSettings.showGrid)
+      setShowGrid(mapSettings.show_grid)
       setbuilding_width(mapSettings.building_width)
       setbuilding_height(mapSettings.building_height)
       setbuilding_x(mapSettings.building_x)
@@ -59,12 +59,13 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
       width: finalWidth,
       height: finalHeight,
       grid_size: finalgrid_size,
-      showGrid,
+      show_grid: showGrid,
       building_width: building_width,
       building_height: building_height,
       building_x: bx,
       building_y: by,
       restricted,
+      isSynced : false
     })
 
     onOpenChange(false)

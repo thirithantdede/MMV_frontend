@@ -12,7 +12,7 @@ export const Grid = memo(function Grid({ mapSettings }: GridProps) {
   const gridLines = useGrid(mapSettings)
 
   const clipPath = useMemo(() => {
-    if (!mapSettings.showGrid) return "" // Return empty string if grid is not shown
+    if (!mapSettings.show_grid) return "" // Return empty string if grid is not shown
     const { building_x, building_y, building_width, building_height } = mapSettings
     return `polygon(
       0% 0%, 100% 0%, 100% 100%, 0% 100%,
@@ -26,11 +26,9 @@ export const Grid = memo(function Grid({ mapSettings }: GridProps) {
     )`
   }, [mapSettings])
 
-  if (!mapSettings.showGrid || gridLines.length === 0) {
+  if (!mapSettings.show_grid || gridLines.length === 0) {
     return null
   }
-
-  // Create a clip path to exclude the building footprint area
 
   return (
     <svg className="absolute inset-0 h-full w-full pointer-events-none">

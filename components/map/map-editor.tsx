@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useCallback, useMemo, useRef} from "react"
+import { useCallback, useEffect, useMemo, useRef} from "react"
 import { useDrop } from "react-dnd"
 import type { MapElement } from "@/types"
 import { useMapEditor } from "@/context/map-editor-context"
@@ -17,6 +17,8 @@ import { MapControls } from "@/components/map/map-controls"
 import { DropIndicator } from "@/components/map/drop-indicator"
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { useHandleBehavior } from "@/hooks/use-handle-behavior"
+import { Toaster } from "../ui/toaster"
+import { toast } from "@/hooks/use-toast"
 
 // Optimize MapEditor component with better memoization and performance improvements
 
@@ -229,9 +231,6 @@ export function MapEditor() {
     [handleMouseMove, selectedElement, isEditingFootprint, isDragging],
   )
 
-
-
-
   // Memoize the drop target ref assignment
   const setDropTargetRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -295,6 +294,7 @@ export function MapEditor() {
         />
       </div>
 
+      <Toaster />
       {/* Map controls */}
       <MapControls isEditingFootprint={isEditingFootprint} />
     </div>

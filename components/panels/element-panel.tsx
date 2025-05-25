@@ -190,24 +190,24 @@ export function ElementPanel() {
 
   return (
     <div className="space-y-4 h-full flex flex-col">
-      <Accordion type="multiple" defaultValue={defaultOpenSections} className="flex-1 overflow-hidden">
+      <Accordion type="multiple" defaultValue={defaultOpenSections} className="flex-1 overflow-y-scroll custom-scrollbar">
         <AccordionItem value="stores">
           <AccordionTrigger>Store Types</AccordionTrigger>
-          <AccordionContent className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+          <AccordionContent className="pr-2 ">
             <ElementList items={storeElements} />
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="facilities">
           <AccordionTrigger>Facilities</AccordionTrigger>
-          <AccordionContent className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+          <AccordionContent className="pr-2 custom-scrollbar">
             <ElementList items={facilityElements} />
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="marketing">
           <AccordionTrigger>Marketing & Events</AccordionTrigger>
-          <AccordionContent className="max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
+          <AccordionContent className="pr-2 custom-scrollbar">
             <ElementList items={marketingElements} />
           </AccordionContent>
         </AccordionItem>

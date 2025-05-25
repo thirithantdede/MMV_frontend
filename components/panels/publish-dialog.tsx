@@ -51,10 +51,6 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
             <Upload className="h-5 w-5" />
             Publish Mall Map
           </DialogTitle>
-          <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={() => onOpenChange(false)}>
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
         </DialogHeader>
 
         <div className="space-y-6 py-4">

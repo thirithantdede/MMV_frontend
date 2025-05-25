@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { memo, useCallback, useState, useEffect } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,120 +18,180 @@ import {
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import type { MainElement, MapElement } from "@/types"
+import type { MapElement, ShopInformation } from "@/types"
+import TimeRangePicker from "../ui/time-range-picker"
 
 interface StorePropertiesPanelProps {
   element: MapElement
-  onPropertyChange: (property: any, value: any) => void
+  onPropertyChange: (property: keyof ShopInformation, value: any) => void
 }
 
-  // Memoize closed days to prevent recreation on each render
-  const closedDays = [
-    { value: "none", label: "None" },
-    { value: "monday", label: "Monday" },
-    { value: "tuesday", label: "Tuesday" },
-    { value: "wednesday", label: "Wednesday" },
-    { value: "thursday", label: "Thursday" },
-    { value: "friday", label: "Friday" },
-    { value: "saturday", label: "Saturday" },
-    { value: "sunday", label: "Sunday" },
-  ]
+// Memoized constants
+const closedDays = [
+  { value: "none", label: "None" },
+  { value: "monday", label: "Monday" },
+  { value: "tuesday", label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday", label: "Thursday" },
+  { value: "friday", label: "Friday" },
+  { value: "saturday", label: "Saturday" },
+  { value: "sunday", label: "Sunday" },
+]
 
-  // Memoize store categories to prevent recreation on each render
-  const storeCategories = [
-    { value: "retail", label: "Retail" },
-    { value: "food", label: "Food & Beverage" },
-    { value: "service", label: "Services" },
-    { value: "entertainment", label: "Entertainment" },
-    { value: "luxury", label: "Luxury" },
-    { value: "electronics", label: "Electronics" },
-    { value: "fashion", label: "Fashion" },
-  ]
+const storeCategories = [
+  { value: "retail", label: "Retail" },
+  { value: "food", label: "Food & Beverage" },
+  { value: "service", label: "Services" },
+  { value: "entertainment", label: "Entertainment" },
+  { value: "luxury", label: "Luxury" },
+  { value: "electronics", label: "Electronics" },
+  { value: "fashion", label: "Fashion" },
+]
+
+// Custom debounce function
+function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
+  let timeout: NodeJS.Timeout | null = null
+
+  return (...args: Parameters<T>) => {
+    if (timeout) {
+      clearTimeout(timeout)
+    }
+    timeout = setTimeout(() => {
+      func(...args)
+    }, wait)
+  }
+}
 
 export const StorePropertiesPanel = memo(function StorePropertiesPanel({
   element,
   onPropertyChange,
 }: StorePropertiesPanelProps) {
+  const shopInfo = element.shop_information || {
+    id: element.id,
+    name: element.name,
+    description: "",
+    category: "retail",
+    contact_person: "",
+    contact_email: "",
+    contact_phone: "",
+    is_foc: false,
+    opening_hours: { start: "", end: "" },
+    closed_days: [],
+    website: "",
+    store_category_id: 0,
+    social_media: {},
+    promotions: { is_now: false, end_date: "", detail: "" },
+  }
 
-
-  // Optimize handlers with useCallback
-  const handleOpenHoursChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("openHours", e.target.value),
+  const handleOpeningHourChange = useCallback(
+    (value: { start: string; end: string }) => {
+      onPropertyChange("opening_hours", value)
+    },
     [onPropertyChange],
   )
 
-  const handleIsClosedChange = useCallback(
-    (checked: boolean) => onPropertyChange("isClosed", checked),
+  const handleIsFocChange = useCallback(
+    (checked: boolean) => {
+      onPropertyChange("is_foc", checked)
+    },
     [onPropertyChange],
   )
 
-  const handleClosedDayChange = useCallback((value: string) => onPropertyChange("closedDay", value), [onPropertyChange])
+  const handleClosedDayChange = useCallback(
+    (value: string) => {
+      const newClosedDays = value === "none" ? [] : [value]
+      onPropertyChange("closed_days", newClosedDays)
+    },
+    [onPropertyChange],
+  )
 
-  const handleCategoryChange = useCallback((value: string) => onPropertyChange("category", value), [onPropertyChange])
+  const handleCategoryChange = useCallback(
+    (value: string) => {
+      onPropertyChange("category", value)
+      onPropertyChange("store_category_id", storeCategories.find(cat => cat.value === value)?.value || 0)
+    },
+    [onPropertyChange],
+  )
 
-  // New handlers for promotion and social media
   const handleHasPromotionChange = useCallback(
-    (checked: boolean) => onPropertyChange("hasPromotion", checked),
-    [onPropertyChange],
+    (checked: boolean) => {
+      onPropertyChange("promotions", {
+        ...shopInfo.promotions,
+        is_now: checked,
+      })
+    },
+    [onPropertyChange, shopInfo.promotions],
   )
 
   const handlePromotionDetailsChange = useCallback(
-    (e: React.ChangeEvent<HTMLTextAreaElement>) => onPropertyChange("promotionDetails", e.target.value),
-    [onPropertyChange],
+    debounce((value: string) => {
+      onPropertyChange("promotions", {
+        ...shopInfo.promotions,
+        detail: value,
+      })
+    }, 300),
+    [onPropertyChange, shopInfo.promotions],
   )
 
   const handlePromotionEndDateChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => onPropertyChange("promotionEndDate", e.target.value),
-    [onPropertyChange],
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onPropertyChange("promotions", {
+        ...shopInfo.promotions,
+        end_date: e.target.value,
+      })
+    },
+    [onPropertyChange, shopInfo.promotions],
   )
 
-  // State for social media dialog
   const [showSocialMediaDialog, setShowSocialMediaDialog] = useState(false)
-  const [tempSocialMedia, setTempSocialMedia] = useState<MainElement['socialMedia']>(element.shop_information?.social_media || {})
+  const [tempSocialMedia, setTempSocialMedia] = useState(shopInfo.social_media)
 
-  // Update temporary social media state
-  const handleTempSocialMediaChange = useCallback((platform: string, value: string) => {
+  const handleTempSocialMediaChange = useCallback((platform: keyof ShopInformation['social_media'], value: string) => {
     setTempSocialMedia((prev) => ({
       ...prev,
       [platform]: value,
     }))
   }, [])
 
-  // Apply social media changes
   const handleApplySocialMedia = useCallback(() => {
-    onPropertyChange("socialMedia", tempSocialMedia)
+    onPropertyChange("social_media", tempSocialMedia)
     setShowSocialMediaDialog(false)
   }, [tempSocialMedia, onPropertyChange])
 
-  // Update temp social media when element changes
   useEffect(() => {
-    setTempSocialMedia(element.shop_information?.social_media || {})
-  }, [element.shop_information?.social_media])
+    setTempSocialMedia(shopInfo.social_media)
+  }, [shopInfo.social_media])
 
   return (
-    <div className="space-y-4 pt-4">
-      <div className="grid gap-2">
-        <Label htmlFor="store-hours">Opening Hours</Label>
-        <Input
-          id="store-hours"
-          placeholder="e.g. 10:00 AM - 9:00 PM"
-          value={element.shop_information?.opening_hours || ""}
-          onChange={handleOpenHoursChange}
+    <div className="space-y-6 pt-4">
+      <div className="grid gap-3">
+        <Label htmlFor="opening-hours">Opening Hours</Label>
+        <TimeRangePicker
+          value={shopInfo.opening_hours}
+          onChange={handleOpeningHourChange}
         />
-        <p className="text-xs text-muted-foreground">Format: 10:00 AM - 9:00 PM</p>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-3">
         <div className="flex items-center justify-between">
-          <Label htmlFor="store-closed">Store Closed</Label>
-          <Switch id="store-closed" checked={element.is_closed || false} onCheckedChange={handleIsClosedChange} />
+          <Label htmlFor="store-foc">Free of Charge</Label>
+          <Switch
+            id="store-foc"
+            checked={shopInfo.is_foc}
+            onCheckedChange={handleIsFocChange}
+          />
         </div>
-        <p className="text-xs text-muted-foreground">Closed stores will appear grayed out on the map</p>
+        <p className="text-xs text-muted-foreground">
+          Enable if the store offers free services
+        </p>
       </div>
 
-      <div className="grid gap-2 mt-4">
+      <div className="grid gap-3">
         <Label htmlFor="store-closed-days">Closed Days</Label>
-        <Select value={element.shop_information?.closed_days || "sunday"} onValueChange={handleClosedDayChange}>
+        <Select
+          value={Array.isArray(shopInfo.closed_days) && shopInfo.closed_days.length > 0 ? shopInfo.closed_days[0] : "none"}
+          onValueChange={handleClosedDayChange}
+        >
           <SelectTrigger id="store-closed-days">
             <SelectValue placeholder="Select closed day" />
           </SelectTrigger>
@@ -144,12 +203,17 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
             ))}
           </SelectContent>
         </Select>
-        <p className="text-xs text-muted-foreground">Day when the store is regularly closed</p>
+        <p className="text-xs text-muted-foreground">
+          Day when the store is regularly closed
+        </p>
       </div>
 
-      <div className="grid gap-2">
+      <div className="grid gap-3">
         <Label htmlFor="store-category">Store Category</Label>
-        <Select value={element.shop_information?.store_category_id || "retail"} onValueChange={handleCategoryChange}>
+        <Select
+          value={shopInfo.category}
+          onValueChange={handleCategoryChange}
+        >
           <SelectTrigger id="store-category">
             <SelectValue placeholder="Select category" />
           </SelectTrigger>
@@ -165,19 +229,18 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
 
       <Separator className="my-4" />
 
-      {/* Promotion Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Label htmlFor="store-has-promotion">Has Promotion</Label>
           <Switch
             id="store-has-promotion"
-            checked={element.shop_information?.promotions.is_now || false}
+            checked={shopInfo.promotions.is_now}
             onCheckedChange={handleHasPromotionChange}
           />
         </div>
 
-        {element.shop_information?.promotions.is_now && (
-          <>
+        {shopInfo.promotions.is_now && (
+          <div className="space-y-4">
             <div className="grid gap-2">
               <Label htmlFor="promotion-end-date">Promotion End Date</Label>
               <div className="flex items-center gap-2">
@@ -185,7 +248,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
                 <Input
                   id="promotion-end-date"
                   type="date"
-                  value={element.shop_information.promotions.end_date || ""}
+                  value={shopInfo.promotions.end_date}
                   onChange={handlePromotionEndDateChange}
                 />
               </div>
@@ -197,47 +260,49 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
                 id="promotion-details"
                 className="min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 placeholder="Describe the promotion"
-                value={element.shop_information.promotions.detail || ""}
-                onChange={handlePromotionDetailsChange}
+                defaultValue={shopInfo.promotions.detail}
+                onBlur={(e) => handlePromotionDetailsChange(e.target.value)}
               />
             </div>
-          </>
+          </div>
         )}
       </div>
 
       <Separator className="my-4" />
 
-      {/* Social Media Section */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-medium">Social Media Links</h3>
-          <Button variant="outline" size="sm" onClick={() => setShowSocialMediaDialog(true)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSocialMediaDialog(true)}
+          >
             Edit Links
           </Button>
         </div>
 
-        {/* Preview of social media links */}
-        {element!.shop_information.social_media && Object.keys(element?.shop_information.social_media).some((key) => element?.shop_information.social_media?.[key]) && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {element?.shop_information.social_media.website && (
+        {Object.keys(shopInfo.social_media).length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {shopInfo.social_media.website && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Globe className="h-3 w-3" />
                 Website
               </Badge>
             )}
-            {element?.shop_information.social_media.facebook && (
+            {shopInfo.social_media.facebook && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Facebook className="h-3 w-3" />
                 Facebook
               </Badge>
             )}
-            {element?.shop_information.social_media.instagram && (
+            {shopInfo.social_media.instagram && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Instagram className="h-3 w-3" />
                 Instagram
               </Badge>
             )}
-            {element?.shop_information.social_media.twitter && (
+            {shopInfo.social_media.twitter && (
               <Badge variant="outline" className="flex items-center gap-1">
                 <Twitter className="h-3 w-3" />
                 Twitter
@@ -247,7 +312,6 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
         )}
       </div>
 
-      {/* Social Media Dialog */}
       <Dialog open={showSocialMediaDialog} onOpenChange={setShowSocialMediaDialog}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
@@ -258,46 +322,41 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
           </DialogHeader>
 
           <div className="space-y-4 py-4">
-            <div className="grid gap-3">
-              <div className="grid gap-2">
-                <Label htmlFor="social-website">Website</Label>
-                <Input
-                  id="social-website"
-                  placeholder="https://example.com"
-                  value={tempSocialMedia!.website || ""}
-                  onChange={(e) => handleTempSocialMediaChange("website", e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="social-facebook">Facebook</Label>
-                <Input
-                  id="social-facebook"
-                  placeholder="https://facebook.com/storename"
-                  value={tempSocialMedia!.facebook || ""}
-                  onChange={(e) => handleTempSocialMediaChange("facebook", e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="social-instagram">Instagram</Label>
-                <Input
-                  id="social-instagram"
-                  placeholder="https://instagram.com/storename"
-                  value={tempSocialMedia!.instagram || ""}
-                  onChange={(e) => handleTempSocialMediaChange("instagram", e.target.value)}
-                />
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="social-twitter">Twitter</Label>
-                <Input
-                  id="social-twitter"
-                  placeholder="https://twitter.com/storename"
-                  value={tempSocialMedia!.twitter || ""}
-                  onChange={(e) => handleTempSocialMediaChange("twitter", e.target.value)}
-                />
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="social-website">Website</Label>
+              <Input
+                id="social-website"
+                placeholder="https://example.com"
+                value={tempSocialMedia.website || ""}
+                onChange={(e) => handleTempSocialMediaChange("website", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="social-facebook">Facebook</Label>
+              <Input
+                id="social-facebook"
+                placeholder="https://facebook.com/storename"
+                value={tempSocialMedia.facebook || ""}
+                onChange={(e) => handleTempSocialMediaChange("facebook", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="social-instagram">Instagram</Label>
+              <Input
+                id="social-instagram"
+                placeholder="https://instagram.com/storename"
+                value={tempSocialMedia.instagram || ""}
+                onChange={(e) => handleTempSocialMediaChange("instagram", e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="social-twitter">Twitter</Label>
+              <Input
+                id="social-twitter"
+                placeholder="https://twitter.com/storename"
+                value={tempSocialMedia.twitter || ""}
+                onChange={(e) => handleTempSocialMediaChange("twitter", e.target.value)}
+              />
             </div>
           </div>
 

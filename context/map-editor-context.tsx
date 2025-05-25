@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useCallback, useMemo, useEffect, t
 import { FloorCollection, type MapElement, type MapSettings } from "@/types"
 import useMutate from "@/hooks/use-mutate"
 import { useDragElement } from "@/hooks/use-drag-element"
+import { toast } from "@/hooks/use-toast"
 
 interface MapEditorContextType {
   // Map elements
@@ -126,12 +127,13 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       width: 1600,
       height: 1000,
       grid_size: 20,
-      showGrid: true,
+      show_grid: true,
       building_width: 1200,
       building_height: 800,
       building_x: 700,
       building_y: 400,
       restricted: true,
+      isSynced : true
     }),
   )
 
@@ -148,12 +150,22 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   // Add these new state variables to the useState declarations in the MapEditorProvider
   const [isFloorTransitioning, setIsFloorTransitioning] = useState(false)
 
-  const [syncToServer, { isLoading }] = useMutate({ callback: undefined });
+  const [syncToServer, { isLoading,isError,error }] = useMutate({ callback: undefined });
 
   // Save elements to localStorage whenever they change
   useEffect(() => {
     setElements(loadFromStorage("mall-map-elements-" + currentFloor, [],true))
   }, [currentFloor,isSyncing])
+
+  useEffect(()=>{
+    if(isError){
+      toast({
+      title: "Error",
+      description: error?.data?.message,
+      variant: "destructive"
+    })
+    }
+  },[isError])
 
   useEffect(() => {
     const toSaveElements = elements.filter(el => el.floor != 0);
@@ -224,11 +236,25 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   const syncUnsyncedElements = useCallback(async () => {
     try {
+      
+
+      if(mapSettings.isSynced == false) {
+         const response = await syncToServer("sync-map", { map_setting: mapSettings });
+         const responseMap = response?.data ?? [];
+         const updatedMap = {...responseMap, isSynced: true };
+        
+          setMapSettings((prev) => ({ ...prev, ...updatedMap}));
+          saveToStorage("mall-map-settings", updatedMap)
+      }
+
       for (let floor = 1; floor <= totalFloors; floor++) {
         const floorKey = "mall-map-elements-" + floor;
         const storedElements: MapElement[] = loadFromStorage(floorKey, [],true);
 
-        const unsynced = storedElements.filter(el => !el.isSynced);
+        let unsynced = storedElements.filter(el => !el.isSynced);
+        if(floor != 1) {
+          unsynced = storedElements.filter(el => !el.isSynced && el.floor != 0);
+        }
         if (unsynced.length > 0) {
           const response = await syncToServer("sync-elements", { elements: unsynced });
           const responseElements: MapElement[] = response?.data ?? [];
@@ -275,7 +301,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Sync error:", error);
     }
-  }, [totalFloors, currentFloor]);
+  }, [totalFloors, currentFloor, mapSettings]);
 
 
   useEffect(() => {

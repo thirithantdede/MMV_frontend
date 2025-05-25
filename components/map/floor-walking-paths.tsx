@@ -12,7 +12,7 @@ export const FloorWalkingPaths = memo(function FloorWalkingPaths({
   mapSettings,
   currentFloor,
 }: FloorWalkingPathsProps) {
-  const { building_width, building_height, building_x, building_y, grid_size } = mapSettings
+  const { building_width, building_height, building_x, building_y, grid_size,show_grid } = mapSettings
 
 
   // Generate grid of walkable floor tiles
@@ -40,7 +40,7 @@ export const FloorWalkingPaths = memo(function FloorWalkingPaths({
 
   return (
     <div className="absolute pointer-events-none" style={{ left: 0, top: 0 }}>
-      {floorTiles.map((tile) => (
+      {show_grid && floorTiles.map((tile) => (
         <div
           key={tile.id}
           className="absolute border border-gray-100"

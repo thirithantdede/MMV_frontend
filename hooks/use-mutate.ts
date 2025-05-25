@@ -13,7 +13,7 @@ type ReturnType = [
     method?: MethodType,
     isFormData?: boolean
   ) => Promise<any | void>,
-  { isLoading: boolean }
+  { isLoading: boolean, isError: boolean, error: any }
 ];
 
 type CallbackType = (value: any, router: any) => void;
@@ -43,8 +43,8 @@ const useMutate = (params: ParamsType = {}): ReturnType => {
     try {
       const result = await mutate({ url, method, body: values ?? {} }) as any;
 
+      console.log(result);
       if (result.error || result.errors) {
-        console.log('enter errro')
         if (result.error?.data?.message) {
           toast({
             title: "❗️Error",
@@ -62,6 +62,12 @@ const useMutate = (params: ParamsType = {}): ReturnType => {
             title: "❗️ Server Request timeout",
             variant: "destructive"
           });
+        } else {
+          toast({
+            title: "Error",
+            variant: "destructive",
+            description: result.error.data.message,
+          })
         }
         return result;
       }
@@ -99,7 +105,7 @@ const useMutate = (params: ParamsType = {}): ReturnType => {
     }
   };
 
-  return [onSubmit, { isLoading }];
+  return [onSubmit, { isLoading,isError, error }];
 };
 
 export type useMutateCallbackType = CallbackType;

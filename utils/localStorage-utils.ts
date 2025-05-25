@@ -11,17 +11,11 @@ interface MallLayoutData {
   updatedAt?: string;
 }
 
-export function saveMallLayout(data: MallLayoutData): boolean {
+export function saveMallLayout(data: any): boolean {
   try {
-    const replace: Record<"mall-map-settings" | "mall-map-elements", any> = {
-      "mall-map-settings": data.mapSettings,
-      "mall-map-elements": data.elements,
-    };
-
-    // loop replace and set to localStorage
-    Object.keys(replace).forEach((key) => {
-      const value = replace[key as "mall-map-settings" | "mall-map-elements"];
-      localStorage.setItem(key, JSON.stringify(value));
+    Object.keys(data).forEach((key) => {
+      const value = data[key];
+      localStorage.setItem(key,value);
     });
 
     return true;
@@ -35,37 +29,54 @@ function generateRandomId(): string {
   return Math.random().toString(36).substring(2, 10) // simple random string
 }
 
-export function loadMallLayout(floors: number) {
+export function loadMallLayout(floors: number, encode: boolean = false) {
   try {
-    const finalJson: Record<string, any> = {}
+    const result: Record<string, any> = {};
 
     for (let i = 1; i <= floors; i++) {
-      const key = `mall-map-elements-${i}`
-      const elements = localStorage.getItem(key)
+      const key = `mall-map-elements-${i}`;
+      const raw = localStorage.getItem(key);
 
-      if (elements) {
-        const parsed = JSON.parse(elements)
+      if (raw) {
+        const parsed = JSON.parse(raw);
 
         const modified = parsed.map((el: any) => ({
           ...el,
           id: `new_element_${generateRandomId()}`,
           isSynced: false,
-        }))
+        }));
 
-        finalJson[key] = modified
+        result[key] = encode ? JSON.stringify(modified) : modified;
       }
     }
 
-    const mapLayout = localStorage.getItem("mall-map-settings")!
-    const parsed = JSON.parse(mapLayout);
-    parsed.id = null;
-    parsed.project_id = null;
-    finalJson["mall-map-settings"] = parsed
+    const rawMapLayout = localStorage.getItem("mall-map-settings");
+    const rawFloorElements = localStorage.getItem("floor-elements");
 
-    return finalJson
+    if (!rawMapLayout || !rawFloorElements) {
+      throw new Error("Required layout data not found in localStorage.");
+    }
+
+    const parsedMap = JSON.parse(rawMapLayout);
+    const parsedFloors = JSON.parse(rawFloorElements);
+
+    parsedMap.id = null;
+    parsedMap.project_id = null;
+
+    const modifiedFloors = parsedFloors.map((el: any) => ({
+      ...el,
+      id: `new_element_${generateRandomId()}`,
+      isSynced: false,
+    }));
+
+    result["floor-elements"] = encode ? JSON.stringify(modifiedFloors) : modifiedFloors;
+    result["mall-map-settings"] = encode ? JSON.stringify(parsedMap) : parsedMap;
+
+    return result;
+
   } catch (error) {
-    console.error("Error loading mall layout:", error)
-    return null
+    console.error("Error loading mall layout:", error);
+    return null;
   }
 }
 
@@ -135,7 +146,6 @@ export function importLayoutFromJson(jsonData: File) {
         throw new Error("Invalid layout format: missing required fields");
       }
 
-      // Save the imported layout
       const success = saveMallLayout(data);
 
       if (success) {
@@ -152,5 +162,5 @@ export function importLayoutFromJson(jsonData: File) {
 
 
 function isValidLayoutFormat(data: any): data is MallLayoutData {
-  return data && data.elements !== undefined && data.mapSettings !== undefined
+  return data !== undefined
 }

@@ -8,6 +8,7 @@ import { MainContent } from "@/components/layout/main-content"
 import { MapSettingsDialog } from "@/components/panels/map-settings-dialog"
 import { PublishDialog } from "@/components/panels/publish-dialog"
 import { useMapEditor } from "@/context/map-editor-context"
+import { Toaster } from "../ui/toaster"
 
 // This component caches the layout components to improve performance
 export const CachedLayout = memo(function CachedLayout() {
@@ -18,6 +19,7 @@ export const CachedLayout = memo(function CachedLayout() {
   // Memoize callback functions to prevent unnecessary re-renders
   const handleOpenSettings = useCallback(() => setShowMapSettings(true), [])
   const handleOpenPublish = useCallback(() => setShowPublishDialog(true), [])
+
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background">
@@ -39,6 +41,7 @@ export const CachedLayout = memo(function CachedLayout() {
       {showMapSettings && <MapSettingsDialog open={showMapSettings} onOpenChange={setShowMapSettings} />}
 
       {showPublishDialog && <PublishDialog open={showPublishDialog} onOpenChange={setShowPublishDialog} />}
+
     </div>
   )
 })

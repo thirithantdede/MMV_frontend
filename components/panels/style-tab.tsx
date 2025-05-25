@@ -166,7 +166,7 @@ const StyleProperties = memo(function StyleProperties({
               <Label className="w-24">{corner}</Label>
               <Slider
                 value={[value.value]}
-                max={50}
+                max={200}
                 step={5}
                 className="flex-1"
                 onValueChange={(val) =>

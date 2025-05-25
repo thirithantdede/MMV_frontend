@@ -69,13 +69,14 @@ export interface MapSettings {
   width: number
   height: number
   grid_size: number
-  showGrid: boolean
+  show_grid: boolean
   // Building footprint settings
   building_width: number
   building_height: number
   building_x: number
   building_y: number
   restricted: boolean
+  isSynced: boolean
 }
 
 export type TransportationElementType = "elevator" | "escalator" | "stairs";
@@ -126,7 +127,10 @@ export interface ShopInformation {
   contact_phone: string
   is_foc?: boolean
 
-  opening_hours: string 
+  opening_hours: {
+    start :string
+    end : string
+  } 
 
   closed_days: string | string[]
 
@@ -137,6 +141,7 @@ export interface ShopInformation {
     facebook?: string
     instagram?: string
     twitter?: string
+    website?: string
   }
 
   promotions: {

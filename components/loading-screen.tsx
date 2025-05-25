@@ -2,7 +2,6 @@
 
 import { useState, useEffect, memo, useCallback } from "react"
 import { Building, CloudIcon as CloudSync, Check } from "lucide-react"
-import { Progress } from "@/components/ui/progress"
 import useQuery from "@/hooks/use-query"
 import { saveToStorage, useMapEditor } from "@/context/map-editor-context"
 
@@ -10,6 +9,10 @@ interface LoadingScreenProps {
   onComplete: () => void
   skipLoading?: boolean
 }
+
+import LogoIcon from "@/public/imgs/logo-icon.png"
+import Image from "next/image"
+
 
 export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoading = false }: LoadingScreenProps) {
   const [progress, setProgress] = useState(0)
@@ -28,7 +31,14 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
 
     const { building_footprint, floors } = projectDataQuery.data
     const { elements } = projectElementsQuery?.data
-    updateMapSettings(building_footprint)
+    // add isSyned true to buidling footprint
+    // Add `isSynced: true` to building_footprint
+    const updatedBuildingFootprint = {
+      ...building_footprint,
+      isSynced: true,
+    };
+
+    updateMapSettings(updatedBuildingFootprint)
     updateFloors(floors)
 
     elements.forEach((element: any) => {
@@ -114,31 +124,97 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
   if (skipLoading) return null
 
   return (
-    <div className="fixed inset-0 flex flex-col items-center justify-center bg-background z-50">
-      <div className="w-full max-w-md px-8 py-12 flex flex-col items-center">
-        <div className="mb-8 flex items-center justify-center">
-          <Building className="h-16 w-16 text-primary" />
+    <div className="inset-0 min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 z-50 relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+
+
+      <div className="w-full max-w-lg px-8 py-12 flex flex-col items-center relative">
+        {/* Main Card */}
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl shadow-blue-500/10 rounded-3xl p-8 w-full">
+          {/* Logo Section */}
+          <div className="mb-8 flex items-center justify-center">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl blur-lg opacity-30 animate-pulse" />
+              <div className="relative p-4 shadow-lg">
+                  <Image
+                      src={LogoIcon || "/placeholder.svg"}
+                      alt="Logo"
+                      width={60}
+                      height={60}
+                      className="object-contain"
+                    />
+              </div>
+            </div>
+          </div>
+
+          {/* Title Section */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
+              Mall Map Viewer
+            </h1>
+            <p className="text-slate-600 text-lg">Loading your project workspace</p>
+          </div>
+
+          {/* Progress Section */}
+          <div className="w-full mb-6 space-y-3">
+            <div className="flex justify-between items-center text-sm text-slate-600">
+              <span>Progress</span>
+              <span className="font-medium">{progress}%</span>
+            </div>
+            <div className="relative">
+              <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-slate-800 to-gray-900 rounded-full transition-all duration-500 ease-out relative"
+                  style={{ width: `${progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/30 animate-pulse rounded-full" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Status Section */}
+          <div className="flex items-center justify-center gap-3 text-sm bg-slate-50/50 rounded-xl p-4 border border-slate-200/50">
+            {isComplete ? (
+              <>
+                <div className="relative">
+                  <Check className="h-6 w-6 text-green-500 animate-in fade-in zoom-in duration-300" />
+                  <div className="absolute inset-0 bg-green-500/20 rounded-full animate-ping" />
+                </div>
+                <span className="text-green-600 font-medium text-base">{status}</span>
+              </>
+            ) : (
+              <>
+                <div className="relative">
+                  <CloudSync className="h-6 w-6 text-slate-500 animate-spin" />
+                  <div className="absolute inset-0 bg-blue-500/10 rounded-full animate-pulse" />
+                </div>
+                <span className="text-slate-700 font-medium">{status}</span>
+              </>
+            )}
+          </div>
+
+          {/* Loading Steps Indicator */}
+          <div className="mt-6 flex justify-center space-x-2">
+            <div
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${progress >= 30 ? "bg-slate-300" : "bg-slate-300"}`}
+            />
+            <div
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${progress >= 60 ? "bg-green-200" : "bg-slate-300"}`}
+            />
+            <div
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${progress >= 85 ? "bg-green-300" : "bg-slate-300"}`}
+            />
+            <div
+              className={`w-2 h-2 rounded-full transition-all duration-300 ${progress >= 100 ? "bg-green-500" : "bg-slate-300"}`}
+            />
+          </div>
         </div>
 
-        <h1 className="text-2xl font-bold mb-2 text-center">Mall Map Viewer</h1>
-        <p className="text-muted-foreground mb-8 text-center">Loading your project</p>
-
-        <div className="w-full mb-4">
-          <Progress value={progress} className="h-2" />
-        </div>
-
-        <div className="flex items-center gap-3 text-sm">
-          {isComplete ? (
-            <>
-              <Check className="h-5 w-5 text-green-500 animate-in fade-in" />
-              <span className="text-green-500 font-medium">{status}</span>
-            </>
-          ) : (
-            <>
-              <CloudSync className="h-5 w-5 text-primary animate-spin" />
-              <span>{status}</span>
-            </>
-          )}
+        {/* Bottom Text */}
+        <div className="mt-6 text-center">
+          <p className="text-slate-500 text-sm">Preparing your mall mapping experience</p>
         </div>
       </div>
     </div>
