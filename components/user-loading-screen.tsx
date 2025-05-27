@@ -1,35 +1,47 @@
 "use client"
 
 import { useState, useEffect, memo, useCallback } from "react"
-import { CloudIcon as CloudSync, Check } from "lucide-react"
+import { CloudIcon as CloudSync, Check, AlertCircle } from "lucide-react"
 import useQuery from "@/hooks/use-query"
 import { saveToStorage, useMapEditor } from "@/context/map-editor-context"
-
+import { Button } from "@/components/ui/button"
 import LogoIcon from "@/public/imgs/logo-icon.png"
 import Image from "next/image"
 
 interface LoadingScreenProps {
   onComplete: () => void
   skipLoading?: boolean
+  project_uri: string
 }
 
-export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoading = false }: LoadingScreenProps) {
+interface QueryErrorInterface {
+  status: number
+  data: any
+}
+
+export const UserLoadingScreen = memo(function LoadingScreen({
+  onComplete,
+  skipLoading = false,
+  project_uri,
+}: LoadingScreenProps) {
   const [progress, setProgress] = useState(0)
   const [status, setStatus] = useState("Connecting to server...")
   const [localSynced, setLocalSynced] = useState(false)
+  const [syncStarted, setSyncStarted] = useState(false)
   const [finished, setFinished] = useState(false)
 
-  const { updateMapSettings, updateProject, updateFloors, setFetchFromServer, setIsSyncing } = useMapEditor()
+  const {
+    updateMapSettings,
+    updateProject,
+    updateFloors,
+    setFetchFromServer,
+    setIsSyncing,
+  } = useMapEditor()
 
-  const authQuery = useQuery("/auth-check")
-  const projectDataQuery = useQuery("/project-data", { enabled: authQuery.data && !authQuery.isLoading })
-  const projectElementsQuery = useQuery("/project-elements", { enabled: projectDataQuery.data && !projectDataQuery.isLoading })
+  const projectDataQuery = useQuery(`/projects/${project_uri}`)
 
   const syncToLocal = useCallback(() => {
-    if (!projectDataQuery.data || !projectElementsQuery.data) return
-
-    const { building_footprint, floors, project } = projectDataQuery.data
-    const { elements } = projectElementsQuery.data
+    const { building_footprint, floors, project, elements } = projectDataQuery.data
 
     const updatedBuildingFootprint = {
       ...building_footprint,
@@ -55,8 +67,10 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
       saveToStorage("mall-map-elements-" + element.level, updatedElements)
     })
 
+    setStatus("Syncing local storage...")
+    setProgress(95)
     setLocalSynced(true)
-  }, [projectDataQuery.data, projectElementsQuery.data, updateMapSettings, updateFloors, updateProject])
+  }, [projectDataQuery.data, updateMapSettings, updateFloors, updateProject])
 
   useEffect(() => {
     if (skipLoading) {
@@ -67,22 +81,27 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
     setFetchFromServer(false)
     setIsSyncing(false)
 
-    if (authQuery.isLoading) {
-      setStatus("Checking authentication...")
-      setProgress(30)
-    } else if (!authQuery.isLoading && projectDataQuery.isLoading) {
-      setStatus("Loading project data...")
-      setProgress(60)
-    } else if (!projectDataQuery.isLoading && projectElementsQuery.isLoading) {
+    if (projectDataQuery.error) {
+      const error = projectDataQuery.error as QueryErrorInterface
+      if (error.status === 404) {
+        setStatus("Project not found")
+        setProgress(0)
+        return
+      }
+    }
+
+    if (!projectDataQuery.isLoading && projectDataQuery.data && !syncStarted) {
       setStatus("Loading map elements...")
       setProgress(85)
-    } else if (projectDataQuery.data && projectElementsQuery.data && !localSynced) {
-      setStatus("Syncing local storage...")
+      setSyncStarted(true)
       syncToLocal()
-    } else if (localSynced && !finished) {
+    }
+
+    if (localSynced && !finished) {
       setStatus("Ready!")
       setProgress(100)
       setFinished(true)
+
       setTimeout(() => {
         setFetchFromServer(true)
         setIsSyncing(true)
@@ -92,22 +111,41 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
   }, [
     skipLoading,
     onComplete,
-    authQuery.isLoading,
     projectDataQuery.isLoading,
-    projectElementsQuery.isLoading,
     projectDataQuery.data,
-    projectElementsQuery.data,
+    projectDataQuery.error,
     localSynced,
     finished,
+    syncStarted,
     syncToLocal,
     setFetchFromServer,
-    setIsSyncing
+    setIsSyncing,
   ])
 
   if (skipLoading) return null
 
+  if (projectDataQuery.error && (projectDataQuery.error as QueryErrorInterface).status === 404) {
+    return (
+      <div className="inset-0 min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-red-50 to-rose-100 z-50 relative overflow-hidden">
+      <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
+
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 shadow-2xl shadow-red-500/10 rounded-3xl p-10 max-w-md text-center">
+        <div className="flex items-center justify-center mb-4">
+          <AlertCircle className="w-10 h-10 text-red-500" />
+        </div>
+        <h2 className="text-2xl font-semibold text-slate-800 mb-2">Project Not Found</h2>
+        <p className="text-slate-600 mb-4">We couldn't find the project with URI <strong>{project_uri}</strong>. It may have been deleted or archieved.</p>
+        <Button variant="outline" onClick={() => window.location.href = "/"} className="mt-2">
+          Go Back Home
+        </Button>
+      </div>
+    </div>
+    )
+  }
+
   return (
     <div className="inset-0 min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 z-50 relative overflow-hidden">
+      {/* Background grid */}
       <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,white,rgba(255,255,255,0.6))] -z-10" />
 
       <div className="w-full max-w-lg px-8 py-12 flex flex-col items-center relative">
@@ -123,9 +161,9 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
 
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-3 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">
-              Mall Map Viewer
+            <span className="capitalize">{project_uri}</span>
             </h1>
-            <p className="text-slate-600 text-lg">Loading your project workspace</p>
+            <p className="text-slate-600 text-lg">Loading The Project </p>
           </div>
 
           <div className="w-full mb-6 space-y-3">
@@ -170,7 +208,7 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
               <div
                 key={i}
                 className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  progress >= step ? `bg-green-${step}` : "bg-slate-300"
+                  progress >= step ? `bg-green-500` : "bg-slate-300"
                 }`}
               />
             ))}

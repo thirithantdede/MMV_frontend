@@ -23,9 +23,9 @@ export const ElementList = memo(function ElementList({
   maxHeight = "300px",
 }: ElementListProps) {
   return (
-    <ScrollArea className={`border rounded-md p-2`} style={{ maxHeight }}>
+    <ScrollArea className={`border rounded-md p-2 overflow-y-scroll`} style={{ maxHeight }}>
       {elements.length > 0 ? (
-        <div className="space-y-1">
+        <div className="space-y-1 ">
           {elements.map((element) => (
             <div
               key={element.id}

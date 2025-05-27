@@ -29,8 +29,8 @@ export const SearchInput = memo(function SearchInput({
         type="search"
         placeholder={placeholder}
         className="pl-9 pr-10"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        defaultValue={value}
+        onBlur={(e) => onChange(e.target.value)}
         autoFocus={autoFocus}
       />
       {value && onClear && (

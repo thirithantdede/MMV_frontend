@@ -5,9 +5,11 @@ import { ArrowLeft, ChevronDown, ChevronUp, Loader2, CalendarDays, Ticket } from
 import { Button } from "@/components/ui/button"
 import { ElementSearch } from "@/components/guest-mode/store-search"
 import type { MapElement } from "@/types"
+import { useMapEditor } from "@/context/map-editor-context"
 
 interface PreviewHeaderProps {
   onExitPreview: () => void
+  isGuestView : boolean
   currentFloor: number
   totalFloors: number
   goToPrevFloor: () => void
@@ -21,6 +23,7 @@ interface PreviewHeaderProps {
 
 export const PreviewHeader = memo(function PreviewHeader({
   onExitPreview,
+  isGuestView,
   currentFloor,
   totalFloors,
   goToPrevFloor,
@@ -31,13 +34,20 @@ export const PreviewHeader = memo(function PreviewHeader({
   onOpenPromotionsDialog,
   onStoreSelect,
 }: PreviewHeaderProps) {
+
+  const {project} = useMapEditor();
+
   return (
     <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-3">
       <div className="flex items-center justify-between mb-2">
-        <Button variant="ghost" onClick={onExitPreview} className="gap-2">
+        {
+          !isGuestView ? (<Button variant="ghost" onClick={onExitPreview} className="gap-2">
           <ArrowLeft className="h-4 w-4" />
           Exit Preview
-        </Button>
+        </Button>) : 
+         ( <p><b className="ps-3 capitalize">{project.name}</b> <span className="text-gray-500"> ( v{project.current_version} ) </span> </p>)
+        }
+        
 
         {/* Floor navigation */}
 

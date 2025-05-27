@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Ticket, Calendar, Facebook, Instagram, Twitter, Globe, MapPin, Clock, Sparkles } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
@@ -10,33 +10,56 @@ import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
 import { useMapEditor } from "@/context/map-editor-context"
 import type { MapElement } from "@/types"
+import useQuery from "@/hooks/use-query"
 
 interface PromotionsListProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onStoreSelect?: (store: MapElement) => void
 }
-
 export function PromotionsList({ open, onOpenChange, onStoreSelect }: PromotionsListProps) {
-  const { elements } = useMapEditor()
+  const { project } = useMapEditor()
   const [selectedPromotion, setSelectedPromotion] = useState<MapElement | null>(null)
   const [showPromotionDetails, setShowPromotionDetails] = useState(false)
+
+  const dataFetching = useQuery("/get-promotions/" + project.id)
+
+  useEffect(() => {
+    if (open && dataFetching?.refetch) {
+      dataFetching.refetch()
+    }
+  }, [open, dataFetching?.refetch])
+
+  // Ensure elements is always an array
+  const elements = useMemo(() => {
+    if (!dataFetching?.data) return []
+    // Handle case where data is an object with a promotions array
+    if (Array.isArray(dataFetching.data?.elements)) {
+      return dataFetching.data.elements as MapElement[]
+    } else if (dataFetching.data?.elements && typeof dataFetching.data?.elements === "object" ) {
+      return dataFetching.data.elements as MapElement[]
+    }
+    console.warn("Unexpected data format for promotions:", dataFetching.data)
+    return []
+  }, [dataFetching?.data])
 
   // Filter stores with active promotions
   const storesWithPromotions = useMemo(() => {
     return elements.filter(
-      (element) => element.type === "store" && element.shop_information?.promotions.is_now && !element.is_closed,
+      (element: MapElement) =>
+        element.type === "store" &&
+        element.shop_information?.promotions?.is_now &&
+        !element.is_closed
     ) as MapElement[]
   }, [elements])
 
   // Sort by promotion end date (soonest ending first)
   const sortedPromotions = useMemo(() => {
     return [...storesWithPromotions].sort((a, b) => {
-      if (!a.shop_information?.promotions.end_date || !b.shop_information?.promotions.end_date) return 0
-      return (
-        new Date(a.shop_information?.promotions.end_date).getTime() -
-        new Date(b.shop_information?.promotions.end_date).getTime()
-      )
+      const aEndDate = a.shop_information?.promotions?.end_date
+      const bEndDate = b.shop_information?.promotions?.end_date
+      if (!aEndDate || !bEndDate) return 0
+      return new Date(aEndDate).getTime() - new Date(bEndDate).getTime()
     })
   }, [storesWithPromotions])
 
@@ -57,10 +80,10 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     if (!store.shop_information?.social_media) return null
 
     const socialLinks = [
-      { icon: Globe, url: store.shop_information?.social_media.website, label: "Website" },
-      { icon: Facebook, url: store.shop_information?.social_media.facebook, label: "Facebook" },
-      { icon: Instagram, url: store.shop_information?.social_media.instagram, label: "Instagram" },
-      { icon: Twitter, url: store.shop_information?.social_media.twitter, label: "Twitter" },
+      { icon: Globe, url: store.shop_information.social_media.website, label: "Website" },
+      { icon: Facebook, url: store.shop_information.social_media.facebook, label: "Facebook" },
+      { icon: Instagram, url: store.shop_information.social_media.instagram, label: "Instagram" },
+      { icon: Twitter, url: store.shop_information.social_media.twitter, label: "Twitter" },
     ].filter((link) => link.url)
 
     if (socialLinks.length === 0) return null
@@ -83,7 +106,8 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     )
   }
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return "Not specified"
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
@@ -91,7 +115,8 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     })
   }
 
-  const isPromotionEndingSoon = (endDate: string) => {
+  const isPromotionEndingSoon = (endDate?: string) => {
+    if (!endDate) return false
     const end = new Date(endDate)
     const now = new Date()
     const diffTime = end.getTime() - now.getTime()
@@ -116,8 +141,18 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
           </DialogHeader>
 
           <ScrollArea className="flex-1 pr-4">
-            {sortedPromotions.length > 0 ? (
-              <div className="space-y-4 pb-4">
+            {dataFetching?.isLoading ? (
+              <div className="flex flex-col items-center justify-center max-h-[400px] text-center">
+                <div className="p-4 bg-muted/30 rounded-full mb-4">
+                  <Ticket className="h-12 w-12 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Loading Promotions</h3>
+                <p className="text-muted-foreground max-w-sm">
+                  Please wait while we fetch the latest promotions...
+                </p>
+              </div>
+            ) : sortedPromotions.length > 0 ? (
+              <div className="space-y-4 pb-4 max-h-[400px] ">
                 {sortedPromotions.map((store) => (
                   <Card
                     key={store.id}
@@ -132,7 +167,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                               <MapPin className="h-3 w-3" />
                               Floor {store.floor}
                             </div>
-                            {store.shop_information?.promotions.end_date && (
+                            {store.shop_information?.promotions?.end_date && (
                               <div className="flex items-center gap-1 text-sm">
                                 <Calendar className="h-3 w-3" />
                                 <span
@@ -156,7 +191,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                       </div>
                     </CardHeader>
 
-                    {store.shop_information?.promotions.detail && (
+                    {store.shop_information?.promotions?.detail && (
                       <CardContent className="pt-0 pb-3">
                         <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/10">
                           <p className="text-sm line-clamp-2 text-foreground/90">
@@ -216,7 +251,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                   <MapPin className="h-3 w-3" />
                   Floor {selectedPromotion.floor}
                 </Badge>
-                {selectedPromotion.shop_information?.promotions.end_date && (
+                {selectedPromotion.shop_information?.promotions?.end_date && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
                     Ends {formatDate(selectedPromotion.shop_information.promotions.end_date)}
@@ -227,7 +262,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
 
             <ScrollArea className="max-h-[400px] pr-4">
               <div className="space-y-6">
-                {selectedPromotion.shop_information?.promotions.detail && (
+                {selectedPromotion.shop_information?.promotions?.detail && (
                   <div>
                     <h4 className="font-medium mb-3 flex items-center gap-2">
                       <Sparkles className="h-4 w-4 text-primary" />
@@ -248,7 +283,27 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                       Opening Hours
                     </h4>
                     <div className="bg-muted/30 p-3 rounded-lg">
-                      <p className="text-sm">{selectedPromotion.shop_information.opening_hours.start}</p>
+                      <p className="text-sm">
+                        {selectedPromotion.shop_information.opening_hours.start} -{" "}
+                        {selectedPromotion.shop_information.opening_hours.end || "Not specified"}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {selectedPromotion.shop_information?.closed_days &&
+                 selectedPromotion.shop_information.closed_days.length > 0 &&
+                 selectedPromotion.shop_information.closed_days !== "none" && (
+                  <div>
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-primary" />
+                      Closed Days
+                    </h4>
+                    <div className="bg-muted/30 p-3 rounded-lg">
+                      <p className="text-sm">
+                        Closed on {selectedPromotion.shop_information.closed_days.charAt(0).toUpperCase() +
+                          selectedPromotion.shop_information.closed_days.slice(1)}
+                      </p>
                     </div>
                   </div>
                 )}

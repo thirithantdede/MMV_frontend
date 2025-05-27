@@ -23,6 +23,21 @@ export interface MapElement {
   shop_information?: ShopInformation
 }
 
+export interface Project {
+  id : string,
+  name : string,
+  description : string
+  address : string
+  webisite? : string
+  is_published : boolean
+  uri: string
+  is_public : boolean
+  current_version : string
+  map_settings : MapSettings
+  published_at : string
+  updated_at : string
+}
+
 export type FloorCollection = Floor[];
 
 export interface Floor {
@@ -62,6 +77,7 @@ export interface EventElement extends MapElement {
   start_time?: string
   end_time?: string
   is_active?: boolean
+  is_foc?: boolean
   host?: string
   company?: string
 }
@@ -133,7 +149,7 @@ export interface ShopInformation {
     end : string
   } 
 
-  closed_days: string 
+  closed_days: string[]
   website: string
   store_category_id: number
 

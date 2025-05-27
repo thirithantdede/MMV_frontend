@@ -12,7 +12,7 @@ import { EventsPanel } from "@/components/events/events-panel"
 import { PromotionsList } from "@/components/guest-mode/promotions-list"
 import type { MapElement, RouteInfo } from "@/types"
 
-export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
+export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPreview: () => void,isGuestView?:boolean }) {
   const { elements, mapSettings, currentFloor, totalFloors,setCurrentFloor } = useMapEditor()
   const [zoomLevel, setZoomLevel] = useState(1)
   const [showInfo, setShowInfo] = useState(true)
@@ -179,12 +179,12 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
 
       // Automatically show element details
       setSelectedElement(store)
-      setShowElementDetails(true)
+      // setShowElementDetails(true)
 
       // Clear the highlight after 3 seconds
       setTimeout(() => {
         setHighlightedElement(null)
-      }, 3000)
+      }, 10000)
     },
     [currentFloor],
   )
@@ -225,6 +225,7 @@ export function PreviewMode({ onExitPreview }: { onExitPreview: () => void }) {
   const MemoizedHeader = useMemo(
     () => (
       <PreviewHeader
+        isGuestView={isGuestView}
         onExitPreview={onExitPreview}
         currentFloor={currentFloor}
         totalFloors={totalFloors}

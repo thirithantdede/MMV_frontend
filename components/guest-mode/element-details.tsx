@@ -108,13 +108,16 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
               </div>
 
               {element.shop_information?.closed_days && 
-              element.shop_information.closed_days !== "none" && 
               element.shop_information.closed_days.length > 0 && (
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    Closed on {element.shop_information.closed_days.charAt(0).toUpperCase() + 
-                              element.shop_information.closed_days.slice(1)}
-                  </Badge>
+                  Closed days:
+                  {
+                    element.shop_information.closed_days.map((day, index) => (
+                      <Badge variant="outline" className="text-xs" key={index}>
+                        {day}
+                      </Badge>
+                    ))
+                  }
                 </div>
               )}
 

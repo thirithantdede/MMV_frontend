@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useCallback, useState } from "react"
 import { X, Upload, Check, Globe, Tag, FileText, Eye, EyeOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,7 @@ import { Switch } from "@/components/ui/switch"
 import { useMapEditor } from "@/context/map-editor-context"
 import { Badge } from "@/components/ui/badge"
 import config from "@/config"
+import useMutate from "@/hooks/use-mutate"
 
 interface PublishDialogProps {
   open: boolean
@@ -21,30 +22,43 @@ interface PublishDialogProps {
 const domain = config.domain;
 
 export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
-  const { mapSettings } = useMapEditor()
-  const [publishName, setPublishName] = useState("My Mall Map")
+  const { mapSettings,project,updateProject } = useMapEditor()
+  const [publishName, setPublishName] = useState(project.name ?? "My Mall Map")
   const [publishDescription, setPublishDescription] = useState("")
-  const [isPublic, setIsPublic] = useState(true)
+  const [isPublic, setIsPublic] = useState(project.is_public)
   const [isPublishing, setIsPublishing] = useState(false)
   const [isPublished, setIsPublished] = useState(false)
-  const [urlEndpoint, setUrlEndpoint] = useState("my-mall-map")
-  const [currentVersion, setCurrentVersion] = useState("1.0.0")
+  const [urlEndpoint, setUrlEndpoint] = useState(project.uri ?? "new-uri")
 
-  const handlePublish = () => {
+    const [publish, { isLoading,isError,error }] = useMutate({ callback: undefined });
+ 
+    console.log("publish",project)
+
+  const handlePublish = useCallback(async () => {
     setIsPublishing(true)
+    const updated  = {
+        name: publishName,
+        description: publishDescription,
+        is_public: isPublic,
+        uri: urlEndpoint,
+      };
+      const response = await publish("publish-project",updated)
 
-    // Simulate publishing process
-    setTimeout(() => {
+      updateProject({
+        ...project,
+        ...response?.data
+      })
       setIsPublishing(false)
-      setIsPublished(true)
-
-      // Reset after showing success
-      setTimeout(() => {
-        setIsPublished(false)
-        onOpenChange(false)
-      }, 2000)
-    }, 1500)
-  }
+      
+  },[
+    project,
+    publishName,
+    publishDescription,
+    isPublic,
+    urlEndpoint,
+    updateProject,
+    publish
+  ])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,7 +83,7 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
                   Map Name
                 </Label>
                 <div className="col-span-4">
-                  <Input id="publish-name" value={publishName} onChange={(e) => setPublishName(e.target.value)} />
+                  <Input id="publish-name" defaultValue={project.name} onChange={(e) => setPublishName(e.target.value)} />
                 </div>
               </div>
 
@@ -78,10 +92,10 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
                   URL Path
                 </Label>
                 <div className="col-span-4 flex items-center gap-1 bg-background rounded-md border border-input px-3 focus-within:ring-1 focus-within:ring-ring">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">{domain}/</span>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{domain}/projects/</span>
                   <Input
                     id="url-endpoint"
-                    value={urlEndpoint}
+                    defaultValue={project.uri}
                     onChange={(e) => setUrlEndpoint(e.target.value.replace(/\s+/g, "-").toLowerCase())}
                     className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0 px-0"
                   />
@@ -98,7 +112,7 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
 
             <Textarea
               id="publish-description"
-              value={publishDescription}
+              defaultValue={project.description}
               onChange={(e) => setPublishDescription(e.target.value)}
               placeholder="Describe your mall map..."
               className="min-h-[100px] resize-none"
@@ -113,15 +127,15 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
 
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                {isPublic ? <Eye className="h-4 w-4 text-green-500" /> : <EyeOff className="h-4 w-4 text-amber-500" />}
+                {project.is_public ? <Eye className="h-4 w-4 text-green-500" /> : <EyeOff className="h-4 w-4 text-amber-500" />}
                 <div>
-                  <p className="text-sm font-medium">{isPublic ? "Public" : "Private"}</p>
+                  <p className="text-sm font-medium">{project.is_public ? "Public" : "Private"}</p>
                   <p className="text-xs text-muted-foreground">
-                    {isPublic ? "Anyone with the link can view" : "Only you can view"}
+                    {project.is_public ? "Anyone with the link can view" : "Only you can view"}
                   </p>
                 </div>
               </div>
-              <Switch id="publish-public" checked={isPublic} onCheckedChange={setIsPublic} />
+              <Switch id="publish-public" defaultChecked={project.is_public} onCheckedChange={setIsPublic} />
             </div>
           </div>
 
@@ -131,7 +145,7 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-medium">Map Details</p>
                   <Badge variant="outline" className="text-xs bg-primary/10 hover:bg-primary/20">
-                    v{currentVersion}
+                    v{project.current_version}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">

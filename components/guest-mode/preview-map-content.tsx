@@ -83,7 +83,7 @@ const FloorWalkingPaths = memo(function FloorWalkingPaths({
 }) {
   return (
     <div className="absolute" style={{ left: 0, top: 0 }}>
-      {Array.from({ length: Math.floor(mapSettings.building_height / mapSettings.grid_size) }).map((_, row) =>
+      {mapSettings.show_grid && Array.from({ length: Math.floor(mapSettings.building_height / mapSettings.grid_size) }).map((_, row) =>
         Array.from({ length: Math.floor(mapSettings.building_width / mapSettings.grid_size) }).map((_, col) => (
           <div
             key={`floor-${currentFloor}-${row}-${col}`}

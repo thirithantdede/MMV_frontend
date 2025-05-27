@@ -1,7 +1,7 @@
 "use client"
 
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react"
-import { FloorCollection, type MapElement, type MapSettings } from "@/types"
+import { FloorCollection, Project, type MapElement, type MapSettings } from "@/types"
 import useMutate from "@/hooks/use-mutate"
 import { useDragElement } from "@/hooks/use-drag-element"
 import { toast } from "@/hooks/use-toast"
@@ -12,6 +12,9 @@ interface MapEditorContextType {
   addElement: (element: MapElement) => void
   updateElement: (element: MapElement) => void
   removeElement: (id: string) => void
+
+  project : Project
+  updateProject: (project: Project) => void
 
   fetchFromServer: boolean,
   setFetchFromServer: (isFetchFromServer: boolean) => void
@@ -117,6 +120,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   const [fetchFromServer, setFetchFromServer] = useState<boolean>(true);
 
   const [floors, setFloors] = useState<FloorCollection | null>(null)
+  const [project, setProject] = useState<Project>(()=>loadFromStorage("mall-project", []) as unknown as Project)
   const [selectedElement, setSelectedElement] = useState<MapElement | null>(null)
   // Floor state
   const [totalFloors, setTotalFloors] = useState(2)
@@ -191,8 +195,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const removeElement = useCallback((id: string) => {
-    // setElements((prev) => prev.filter((el) => el.id !== id))
-    setElements((prev) => prev.map((el) => el.id === id ? { ...el, isDeleted: true,isSynced:false } : el))
+    syncToServer("delete-element", { id })
+    setElements((prev) => prev.filter((el) => el.id !== id))
     setSelectedElement((prev) => (prev?.id === id ? null : prev))
   }, [])
 
@@ -205,6 +209,11 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   const addFloor = useCallback(() => {
     setTotalFloors((prev) => prev + 1)
+  }, [])
+
+  const updateProject = useCallback((project: Project) => {
+    setProject(project)
+    saveToStorage("mall-project", project)
   }, [])
 
   // Panel toggles
@@ -269,12 +278,11 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
                 ...localEl,
                 ...matched,
                 id: matched.id,
-                isSynced: true,
-                isDeleted: false,
+                isSynced: true
               }
             }
 
-            return {...localEl, isSynced: true};
+            return localEl;
           })
           saveToStorage(floorKey, updated);
 
@@ -287,12 +295,10 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
                  ...localEl,
                 ...matched,
                 id: matched.id,
-                isSynced: true,
-                isDeleted: false,
-
+                isSynced: true
               }
             }
-            return {...localEl, isSynced: true}
+            return localEl
           })
 
           saveToStorage("floor-elements",floorUpdated)
@@ -332,6 +338,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       setFetchFromServer,
       floors,
       updateFloors,
+      project,
+      updateProject,
       currentFloor,
       totalFloors,
       setCurrentFloor: handleSetCurrentFloor,
@@ -364,6 +372,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       setFetchFromServer,
       floors,
       updateFloors,
+      project,
+      updateProject,
       currentFloor,
       totalFloors,
       handleSetCurrentFloor,
