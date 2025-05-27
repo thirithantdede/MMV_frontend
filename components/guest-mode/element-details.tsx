@@ -28,49 +28,49 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
   }, [element])
 
   const renderSocialMediaLinks = (element: MapElement) => {
-    if (!element.socialMedia) return null
+    if (!element.shop_information?.social_media) return null
 
     return (
       <div className="flex gap-2 mt-4">
-        {element.socialMedia.website && (
+        {element.shop_information?.social_media.website && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element.socialMedia?.website, "_blank")}
+            onClick={() => window.open(element.shop_information?.social_media?.website, "_blank")}
           >
             <Globe className="h-4 w-4" />
             <span className="sr-only">Website</span>
           </Button>
         )}
-        {element.socialMedia.facebook && (
+        {element.shop_information.social_media.facebook && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element.socialMedia?.facebook, "_blank")}
+            onClick={() => window.open(element!.shop_information!.social_media?.facebook, "_blank")}
           >
             <Facebook className="h-4 w-4" />
             <span className="sr-only">Facebook</span>
           </Button>
         )}
-        {element.socialMedia.instagram && (
+        {element.shop_information.social_media.instagram && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element.socialMedia?.instagram, "_blank")}
+            onClick={() => window.open(element!.shop_information!.social_media?.instagram, "_blank")}
           >
             <Instagram className="h-4 w-4" />
             <span className="sr-only">Instagram</span>
           </Button>
         )}
-        {element.socialMedia.twitter && (
+        {element.shop_information.social_media.twitter && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element.socialMedia?.twitter, "_blank")}
+            onClick={() => window.open(element!.shop_information!.social_media?.twitter, "_blank")}
           >
             <Twitter className="h-4 w-4" />
             <span className="sr-only">Twitter</span>
@@ -91,9 +91,6 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
               <ElementIcon type={element.type} />
               <DialogTitle>{element.name}</DialogTitle>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-              <X className="h-4 w-4" />
-            </Button>
           </div>
         </DialogHeader>
 
@@ -103,13 +100,13 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{element.openHours || "Hours not specified"}</span>
+                <span>{element.shop_information?.opening_hours.start || "Hours not specified"} - {element.shop_information?.opening_hours.end}</span>
               </div>
 
-              {element.closedDay && element.closedDay !== "none" && (
+              {element.shop_information?.closed_days && element.shop_information?.closed_days !== "none" && (
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
-                    Closed on {element.closedDay.charAt(0).toUpperCase() + element.closedDay.slice(1)}
+                    Closed on {element.shop_information?.closed_days.charAt(0).toUpperCase() + element.shop_information?.closed_days.slice(1)}
                   </Badge>
                 </div>
               )}

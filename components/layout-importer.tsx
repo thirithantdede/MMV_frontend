@@ -6,12 +6,14 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { importLayoutFromJson } from "@/utils/localStorage-utils"
 import { Download, Check, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { loadFromStorage, useMapEditor } from "@/context/map-editor-context"
 
 export function LayoutImport() {
   const [layoutName, setLayoutName] = useState("")
   const [importStatus, setImportStatus] = useState<"idle" | "success" | "error">("idle")
   const [errorMessage, setErrorMessage] = useState("")
   const [isImporting, setisImporting] = useState(false)
+  const {updateMapSettings} = useMapEditor();
   // input ref
   const inputRef = useRef<HTMLInputElement>(null)
 

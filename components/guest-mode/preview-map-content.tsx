@@ -83,22 +83,22 @@ const FloorWalkingPaths = memo(function FloorWalkingPaths({
 }) {
   return (
     <div className="absolute" style={{ left: 0, top: 0 }}>
-      {Array.from({ length: Math.floor(mapSettings.buildingHeight / mapSettings.gridSize) }).map((_, row) =>
-        Array.from({ length: Math.floor(mapSettings.buildingWidth / mapSettings.gridSize) }).map((_, col) => (
+      {Array.from({ length: Math.floor(mapSettings.building_height / mapSettings.grid_size) }).map((_, row) =>
+        Array.from({ length: Math.floor(mapSettings.building_width / mapSettings.grid_size) }).map((_, col) => (
           <div
             key={`floor-${currentFloor}-${row}-${col}`}
             className="absolute border border-gray-100"
             style={{
-              left: mapSettings.buildingX + col * mapSettings.gridSize,
-              top: mapSettings.buildingY + row * mapSettings.gridSize,
-              width: mapSettings.gridSize,
-              height: mapSettings.gridSize,
+              left: mapSettings.building_x + col * mapSettings.grid_size,
+              top: mapSettings.building_y + row * mapSettings.grid_size,
+              width: mapSettings.grid_size,
+              height: mapSettings.grid_size,
               backgroundColor: "rgba(240, 240, 240, 0.3)",
             }}
             data-walkable="true"
             data-floor={currentFloor}
-            data-x={mapSettings.buildingX + col * mapSettings.gridSize}
-            data-y={mapSettings.buildingY + row * mapSettings.gridSize}
+            data-x={mapSettings.building_x + col * mapSettings.grid_size}
+            data-y={mapSettings.building_y + row * mapSettings.grid_size}
           />
         )),
       )}
@@ -117,10 +117,10 @@ const BuildingFootprint = memo(function BuildingFootprint({
     <div
       className="absolute border-4 border-gray-800 bg-gray-50/30 pointer-events-none"
       style={{
-        left: mapSettings.buildingX,
-        top: mapSettings.buildingY,
-        width: mapSettings.buildingWidth,
-        height: mapSettings.buildingHeight,
+        left: mapSettings.building_x,
+        top: mapSettings.building_y,
+        width: mapSettings.building_width,
+        height: mapSettings.building_height,
         boxShadow: "inset 0 0 20px rgba(0, 0, 0, 0.1)",
       }}
     >

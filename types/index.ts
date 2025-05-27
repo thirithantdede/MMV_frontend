@@ -132,8 +132,7 @@ export interface ShopInformation {
     end : string
   } 
 
-  closed_days: string | string[]
-
+  closed_days: string 
   website: string
   store_category_id: number
 

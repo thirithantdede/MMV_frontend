@@ -59,7 +59,7 @@ const MapEditorContext = createContext<MapEditorContextType | undefined>(undefin
 
 // Helper function to load state from localStorage
 // Helper function to load state from localStorage
-const loadFromStorage = <T extends object>(
+export const loadFromStorage = <T extends object>(
   key: string,
   defaultValue: T,
   fe: boolean = false
@@ -222,8 +222,9 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   // Map settings update
   const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
-    setMapSettings((prev) => ({ ...prev, ...settings }))
-  }, [])
+    console.log("Updating map settings:", settings)
+    setMapSettings((prev) => ({ ...prev, ...settings, isSynced: false }))
+  }, [mapSettings])
 
   // Zoom controls - updated min zoom to 0.3 (30%)
   const zoomIn = useCallback(() => {
@@ -236,10 +237,9 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   const syncUnsyncedElements = useCallback(async () => {
     try {
-      
-
       if(mapSettings.isSynced == false) {
-         const response = await syncToServer("sync-map", { map_setting: mapSettings });
+         const mapFromLocalStorage = loadFromStorage("mall-map-settings", {});
+         const response = await syncToServer("sync-map", { map_setting: mapFromLocalStorage });
          const responseMap = response?.data ?? [];
          const updatedMap = {...responseMap, isSynced: true };
         

@@ -152,10 +152,6 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Find Route</DialogTitle>
-          <Button variant="ghost" size="icon" className="absolute right-4 top-4" onClick={() => onOpenChange(false)}>
-            <X className="h-4 w-4" />
-            <span className="sr-only">Close</span>
-          </Button>
         </DialogHeader>
 
         <div className="space-y-4 py-4">

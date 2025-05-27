@@ -15,7 +15,7 @@ export function saveMallLayout(data: any): boolean {
   try {
     Object.keys(data).forEach((key) => {
       const value = data[key];
-      localStorage.setItem(key,value);
+      localStorage.setItem(key,JSON.stringify(value));
     });
 
     return true;
@@ -62,6 +62,7 @@ export function loadMallLayout(floors: number, encode: boolean = false) {
 
     parsedMap.id = null;
     parsedMap.project_id = null;
+    parsedMap.isSynced = false;
 
     const modifiedFloors = parsedFloors.map((el: any) => ({
       ...el,
