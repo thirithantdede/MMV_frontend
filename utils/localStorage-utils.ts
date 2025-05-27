@@ -1,5 +1,7 @@
 // localStorage utility functions for the Mall Map Editor
 
+import { parse } from "path";
+
 
 interface MallLayoutData {
   name: string;
@@ -13,12 +15,13 @@ interface MallLayoutData {
 
 export function saveMallLayout(data: any): boolean {
   try {
+    let parsed :any = {};
     Object.keys(data).forEach((key) => {
       const value = data[key];
       localStorage.setItem(key,JSON.stringify(value));
+      parsed[key] = JSON.parse(localStorage.getItem(key) || "{}");
     });
-
-    return true;
+    return parsed;
   } catch (error) {
     console.error("Error saving mall layout:", error);
     return false;
@@ -150,7 +153,7 @@ export function importLayoutFromJson(jsonData: File) {
       const success = saveMallLayout(data);
 
       if (success) {
-        return true
+        return success
       } else {
         throw new Error("Failed to save imported layout")
       }

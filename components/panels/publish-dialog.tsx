@@ -11,11 +11,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { useMapEditor } from "@/context/map-editor-context"
 import { Badge } from "@/components/ui/badge"
+import config from "@/config"
 
 interface PublishDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+const domain = config.domain;
 
 export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
   const { mapSettings } = useMapEditor()
@@ -75,7 +78,7 @@ export function PublishDialog({ open, onOpenChange }: PublishDialogProps) {
                   URL Path
                 </Label>
                 <div className="col-span-4 flex items-center gap-1 bg-background rounded-md border border-input px-3 focus-within:ring-1 focus-within:ring-ring">
-                  <span className="text-sm text-muted-foreground whitespace-nowrap">mall-maps.com/</span>
+                  <span className="text-sm text-muted-foreground whitespace-nowrap">{domain}/</span>
                   <Input
                     id="url-endpoint"
                     value={urlEndpoint}

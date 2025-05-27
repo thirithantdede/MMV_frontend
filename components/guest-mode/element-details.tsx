@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ElementIcon } from "@/components/map/element-icon"
-import type { MapElement } from "@/types"
+import type { EventElement, MainElement, MapElement } from "@/types"
 
 interface ElementDetailsProps {
   element: MapElement | null
@@ -16,61 +16,63 @@ interface ElementDetailsProps {
 }
 
 export function ElementDetails({ element, open, onOpenChange, onViewEvents }: ElementDetailsProps) {
-  // Check if event is currently active
   const isActiveEvent = useMemo(() => {
-    if (!element || element.type !== "event" || !element.start_date || !element.end_date) return false
+    if (!element || element.type !== "event") return false
+    const eventElement = element as EventElement
+    if (!eventElement.start_date || !eventElement.end_date) return false
 
     const now = new Date()
-    const startDate = new Date(element.start_date)
-    const endDate = new Date(element.end_date)
+    const startDate = new Date(eventElement.start_date)
+    const endDate = new Date(eventElement.end_date)
 
-    return now >= startDate && now <= endDate && element.is_active
+    return now >= startDate && now <= endDate && !!eventElement.is_active
   }, [element])
 
   const renderSocialMediaLinks = (element: MapElement) => {
-    if (!element.shop_information?.social_media) return null
+    const shopInfo = (element as MainElement).socialMedia || element.shop_information?.social_media
+    if (!shopInfo) return null
 
     return (
       <div className="flex gap-2 mt-4">
-        {element.shop_information?.social_media.website && (
+        {shopInfo.website && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element.shop_information?.social_media?.website, "_blank")}
+            onClick={() => window.open(shopInfo.website, "_blank")}
           >
             <Globe className="h-4 w-4" />
             <span className="sr-only">Website</span>
           </Button>
         )}
-        {element.shop_information.social_media.facebook && (
+        {shopInfo.facebook && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element!.shop_information!.social_media?.facebook, "_blank")}
+            onClick={() => window.open(shopInfo.facebook, "_blank")}
           >
             <Facebook className="h-4 w-4" />
             <span className="sr-only">Facebook</span>
           </Button>
         )}
-        {element.shop_information.social_media.instagram && (
+        {shopInfo.instagram && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element!.shop_information!.social_media?.instagram, "_blank")}
+            onClick={() => window.open(shopInfo.instagram, "_blank")}
           >
             <Instagram className="h-4 w-4" />
             <span className="sr-only">Instagram</span>
           </Button>
         )}
-        {element.shop_information.social_media.twitter && (
+        {shopInfo.twitter && (
           <Button
             variant="outline"
             size="sm"
             className="h-8 w-8 p-0"
-            onClick={() => window.open(element!.shop_information!.social_media?.twitter, "_blank")}
+            onClick={() => window.open(shopInfo.twitter, "_blank")}
           >
             <Twitter className="h-4 w-4" />
             <span className="sr-only">Twitter</span>
@@ -95,47 +97,50 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
         </DialogHeader>
 
         <div className="py-4">
-          {/* Store Details */}
           {element.type === "store" && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <Clock className="h-4 w-4 text-muted-foreground" />
-                <span>{element.shop_information?.opening_hours.start || "Hours not specified"} - {element.shop_information?.opening_hours.end}</span>
+                <span>
+                  {element.shop_information?.opening_hours?.start || "Hours not specified"} -{" "}
+                  {element.shop_information?.opening_hours?.end || "Hours not specified"}
+                </span>
               </div>
 
-              {element.shop_information?.closed_days && element.shop_information?.closed_days !== "none" && (
+              {element.shop_information?.closed_days && 
+              element.shop_information.closed_days !== "none" && 
+              element.shop_information.closed_days.length > 0 && (
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="text-xs">
-                    Closed on {element.shop_information?.closed_days.charAt(0).toUpperCase() + element.shop_information?.closed_days.slice(1)}
+                    Closed on {element.shop_information.closed_days.charAt(0).toUpperCase() + 
+                              element.shop_information.closed_days.slice(1)}
                   </Badge>
                 </div>
               )}
 
-              {element.isClosed && (
+              {element.is_closed && (
                 <div className="bg-red-100 text-red-800 p-2 rounded-md text-sm">This store is currently closed.</div>
               )}
 
-              {element.category && (
+              {element.shop_information?.category && (
                 <div className="flex items-center gap-2">
                   <Tag className="h-4 w-4 text-muted-foreground" />
-                  <span className="capitalize">{element.category}</span>
+                  <span className="capitalize">{element.shop_information.category}</span>
                 </div>
               )}
 
-              {/* Show promotion details if available */}
-              {element.hasPromotion && element.promotionDetails && (
+              {(element as MainElement).hasPromotion && (element as MainElement).promotionDetails && (
                 <div className="bg-primary/10 p-3 rounded-md">
                   <p className="font-medium text-sm mb-1">Current Promotion:</p>
-                  <p className="text-sm">{element.promotionDetails}</p>
-                  {element.promotionEndDate && (
+                  <p className="text-sm">{(element as MainElement).promotionDetails}</p>
+                  {(element as MainElement).promotionEndDate && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      Ends: {new Date(element.promotionEndDate).toLocaleDateString()}
+                      Ends: {new Date((element as MainElement).promotionEndDate!).toLocaleDateString()}
                     </p>
                   )}
                 </div>
               )}
 
-              {/* Social Media Links */}
               {renderSocialMediaLinks(element)}
 
               {element.notes && (
@@ -147,7 +152,6 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
             </div>
           )}
 
-          {/* Event Details */}
           {element.type === "event" && (
             <div className="space-y-4">
               {isActiveEvent && (
@@ -161,52 +165,52 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
               )}
 
               <div className="flex flex-col gap-2">
-                {element.start_date && element.end_date && (
+                {(element as EventElement).start_date && (element as EventElement).end_date && (
                   <div className="flex items-center gap-2">
                     <ElementIcon type="event" className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {new Date(element.start_date).toLocaleDateString()} -{" "}
-                      {new Date(element.end_date).toLocaleDateString()}
+                      {new Date((element as EventElement).start_date!).toLocaleDateString()} -{" "}
+                      {new Date((element as EventElement).end_date!).toLocaleDateString()}
                     </span>
                   </div>
                 )}
 
-                {element.start_time && element.end_time && (
+                {(element as EventElement).start_time && (element as EventElement).end_time && (
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4 text-muted-foreground" />
                     <span>
-                      {element.start_time} - {element.end_time}
+                      {(element as EventElement).start_time} - {(element as EventElement).end_time}
                     </span>
                   </div>
                 )}
 
-                {element.host && (
+                {(element as EventElement).host && (
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span>Host: {element.host}</span>
+                    <span>Host: {(element as EventElement).host}</span>
                   </div>
                 )}
 
-                {element.company && (
+                {(element as EventElement).company && (
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-muted-foreground" />
-                    <span>Company: {element.company}</span>
+                    <span>Company: {(element as EventElement).company}</span>
                   </div>
                 )}
 
-                {element.is_foc !== undefined && (
+                {(element as EventElement).is_foc !== undefined && (
                   <div className="flex items-center gap-2">
-                    <Badge variant={element.is_foc ? "success" : "outline"}>
-                      {element.is_foc ? "Free Entry" : "Paid Event"}
+                    <Badge variant={(element as EventElement).is_foc ? "success" : "outline"}>
+                      {(element as EventElement).is_foc ? "Free Entry" : "Paid Event"}
                     </Badge>
                   </div>
                 )}
               </div>
 
-              {element.eventDescription && (
+              {(element as EventElement).eventDescription && (
                 <div className="mt-2 p-3 bg-muted/30 rounded-md text-sm">
                   <p className="font-medium mb-1">Description:</p>
-                  <p>{element.eventDescription}</p>
+                  <p>{(element as EventElement).eventDescription}</p>
                 </div>
               )}
 
@@ -219,9 +223,8 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
             </div>
           )}
 
-          {/* Facility Details */}
           {["elevator", "escalator", "stairs", "room", "pathway", "door", "info", "atm", "security"].includes(
-            element.type,
+            element.type
           ) && (
             <div className="space-y-4">
               <div className="flex items-center gap-2">

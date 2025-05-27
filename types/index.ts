@@ -19,6 +19,7 @@ export interface MapElement {
   is_closed?: boolean
   walkable?: boolean
   isSynced : boolean
+  isDeleted : boolean
   shop_information?: ShopInformation
 }
 

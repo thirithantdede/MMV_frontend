@@ -63,7 +63,7 @@ export function MapEditor() {
 
   // Filter elements for current floor - memoized for performance
   const currentFloorElements = useMemo(
-    () => elements.filter((element) => element.floor == currentFloor || element.floor == 0),
+    () => elements.filter((element) =>( element.floor == currentFloor || element.floor == 0) && element.isDeleted == false),
     [elements, currentFloor],
   )
 
@@ -168,6 +168,7 @@ export function MapEditor() {
               topLeft:0
             },
             isSynced:false,
+            isDeleted:false,
             ...additionalFields,
           }
 

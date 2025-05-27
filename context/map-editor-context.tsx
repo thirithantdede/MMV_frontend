@@ -191,7 +191,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const removeElement = useCallback((id: string) => {
-    setElements((prev) => prev.filter((el) => el.id !== id))
+    // setElements((prev) => prev.filter((el) => el.id !== id))
+    setElements((prev) => prev.map((el) => el.id === id ? { ...el, isDeleted: true,isSynced:false } : el))
     setSelectedElement((prev) => (prev?.id === id ? null : prev))
   }, [])
 
@@ -222,8 +223,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   // Map settings update
   const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
-    console.log("Updating map settings:", settings)
-    setMapSettings((prev) => ({ ...prev, ...settings, isSynced: false }))
+    setMapSettings((prev) => ({ ...prev, ...settings }))
   }, [mapSettings])
 
   // Zoom controls - updated min zoom to 0.3 (30%)
@@ -237,11 +237,13 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   const syncUnsyncedElements = useCallback(async () => {
     try {
-      if(mapSettings.isSynced == false) {
+      const checkMap = loadFromStorage("mall-map-settings", {}) as MapSettings;
+      if(checkMap.isSynced == false) {
          const mapFromLocalStorage = loadFromStorage("mall-map-settings", {});
          const response = await syncToServer("sync-map", { map_setting: mapFromLocalStorage });
          const responseMap = response?.data ?? [];
          const updatedMap = {...responseMap, isSynced: true };
+         console.log('updatedMap', updatedMap);
         
           setMapSettings((prev) => ({ ...prev, ...updatedMap}));
           saveToStorage("mall-map-settings", updatedMap)
@@ -267,11 +269,12 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
                 ...localEl,
                 ...matched,
                 id: matched.id,
-                isSynced: true
+                isSynced: true,
+                isDeleted: false,
               }
             }
 
-            return localEl;
+            return {...localEl, isSynced: true};
           })
           saveToStorage(floorKey, updated);
 
@@ -284,10 +287,12 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
                  ...localEl,
                 ...matched,
                 id: matched.id,
-                isSynced: true
+                isSynced: true,
+                isDeleted: false,
+
               }
             }
-            return localEl
+            return {...localEl, isSynced: true}
           })
 
           saveToStorage("floor-elements",floorUpdated)

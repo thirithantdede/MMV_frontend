@@ -45,12 +45,17 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
       const updatedElements = element.elements.filter((ela: any) => ela.floor != 0).map((el: any) => ({
         ...el,
         isSynced: true,
+        isDeleted: false,
+
       }));
 
       if (element.level == 1) {
         const floorElements = element.elements.filter((ela: any) => ela.floor == 0).map((el: any) => ({
           ...el,
           isSynced: true,
+          isDeleted: false,
+
+
         }));
         saveToStorage("floor-elements", floorElements);
 
@@ -137,13 +142,13 @@ export const LoadingScreen = memo(function LoadingScreen({ onComplete, skipLoadi
             <div className="relative">
               <div className="absolute inset-0 rounded-2xl blur-lg opacity-30 animate-pulse" />
               <div className="relative p-4 shadow-lg">
-                  <Image
-                      src={LogoIcon || "/placeholder.svg"}
-                      alt="Logo"
-                      width={60}
-                      height={60}
-                      className="object-contain"
-                    />
+                <Image
+                  src={LogoIcon || "/placeholder.svg"}
+                  alt="Logo"
+                  width={60}
+                  height={60}
+                  className="object-contain"
+                />
               </div>
             </div>
           </div>

@@ -44,7 +44,10 @@ export const PreviewHeader = memo(function PreviewHeader({
 
         <div className="flex items-center gap-2">
 
-                  <div className="bg-white rounded-md border-[1px] flex items-center gap-2">
+        <ElementSearch onElementSelect={onStoreSelect} />
+
+
+        <div className="bg-white rounded-md border-[1px] flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
@@ -84,11 +87,6 @@ export const PreviewHeader = memo(function PreviewHeader({
             Events
           </Button>
         </div>
-      </div>
-
-      {/* Search bar */}
-      <div className="px-2">
-        <ElementSearch onElementSelect={onStoreSelect} />
       </div>
     </div>
   )

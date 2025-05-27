@@ -5,7 +5,6 @@ import type React from "react"
 import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useMapEditor } from "@/context/map-editor-context"
 import { SearchInput } from "@/components/ui/search-input"
 import { ElementList } from "@/components/ui/element-list"
@@ -137,23 +136,23 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
                 <div className="text-sm font-medium">Floor {selectedElement.floor}</div>
                 <div className="text-sm text-muted-foreground capitalize">
                   {selectedElement.type}
-                  {selectedElement.category && ` • ${selectedElement.category}`}
+                  {selectedElement.shop_information?.store_category_id && ` • ${selectedElement.shop_information?.store_category_id}`}
                 </div>
               </div>
 
-              {selectedElement.type === "store" && selectedElement.openHours && (
+              {selectedElement.type === "store" && selectedElement.shop_information?.opening_hours && (
                 <div className="mb-4">
                   <p className="text-sm font-medium">Opening Hours:</p>
-                  <p className="text-sm">{selectedElement.openHours}</p>
+                  <p className="text-sm">{selectedElement.shop_information?.opening_hours?.start} - {selectedElement.shop_information?.opening_hours?.end}</p>
                 </div>
               )}
 
               {selectedElement.type === "store" &&
-                selectedElement.closedDay &&
-                selectedElement.closedDay !== "none" && (
+                selectedElement.shop_information?.closed_days &&
+                selectedElement.shop_information?.closed_days  !== "none" && (
                   <div className="mb-4">
                     <p className="text-sm font-medium">Closed on:</p>
-                    <p className="text-sm capitalize">{selectedElement.closedDay}</p>
+                    <p className="text-sm capitalize">{selectedElement.shop_information?.closed_days}</p>
                   </div>
                 )}
 
@@ -164,13 +163,13 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
                 </div>
               )}
 
-              {selectedElement.type === "store" && selectedElement.hasPromotion && selectedElement.promotionDetails && (
+              {selectedElement.type === "store" && selectedElement.shop_information?.promotions.is_now && selectedElement.shop_information?.promotions.detail && (
                 <div className="bg-primary/10 p-4 rounded-md mb-4">
                   <p className="text-sm font-medium">Current Promotion:</p>
-                  <p className="text-sm whitespace-pre-line">{selectedElement.promotionDetails}</p>
-                  {selectedElement.promotionEndDate && (
+                  <p className="text-sm whitespace-pre-line">{selectedElement.shop_information?.promotions?.detail}</p>
+                  {selectedElement.shop_information?.promotions.end_date && (
                     <p className="text-xs text-muted-foreground mt-2">
-                      Ends: {new Date(selectedElement.promotionEndDate).toLocaleDateString()}
+                      Ends: {new Date(selectedElement?.shop_information?.promotions?.end_date).toLocaleDateString()}
                     </p>
                   )}
                 </div>

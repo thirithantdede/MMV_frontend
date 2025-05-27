@@ -4,6 +4,7 @@ const config = {
   secretKey: process.env.NEXT_PUBLIC_APP_SECURE_KEY,
   adminExpireIn: 3 * 24 * 60 * 60 * 1000,
   userExpireIn: 1 * 24 * 60 * 60 * 1000,
+  domain: process.env.NEXT_PUBLIC_APP_DOMAIN,
 };
 
 export default config;
