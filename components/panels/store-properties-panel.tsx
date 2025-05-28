@@ -39,14 +39,147 @@ const closedDays = [
 ]
 
 const storeCategories = [
-  { value: "retail", label: "Retail" },
-  { value: "food", label: "Food & Beverage" },
-  { value: "service", label: "Services" },
-  { value: "entertainment", label: "Entertainment" },
-  { value: "luxury", label: "Luxury" },
-  { value: "electronics", label: "Electronics" },
-  { value: "fashion", label: "Fashion" },
+
+  {
+    "id": 1,
+    "name": "Retail",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 2,
+    "name": "Food",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 3,
+    "name": "Drink",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 4,
+    "name": "Service",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 5,
+    "name": "Other",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 6,
+    "name": "Mobile Phone",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 7,
+    "name": "Computer",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 8,
+    "name": "Furniture",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 9,
+    "name": "Electronics",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 10,
+    "name": "Clothing",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 11,
+    "name": "Beauty",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 12,
+    "name": "Health",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 13,
+    "name": "Sports",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 14,
+    "name": "Travel",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 15,
+    "name": "Home",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 16,
+    "name": "Garden",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 17,
+    "name": "Pet",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 18,
+    "name": "Automotive",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 19,
+    "name": "Music",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 20,
+    "name": "Book",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 21,
+    "name": "Movie",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 22,
+    "name": "Game",
+    "created_at": null,
+    "updated_at": null
+  },
+  {
+    "id": 23,
+    "name": "Toy",
+    "created_at": null,
+    "updated_at": null
+  },
 ]
+
 
 // Custom debounce function
 function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (...args: Parameters<T>) => void {
@@ -108,7 +241,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
   const handleCategoryChange = useCallback(
     (value: string) => {
       onPropertyChange("category", value)
-      onPropertyChange("store_category_id", storeCategories.find(cat => cat.value === value)?.value || 0)
+      onPropertyChange("store_category_id", storeCategories.find(cat => cat.name === value)?.id || 0)
     },
     [onPropertyChange],
   )
@@ -219,8 +352,8 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
           </SelectTrigger>
           <SelectContent>
             {storeCategories.map((category) => (
-              <SelectItem key={category.value} value={category.value}>
-                {category.label}
+              <SelectItem key={category.id} value={category.name}>
+                {category.name}
               </SelectItem>
             ))}
           </SelectContent>

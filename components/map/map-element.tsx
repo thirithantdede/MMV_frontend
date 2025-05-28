@@ -56,7 +56,7 @@ export const MapElementComponent = memo(function MapElementComponent({
       onMouseDown={isGuestMode ? undefined : onDragStart}
     >
       <ElementIcon type={element.type} />
-      <span className="mt-1 text-xs font-medium pointer-events-none">{element.name}</span>
+      <span className="mt-1 text-md font-bold font-medium pointer-events-none">{element.name}</span>
       <ElementBadges element={element} />
     </div>
   )
