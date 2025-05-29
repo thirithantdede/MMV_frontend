@@ -21,12 +21,15 @@ export interface MapElement {
   isSynced : boolean
   isDeleted : boolean
   shop_information?: ShopInformation
+  event?: EventElement
 }
 
 export interface Project {
   id : string,
   name : string,
   description : string
+  photo : string,
+  photo_path : string
   address : string
   webisite? : string
   is_published : boolean
@@ -69,17 +72,19 @@ export interface MainElement extends MapElement {
   }
 }
 
-export interface EventElement extends MapElement {
-  eventDate?: string
-  eventDescription?: string
+export interface EventElement  {
+  title?: string
+  description?: string
   start_date?: string
   end_date?: string
   start_time?: string
   end_time?: string
+  company?: string
+  hosts?: string
   is_active?: boolean
   is_foc?: boolean
-  host?: string
-  company?: string
+  is_featured?: boolean
+
 }
 
 export interface MapSettings {

@@ -4,7 +4,7 @@ import type React from "react"
 
 import { useCallback, useEffect, useMemo, useRef} from "react"
 import { useDrop } from "react-dnd"
-import type { MapElement } from "@/types"
+import type { EventElement, MapElement } from "@/types"
 import { useMapEditor } from "@/context/map-editor-context"
 import { useDragElement } from "@/hooks/use-drag-element"
 import { Grid } from "@/components/map/grid"
@@ -133,17 +133,18 @@ export function MapEditor() {
           const additionalFields =
             item.type === "event"
               ? {
+                  title : "New Event",
+                  description : "This is a new event.",
                   start_date: new Date().toISOString().split("T")[0],
                   end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0], // 7 days from now
                   start_time: "09:00",
                   end_time: "18:00",
+                  company: "Company Name",
+                  hosts: "Rapper 1 , Rapper 2",
                   is_active: true,
-                  host: "",
-                  company: "",
                   is_foc: false,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString(),
-                }
+                  is_featured: false,
+                } as EventElement
               : {}
 
           const isTransportationElement = ["elevator", "escalator", "stairs"].includes(item.type)

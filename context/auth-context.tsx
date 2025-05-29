@@ -15,8 +15,9 @@ interface User {
 interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
-  login: (email: string, password: string,setError : any) => Promise<boolean>
-  logout: (unauthenticated : boolean) => void
+  login: (email: string, password: string,setError : any,url : string) => Promise<boolean>
+  register: (data : any,setError : any,url : string) => Promise<boolean>
+  logout: (unauthenticated? : boolean) => void
   isInitializing: "initializing" | "authenticated" | "unauthenticated"
 }
 
@@ -46,19 +47,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     })
 
     setTimeout(() => {
-      window.location.href = "/"
+      window.location.href = response.type == "web" ? "/" : "/explore"
     }, 1000)
   }
 
   const [postLogin] = useMutate({ callback: loginOnSuccess, navigateBack: false })
 
-  const login = async (email: string, password: string,setError : any): Promise<boolean> => {
-    const response = await postLogin("login", { email, password }) as any
+  const login = async (email: string, password: string,setError : any,url : string  = "login"): Promise<boolean> => {
+    const response = await postLogin(url, { email, password }) as any
     console.log('response',response)
     if (response.error || response?.status != "success") {
       handleServerErrors(response.error, setError)
       toast({
         title:"Login Failed",
+        description:response?.error?.data?.message,
+        variant:"destructive"
+      })
+      return false
+    }
+    return true
+  }
+
+  const register = async (data : any , setError : any,url : string  = "register"): Promise<boolean> => {
+    const response = await postLogin(url, data) as any
+    if (response.error || response?.status != "success") {
+      handleServerErrors(response.error, setError)
+      toast({
+        title:"Registration Failed",
         description:response?.error?.data?.message,
         variant:"destructive"
       })
@@ -83,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     // Redirect to login page or home
     setTimeout(() => {
-      window.location.href = "/login"
+      window.location.href = "/explore"
     }, 2000);
   }
 
@@ -106,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider  value={{ user, isAuthenticated, login, logout, isInitializing }}>
+    <AuthContext.Provider  value={{ user, isAuthenticated, login, logout,register, isInitializing }}>
       {children}
     </AuthContext.Provider>
   )

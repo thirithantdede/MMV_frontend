@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { memo, useCallback, useState, useEffect } from "react"
+import { memo, useCallback, useState, useEffect, useMemo } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -199,22 +199,26 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
   element,
   onPropertyChange,
 }: StorePropertiesPanelProps) {
-  const shopInfo = element.shop_information || {
-    id: element.id,
-    name: element.name,
-    description: "",
-    category: "retail",
-    contact_person: "",
-    contact_email: "",
-    contact_phone: "",
-    is_foc: false,
-    opening_hours: { start: "", end: "" },
-    closed_days: [],
-    website: "",
-    store_category_id: 0,
-    social_media: {},
-    promotions: { is_now: false, end_date: "", detail: "" },
-  }
+const shopInfo = useMemo(() => {
+  return (
+    element.shop_information || {
+      id: element.id,
+      name: element.name,
+      description: "",
+      category: "retail",
+      contact_person: "",
+      contact_email: "",
+      contact_phone: "",
+      is_foc: false,
+      opening_hours: { start: "", end: "" },
+      closed_days: [],
+      website: "",
+      store_category_id: 0,
+      social_media: {},
+      promotions: { is_now: false, end_date: "", detail: "" },
+    }
+  );
+}, [element])
 
   const handleOpeningHourChange = useCallback(
     (value: { start: string; end: string }) => {
@@ -253,7 +257,7 @@ export const StorePropertiesPanel = memo(function StorePropertiesPanel({
         is_now: checked,
       })
     },
-    [onPropertyChange, shopInfo.promotions],
+    [onPropertyChange],
   )
 
   const handlePromotionDetailsChange = useCallback(

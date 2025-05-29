@@ -6,7 +6,7 @@ import { Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useMapEditor } from "@/context/map-editor-context"
-import type { MapElement, ShopInformation } from "@/types"
+import type { EventElement, MapElement, ShopInformation } from "@/types"
 import { StorePropertiesPanel } from "@/components/panels/store-properties-panel"
 import GeneralProperties from "./general-tab"
 import StyleProperties from "./style-tab"
@@ -57,6 +57,31 @@ export function PropertyPanel() {
         const updatedElement: MapElement = {
           ...prev,
           shop_information: updatedShopInfo,
+          isSynced: false,
+        }
+
+        // Notify context of changes
+        updateElement(updatedElement)
+
+        return updatedElement
+      })
+    },
+    [updateElement]
+  )
+
+    const handlEventProperyChange = useCallback(
+    (property: keyof EventElement, value: any) => {
+      setElementProperties((prev) => {
+        if (!prev || prev.type !== "event") return prev
+
+        const eventInfo: any = {
+          ...prev.event,
+          [property]: value,
+        }
+
+        const updatedElement: MapElement = {
+          ...prev,
+          event: eventInfo,
           isSynced: false,
         }
 
@@ -158,7 +183,7 @@ export function PropertyPanel() {
 
         {showEventTab && (
           <TabsContent value="event">
-            <EventProperties element={elementProperties} onPropertyChange={handlePropertyChange} />
+            <EventProperties event={elementProperties.event!} onPropertyChange={handlEventProperyChange} />
           </TabsContent>
         )}
 

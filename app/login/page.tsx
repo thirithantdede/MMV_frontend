@@ -27,7 +27,7 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    await login(email, password, setError)
+    await login(email, password, setError,'login')
     setIsLoading(false)
   }
 
