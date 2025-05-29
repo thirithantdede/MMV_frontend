@@ -38,7 +38,7 @@ const closedDays = [
   { value: "sunday", label: "Sunday" },
 ]
 
-const storeCategories = [
+export const storeCategories = [
 
   {
     "id": 1,

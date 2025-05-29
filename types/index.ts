@@ -142,6 +142,7 @@ export interface RouteInfo {
 export interface ShopInformation {
   id: string
   name: string
+  readable_id: string
   description: string
   category: string
   contact_person: string

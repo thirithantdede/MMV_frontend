@@ -22,16 +22,6 @@ const AdvancedProperties = memo(function AdvancedProperties({
       }))
     }, [totalFloors])
   
-    // Memoize categories to prevent recreation on each render
-    const categories = useMemo(
-      () => [
-        { value: "retail", label: "Retail" },
-        { value: "food", label: "Food & Beverage" },
-        { value: "service", label: "Services" },
-        { value: "facility", label: "Facility" },
-      ],
-      [],
-    )
   
     // Optimize handlers with useCallback
     const handleFloorChange = useCallback(
@@ -39,7 +29,6 @@ const AdvancedProperties = memo(function AdvancedProperties({
       [onPropertyChange],
     )
   
-    const handleCategoryChange = useCallback((value: string) => onPropertyChange("category", value), [onPropertyChange])
   
     const handleNotesChange = useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => onPropertyChange("notes", e.target.value),
@@ -63,38 +52,17 @@ const AdvancedProperties = memo(function AdvancedProperties({
             </SelectContent>
           </Select>
         </div>
-  
-        <div className="grid gap-2">
-          <Label htmlFor="element-category">Category</Label>
-          <Select value={element.category || "retail"} onValueChange={handleCategoryChange}>
-            <SelectTrigger id="element-category">
-              <SelectValue placeholder="Select category" />
-            </SelectTrigger>
-            <SelectContent>
-              {categories.map((category) => (
-                <SelectItem key={category.value} value={category.value}>
-                  {category.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-  
+
         <div className="grid gap-2">
           <Label htmlFor="element-id">Element ID</Label>
-          <Input id="element-id" value={element.id || ""} disabled />
+          <Input id="element-id" className="text-red-700 cursor-not-allowed" value={element?.shop_information?.readable_id || element.id} />
+        </div>
+
+           <div className="grid gap-2">
+          <Label htmlFor="element-id">Token</Label>
+          <Input id="element-id" className="text-red-700 cursor-not-allowed" value={element?.shop_information?.id || element.id}  />
         </div>
   
-        <div className="grid gap-2">
-          <Label htmlFor="element-notes">Notes</Label>
-          <textarea
-            id="element-notes"
-            className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="Add notes about this element"
-            value={element.notes || ""}
-            onChange={handleNotesChange}
-          />
-        </div>
       </div>
     )
   })
