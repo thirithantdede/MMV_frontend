@@ -47,35 +47,25 @@ function findSingleFloorPath(
   }
 
   // Create grid based on building boundaries
-  const { gridWidth, gridHeight, offsetX, offsetY } = calculateBuildingGrid(mapSettings);
+  const buildingGridWidth = Math.ceil(mapSettings.building_width / mapSettings.grid_size);
+  const buildingGridHeight = Math.ceil(mapSettings.building_height / mapSettings.grid_size);
   
-  // Convert coordinates to building-relative grid coordinates
+  // Convert absolute coordinates to building-relative coordinates
   const buildingStartX = Math.round((sourceStore.x + sourceStore.width / 2 - mapSettings.building_x) / mapSettings.grid_size);
   const buildingStartY = Math.round((sourceStore.y + sourceStore.height / 2 - mapSettings.building_y) / mapSettings.grid_size);
   const buildingEndX = Math.round((targetStore.x + targetStore.width / 2 - mapSettings.building_x) / mapSettings.grid_size);
   const buildingEndY = Math.round((targetStore.y + targetStore.height / 2 - mapSettings.building_y) / mapSettings.grid_size);
 
   // Check if start/end points are within building bounds
-  if (buildingStartX < 0 || buildingStartX >= gridWidth || buildingStartY < 0 || buildingStartY >= gridHeight ||
-      buildingEndX < 0 || buildingEndX >= gridWidth || buildingEndY < 0 || buildingEndY >= gridHeight) {
-    console.error('Start or end point outside building bounds:', {
-      start: { x: buildingStartX, y: buildingStartY },
-      end: { x: buildingEndX, y: buildingEndY },
-      buildingBounds: { width: gridWidth, height: gridHeight },
-      buildingArea: { 
-        x: mapSettings.building_x, 
-        y: mapSettings.building_y, 
-        width: mapSettings.building_width, 
-        height: mapSettings.building_height 
-      }
-    });
+  if (buildingStartX < 0 || buildingStartX >= buildingGridWidth || buildingStartY < 0 || buildingStartY >= buildingGridHeight ||
+      buildingEndX < 0 || buildingEndX >= buildingGridWidth || buildingEndY < 0 || buildingEndY >= buildingGridHeight) {
     return [];
   }
 
   // Create grid - initially all cells are walkable within building
-  const grid: boolean[][] = Array(gridHeight)
+  const grid: boolean[][] = Array(buildingGridHeight)
     .fill(null)
-    .map(() => Array(gridWidth).fill(true));
+    .map(() => Array(buildingGridWidth).fill(true));
 
   // Mark obstacles if avoidElements is true
   if (avoidElements) {
@@ -83,7 +73,7 @@ function findSingleFloorPath(
       (el) => el.floor === floor && 
                el.id !== sourceStore.id && 
                el.id !== targetStore.id &&
-               !el.walkable // Only non-walkable elements are obstacles
+               el.walkable === false // Only mark non-walkable elements as obstacles
     );
 
     floorElements.forEach((element) => {
@@ -94,8 +84,8 @@ function findSingleFloorPath(
       const maxY = Math.ceil((element.y + element.height - mapSettings.building_y) / mapSettings.grid_size);
 
       // Mark grid cells as obstacles (only within building bounds)
-      for (let y = Math.max(0, minY); y < Math.min(maxY, gridHeight); y++) {
-        for (let x = Math.max(0, minX); x < Math.min(maxX, gridWidth); x++) {
+      for (let y = Math.max(0, minY); y < Math.min(maxY, buildingGridHeight); y++) {
+        for (let x = Math.max(0, minX); x < Math.min(maxX, buildingGridWidth); x++) {
           grid[y][x] = false;
         }
       }
@@ -143,7 +133,7 @@ function findSingleFloorPath(
   ];
 
   let iterations = 0;
-  const maxIterations = gridWidth * gridHeight; // Prevent infinite loops
+  const maxIterations = buildingGridWidth * buildingGridHeight; // Prevent infinite loops
 
   while (openList.length > 0 && iterations < maxIterations) {
     iterations++;
@@ -154,7 +144,7 @@ function findSingleFloorPath(
     // If we reached the target
     if (current.x === buildingEndX && current.y === buildingEndY) {
       console.log(`Path found in ${iterations} iterations`);
-      return reconstructBuildingPath(current, mapSettings, floor);
+      return reconstructPath(current, mapSettings, floor);
     }
 
     // Remove current from open list and add to closed
@@ -169,9 +159,9 @@ function findSingleFloorPath(
       // Check if neighbor is valid (within building bounds)
       if (
         nextX < 0 ||
-        nextX >= gridWidth ||
+        nextX >= buildingGridWidth ||
         nextY < 0 ||
-        nextY >= gridHeight ||
+        nextY >= buildingGridHeight ||
         closedList.has(`${nextX},${nextY}`) ||
         !grid[nextY][nextX]
       ) {
@@ -215,7 +205,7 @@ function heuristic(x1: number, y1: number, x2: number, y2: number): number {
 }
 
 // Reconstruct path from end node, converting back to absolute coordinates
-function reconstructBuildingPath(node: Node, mapSettings: MapSettings, floor: number): RoutePoint[] {
+function reconstructPath(node: Node, mapSettings: MapSettings, floor: number): RoutePoint[] {
   const path: RoutePoint[] = [];
   let current: Node | null = node;
 
@@ -249,90 +239,4 @@ function findNearestElement(x: number, y: number, elements: MapElement[]): MapEl
   });
 
   return nearestElement;
-}
-
-// Calculate grid dimensions based on building footprint only
-function calculateBuildingGrid(mapSettings: MapSettings): { 
-  gridWidth: number; 
-  gridHeight: number; 
-  offsetX: number; 
-  offsetY: number; 
-} {
-  // Grid dimensions based only on building footprint
-  const gridWidth = Math.ceil(mapSettings.building_width / mapSettings.grid_size);
-  const gridHeight = Math.ceil(mapSettings.building_height / mapSettings.grid_size);
-  
-  // Offset for converting absolute coordinates to building-relative coordinates
-  const offsetX = mapSettings.building_x;
-  const offsetY = mapSettings.building_y;
-
-  return { gridWidth, gridHeight, offsetX, offsetY };
-}
-
-// Updated function to replace the old calculateGridBounds
-function calculateGridBounds(
-  sourceStore: MapElement,
-  targetStore: MapElement,
-  allElements: MapElement[],
-  mapSettings: MapSettings
-): { gridWidth: number; gridHeight: number } {
-  // Use building-based grid calculation instead
-  const { gridWidth, gridHeight } = calculateBuildingGrid(mapSettings);
-  return { gridWidth, gridHeight };
-}
-
-export function debugVerticalPathfinding(
-  sourceStore: MapElement,
-  targetStore: MapElement,
-  mapSettings: MapSettings
-) {
-  const sourceCenterX = sourceStore.x + (sourceStore.width / 2);
-  const sourceCenterY = sourceStore.y + (sourceStore.height / 2);
-  const targetCenterX = targetStore.x + (targetStore.width / 2);
-  const targetCenterY = targetStore.y + (targetStore.height / 2);
-
-  // Calculate building-relative positions
-  const sourceBuildingX = sourceCenterX - mapSettings.building_x;
-  const sourceBuildingY = sourceCenterY - mapSettings.building_y;
-  const targetBuildingX = targetCenterX - mapSettings.building_x;
-  const targetBuildingY = targetCenterY - mapSettings.building_y;
-
-  const startGridX = Math.floor(sourceBuildingX / mapSettings.grid_size);
-  const startGridY = Math.floor(sourceBuildingY / mapSettings.grid_size);
-  const endGridX = Math.floor(targetBuildingX / mapSettings.grid_size);
-  const endGridY = Math.floor(targetBuildingY / mapSettings.grid_size);
-
-  console.log('Vertical Pathfinding Debug:', {
-    sourceElement: {
-      id: sourceStore.id,
-      name: sourceStore.name,
-      bounds: { x: sourceStore.x, y: sourceStore.y, w: sourceStore.width, h: sourceStore.height },
-      center: { x: sourceCenterX, y: sourceCenterY },
-      buildingRelative: { x: sourceBuildingX, y: sourceBuildingY },
-      gridPos: { x: startGridX, y: startGridY }
-    },
-    targetElement: {
-      id: targetStore.id,
-      name: targetStore.name,
-      bounds: { x: targetStore.x, y: targetStore.y, w: targetStore.width, h: targetStore.height },
-      center: { x: targetCenterX, y: targetCenterY },
-      buildingRelative: { x: targetBuildingX, y: targetBuildingY },
-      gridPos: { x: endGridX, y: endGridY }
-    },
-    alignment: {
-      isVertical: Math.abs(startGridX - endGridX) <= 1,
-      isHorizontal: Math.abs(startGridY - endGridY) <= 1,
-      gridDistance: { x: Math.abs(startGridX - endGridX), y: Math.abs(startGridY - endGridY) }
-    },
-    buildingBounds: {
-      x: mapSettings.building_x,
-      y: mapSettings.building_y,
-      width: mapSettings.building_width,
-      height: mapSettings.building_height
-    },
-    mapSettings: {
-      gridSize: mapSettings.grid_size,
-      buildingSize: { w: mapSettings.building_width, h: mapSettings.building_height }
-    }
-  });
 }
