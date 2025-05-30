@@ -16,7 +16,7 @@ interface PreviewMapContentProps {
   zoomLevel: number
   routeInfo: RouteInfo
   onElementClick: (element: MapElement) => void
-  containerRef: React.RefObject<HTMLDivElement>
+  containerRef: React.RefObject<HTMLDivElement | null>
   highlightedElement: MapElement | null // Add this prop
 }
 

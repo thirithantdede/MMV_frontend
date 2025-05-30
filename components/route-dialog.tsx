@@ -88,6 +88,8 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
     onOpenChange(false)
   }, [selectedSource, selectedTarget, elements, mapSettings, isGuestMode, onRouteSelect, onOpenChange])
 
+  
+
   const handleSelectSource = useCallback((element: MapElement) => {
     setSelectedSource(element)
     setError(null)
