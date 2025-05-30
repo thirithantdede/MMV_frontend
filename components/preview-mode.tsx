@@ -218,8 +218,7 @@ export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPrevi
   }, [handleWheel, handleTouchStart, handleTouchMove, handleTouchEnd])
 
   // Check if there's a route on another floor that the user should see
-  const hasRouteOnOtherFloors =
-    routeInfo.path.some((point) => point.floor !== currentFloor) && routeInfo.path.length > 0
+  const hasRouteOnOtherFloors = useMemo(()=> routeInfo.path.some((point) => point.floor !== currentFloor) && routeInfo.path.length > 0, [routeInfo.path, currentFloor])
 
   // Memoize the header component to improve performance
   const MemoizedHeader = useMemo(

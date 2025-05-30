@@ -159,7 +159,7 @@ export function MapEditor() {
             height,
             name: item.name || `New ${item.type}`,
             color: item.color || "#e2e8f0",
-            border_color: item.border_color || "#e2e8f0",
+            border_color: "#000",
             border_style: "solid",
             floor: floor,
             walkable: item.type === "floor" || item.type === "pathway",

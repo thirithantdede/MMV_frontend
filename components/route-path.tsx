@@ -238,13 +238,14 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor }: Ro
             />
 
             {/* Animated dash overlay */}
-            <path
+           <path
               d={`M ${floorPath.map((point) => `${point.x} ${point.y}`).join(" L ")}`}
-              stroke="url(#dashPattern)"
+              stroke="#60a5fa"
               strokeWidth="2"
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
+              strokeDasharray="5,5"
               className="animate-dash"
             />
           </>

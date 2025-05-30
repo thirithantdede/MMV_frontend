@@ -30,33 +30,38 @@ export function useDragElement({
 
   // Check if position is within building footprint
   const isWithinBuilding = useCallback(
-    (x: number, y: number, width: number, height: number,rotation : number) => {
-      if (!mapSettings.restricted) return true
+  (x: number, y: number, width: number, height: number, rotation: number) => {
+    if (!mapSettings.restricted) return true;
 
-      const { building_x, building_y, building_width, building_height } = mapSettings
+    const { building_x, building_y, building_width, building_height } = mapSettings;
 
-      // For 90° and 270° rotations, swap width and height for boundary check
-      const isRotated = rotation === 90 || rotation === 270
-      const effectiveWidth = isRotated ? height : width
-      const effectiveHeight = isRotated ? width : height
+    const isRotated = rotation == 90 || rotation == 270;
+    const effectiveWidth = isRotated ? height : width;
+    const effectiveHeight = isRotated ? width : height;
 
-       return (
-        x >= building_x &&
-        y >= building_y &&
-        x + effectiveWidth <= building_x + building_width &&
-        y + effectiveHeight <= building_y + building_height
-      )
-    },
-    [mapSettings],
-  )
+    // Assuming (x, y) is the center, calculate the bounding box
+    const left = x - effectiveWidth ;
+    const top = y - effectiveHeight ;
+    const right = x + effectiveWidth ;
+    const bottom = y + effectiveHeight ;
+
+    return (
+      left >= building_x &&
+      top >= building_y &&
+      right <= building_x + building_width &&
+      bottom <= building_y + building_height
+    );
+  },
+  [mapSettings]
+);
 
   const isOverlapping = useCallback(
     (x: number, y: number, width: number, height: number, elementId: string, rotation = 0) => {
       // Only check elements on the current floor
-      const floorElements = elements.filter((el) => el.floor === currentFloor && el.id !== elementId)
+      const floorElements = elements.filter((el) => el.floor === currentFloor && el.id !== elementId || el.floor == 0)
 
       // For 90° and 270° rotations, swap width and height for overlap check
-      const isRotated = rotation === 90 || rotation === 270
+      const isRotated = rotation == 90 || rotation == 270
       const effectiveWidth = isRotated ? height : width
       const effectiveHeight = isRotated ? width : height
 
