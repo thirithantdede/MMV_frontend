@@ -147,7 +147,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   const [showRightPanel, setShowRightPanel] = useState(false)
 
   // Zoom state - updated min zoom to 0.3 (30%)
-  const [zoomLevel, setZoomLevel] = useState(1)
+  const [zoomLevel, setZoomLevel] = useState(0.3)
 
   // Building footprint edit mode
   const [isEditingFootprint, setIsEditingFootprint] = useState(false)

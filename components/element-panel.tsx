@@ -13,6 +13,7 @@ import {
   ShoppingBag,
   Utensils,
   RouteIcon as Road,
+  University,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -110,6 +111,14 @@ export function ElementPanel() {
                 type="store"
                 name="Cafe"
                 icon={<Coffee className="h-4 w-4" />}
+                color="#e0f2fe"
+                defaultWidth={80}
+                defaultHeight={60}
+              />
+               <DraggableElement
+                type="office"
+                name="Office"
+                icon={<University  className="h-4 w-4" />}
                 color="#e0f2fe"
                 defaultWidth={80}
                 defaultHeight={60}

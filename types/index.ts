@@ -107,6 +107,10 @@ export type TransportationElementType = "elevator" | "escalator" | "stairs";
 
 export type ElementType =
   | "store"
+  | "restaurant"
+  | "cafe" 
+  | "anchor-store" 
+  | "kisok"
   | "room"
   | "pathway"
   | "door"
@@ -117,6 +121,7 @@ export type ElementType =
   | "security"
   | "promotion"
   | "floor"
+  | "office"
   | TransportationElementType;
 
 

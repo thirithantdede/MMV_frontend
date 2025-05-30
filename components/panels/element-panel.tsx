@@ -17,6 +17,7 @@ import {
   ShieldAlert,
   StepBackIcon as Stairs,
   PocketKnife,
+  University,
 } from "lucide-react"
 
 import { Separator } from "@/components/ui/separator"
@@ -61,7 +62,15 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     defaultHeight: 80,
   },
   {
-    type: "store",
+    type: "office",
+    name: "Office",
+    icon: <University className="h-4 w-4" />,
+    color: "#f1f5f9",
+    defaultWidth: 120,
+    defaultHeight: 80,
+  },
+  {
+    type: "restaurant",
     name: "Restaurant",
     icon: <Utensils className="h-4 w-4" />,
     color: "#fee2e2",
@@ -69,7 +78,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     defaultHeight: 100,
   },
   {
-    type: "store",
+    type: "cafe",
     name: "Cafe",
     icon: <Coffee className="h-4 w-4" />,
     color: "#e0f2fe",
@@ -85,7 +94,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     defaultHeight: 150,
   },
   {
-    type: "store",
+    type: "anchor-store",
     name: "Food Court Stall",
     icon: <Utensils className="h-4 w-4" />,
     color: "#ffedd5",
@@ -93,7 +102,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     defaultHeight: 120,
   },
   {
-    type: "store",
+    type: "kisok",
     name: "Kiosk",
     icon: <ShoppingBag className="h-4 w-4" />,
     color: "#dbeafe",

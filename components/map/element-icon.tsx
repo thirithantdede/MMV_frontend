@@ -15,6 +15,10 @@ import {
   Ticket,
   StepBackIcon as Stairs,
   PocketKnife,
+  Coffee,
+  ShoppingBag,
+  Utensils,
+  University,
 } from "lucide-react"
 
 interface ElementIconProps {
@@ -28,6 +32,16 @@ export const ElementIcon = memo(function ElementIcon({ type, className = "h-10 w
       return <Store className={className} />
     case "elevator":
       return <Elevator className={className} />
+    case "cafe":
+      return <Coffee className={className} />
+    case "kisok" :
+    return <ShoppingBag className={className} />
+    case "office" :
+    return <University className={className} />
+    case "anchor-store":
+      return <Store className={className} />
+    case "restaurant":
+      return <Utensils className={className} />
     case "escalator":
       return <PocketKnife className={className} />
     case "stairs":

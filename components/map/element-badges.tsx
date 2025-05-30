@@ -3,6 +3,7 @@
 import { memo } from "react"
 import { Clock, LockOpenIcon as LockClosedIcon, AlertCircle, Tag, Percent, CalendarDays } from "lucide-react"
 import type { MapElement, MapSettings } from "@/types"
+import { storeTypes } from "@/utils/global"
 
 interface ElementBadgesProps {
   element: MapElement
@@ -11,7 +12,7 @@ interface ElementBadgesProps {
 
 export const ElementBadges = memo(function ElementBadges({ element,mapsetting }: ElementBadgesProps) {
   const isClosed = element.is_closed || false
-  const hasPromotion = element.type === "store" && element.shop_information?.promotions.is_now
+  const hasPromotion = storeTypes.includes(element.type) && element.shop_information?.promotions.is_now
   const isActiveEvent =
     element.type === "event" &&
     element.event?.is_active &&

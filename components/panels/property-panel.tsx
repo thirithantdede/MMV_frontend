@@ -12,6 +12,7 @@ import GeneralProperties from "./general-tab"
 import StyleProperties from "./style-tab"
 import EventProperties from "./event-panel"
 import AdvancedProperties from "./advanced-tab"
+import { storeTypes } from "@/utils/global"
 
 
 export function PropertyPanel() {
@@ -30,7 +31,7 @@ export function PropertyPanel() {
   // Set appropriate tab based on element type
   useEffect(() => {
     if (selectedElement) {
-      if (selectedElement.type === "store") {
+      if (storeTypes.includes(selectedElement.type)) {
         setActiveTab("store")
       } else if (
         selectedElement.type === "event" ||
@@ -47,7 +48,7 @@ export function PropertyPanel() {
   const handleStoreInformationChange = useCallback(
     (property: keyof ShopInformation, value: any) => {
       setElementProperties((prev) => {
-        if (!prev || prev.type !== "store") return prev
+        if (!prev || !storeTypes.includes(prev.type)) return prev
 
         const updatedShopInfo: any = {
           ...prev.shop_information,
@@ -131,7 +132,7 @@ export function PropertyPanel() {
   }
 
   // Determine which tabs to show based on element type
-  const showStoreTab = elementProperties.type === "store"
+  const showStoreTab = storeTypes.includes(elementProperties.type)
   const showEventTab = ["event", "banner", "promotion"].includes(elementProperties.type)
 
   return (

@@ -18,6 +18,7 @@ import { DropIndicator } from "@/components/map/drop-indicator"
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { useHandleBehavior } from "@/hooks/use-handle-behavior"
 import { Toaster } from "../ui/toaster"
+import { accept } from "@/utils/global"
 
 // Optimize MapEditor component with better memoization and performance improvements
 
@@ -69,7 +70,7 @@ export function MapEditor() {
   // Memoize drop target configuration
     const [{ isOver, canDrop }, drop] = useDrop(
       () => ({
-        accept: ["store", "elevator", "escalator", "room", "pathway", "door", "floor", "event","stairs","atm","security","info"],
+        accept: accept,
         canDrop: (item: any, monitor) => {
           if (isEditingFootprint) return false
 
@@ -262,8 +263,8 @@ export function MapEditor() {
         ref={setDropTargetRef}
         className="relative origin-top-left  "
         style={{
-          height: `${mapSettings.height + (mapSettings.building_width * (zoomLevel / 2)) }px`,
-          width: `${mapSettings.width + (mapSettings.building_width * (zoomLevel / 2))}px`,
+          height: `${(mapSettings.height ) + (mapSettings.building_width * (zoomLevel / 2)) }px`,
+          width: `${(mapSettings.width  ) + (mapSettings.building_width * (zoomLevel / 2))}px`,
           transform: `scale(${zoomLevel})`,
           transformOrigin: "top left",
           willChange: "transform", // Optimize for animations
