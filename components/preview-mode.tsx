@@ -306,7 +306,7 @@ export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPrevi
       )}
 
       {/* Events panel */}
-      <EventsPanel open={showEventsDialog} onOpenChange={setShowEventsDialog} isGuestMode={true} />
+      <EventsPanel open={showEventsDialog} onOpenChange={setShowEventsDialog}  />
 
       {/* Promotions list */}
       <PromotionsList

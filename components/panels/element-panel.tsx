@@ -16,6 +16,7 @@ import {
   CreditCard,
   ShieldAlert,
   StepBackIcon as Stairs,
+  PocketKnife,
 } from "lucide-react"
 
 import { Separator } from "@/components/ui/separator"
@@ -115,6 +116,14 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
     type: "stairs" as TransportationElementType,
     name: "Stairs",
     icon: <Stairs className="h-4 w-4" />,
+    color: "#fef3c7",
+    defaultWidth: 80,
+    defaultHeight: 80,
+  },
+    {
+    type: "escalator" as TransportationElementType,
+    name: "Escalator",
+    icon: <PocketKnife  className="h-4 w-4" />,
     color: "#fef3c7",
     defaultWidth: 80,
     defaultHeight: 80,

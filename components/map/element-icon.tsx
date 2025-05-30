@@ -4,7 +4,6 @@ import { memo } from "react"
 import {
   Store,
   CableCarIcon as Elevator,
-  CableCarIcon as Escalator,
   RouteIcon as Road,
   Sofa,
   DoorOpen,
@@ -15,6 +14,7 @@ import {
   ShieldAlert,
   Ticket,
   StepBackIcon as Stairs,
+  PocketKnife,
 } from "lucide-react"
 
 interface ElementIconProps {
@@ -22,14 +22,14 @@ interface ElementIconProps {
   className?: string
 }
 
-export const ElementIcon = memo(function ElementIcon({ type, className = "h-6 w-6" }: ElementIconProps) {
+export const ElementIcon = memo(function ElementIcon({ type, className = "h-10 w-10" }: ElementIconProps) {
   switch (type) {
     case "store":
       return <Store className={className} />
     case "elevator":
       return <Elevator className={className} />
     case "escalator":
-      return <Escalator className={className} />
+      return <PocketKnife className={className} />
     case "stairs":
       return <Stairs className={className} />
     case "pathway":

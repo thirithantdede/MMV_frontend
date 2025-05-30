@@ -5,6 +5,7 @@ import type React from "react"
 import { memo } from "react"
 import { MapElementComponent } from "@/components/map/map-element"
 import type { MapElement } from "@/types"
+import { useMapEditor } from "@/context/map-editor-context"
 
 interface MapElementsLayerProps {
   elements: MapElement[]
@@ -24,6 +25,7 @@ export const MapElementsLayer = memo(function MapElementsLayer({
   isGuestMode = false,
 }: MapElementsLayerProps) {
   if (isEditingFootprint) return null
+  const { mapSettings} = useMapEditor();
 
   return (
     <>
@@ -35,6 +37,7 @@ export const MapElementsLayer = memo(function MapElementsLayer({
           onClick={(e) => onElementClick(e, element)}
           onDragStart={(e) => onElementDragStart(e, element)}
           isGuestMode={isGuestMode}
+          mapsetting={mapSettings}
         />
       ))}
     </>

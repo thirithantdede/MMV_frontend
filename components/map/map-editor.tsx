@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useCallback, useEffect, useMemo, useRef} from "react"
+import { useCallback, useMemo, useRef} from "react"
 import { useDrop } from "react-dnd"
 import type { EventElement, MapElement } from "@/types"
 import { useMapEditor } from "@/context/map-editor-context"
@@ -18,7 +18,6 @@ import { DropIndicator } from "@/components/map/drop-indicator"
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts"
 import { useHandleBehavior } from "@/hooks/use-handle-behavior"
 import { Toaster } from "../ui/toaster"
-import { toast } from "@/hooks/use-toast"
 
 // Optimize MapEditor component with better memoization and performance improvements
 
@@ -159,6 +158,7 @@ export function MapEditor() {
             height,
             name: item.name || `New ${item.type}`,
             color: item.color || "#e2e8f0",
+            border_color: item.border_color || "#e2e8f0",
             border_style: "solid",
             floor: floor,
             walkable: item.type === "floor" || item.type === "pathway",

@@ -12,6 +12,7 @@ export interface MapElement {
   rotation?: number
   opacity?: number
   border_radius: borderRadius
+  border_color: string
   border_style: string
   notes?: string
   created_at?: string
@@ -92,6 +93,7 @@ export interface MapSettings {
   height: number
   grid_size: number
   show_grid: boolean
+  show_opening_hours: boolean
   // Building footprint settings
   building_width: number
   building_height: number

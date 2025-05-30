@@ -44,6 +44,7 @@ const StyleProperties = memo(function StyleProperties({
 }) {
   const [styleData, setStyleData] = useState({
     color: element.color || "#e2e8f0",
+    border_color: element.border_color || "#e2e8f0",
     opacity: element.opacity || 100,
     border_style: element.border_style || "solid",
     border_radius: element.border_radius || {
@@ -120,6 +121,23 @@ const StyleProperties = memo(function StyleProperties({
           <Input
             value={styleData.color}
             onChange={(e) => handleChange("color", e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor="element-color">Border Color</Label>
+        <div className="flex gap-2">
+          <Input
+            id="element-color"
+            type="color"
+            value={styleData.border_color}
+            onChange={(e) => handleChange("border_color", e.target.value)}
+            className="w-12"
+          />
+          <Input
+            value={styleData.border_color}
+            onChange={(e) => handleChange("border_color", e.target.value)}
           />
         </div>
       </div>

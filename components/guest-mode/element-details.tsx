@@ -187,10 +187,10 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
                   </div>
                 )}
 
-                {(element as EventElement).host && (
+                {(element as EventElement).hosts && (
                   <div className="flex items-center gap-2">
                     <User className="h-4 w-4 text-muted-foreground" />
-                    <span>Host: {(element as EventElement).host}</span>
+                    <span>Host: {(element as EventElement).hosts}</span>
                   </div>
                 )}
 
@@ -210,10 +210,10 @@ export function ElementDetails({ element, open, onOpenChange, onViewEvents }: El
                 )}
               </div>
 
-              {(element as EventElement).eventDescription && (
+              {(element as EventElement).description && (
                 <div className="mt-2 p-3 bg-muted/30 rounded-md text-sm">
                   <p className="font-medium mb-1">Description:</p>
-                  <p>{(element as EventElement).eventDescription}</p>
+                  <p>{(element as EventElement).description}</p>
                 </div>
               )}
 

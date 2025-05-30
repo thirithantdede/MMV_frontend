@@ -132,6 +132,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       height: 1000,
       grid_size: 20,
       show_grid: true,
+      show_opening_hours : false,
       building_width: 1200,
       building_height: 800,
       building_x: 700,

@@ -19,6 +19,7 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
   const [height, setHeight] = useState(mapSettings.height)
   const [grid_size, setgrid_size] = useState(mapSettings.grid_size)
   const [showGrid, setShowGrid] = useState(mapSettings.show_grid)
+  const [showOpeningHours, setShowOpeningHours] = useState(mapSettings.show_opening_hours)
 
   // Building footprint settings
   const [building_width, setbuilding_width] = useState(mapSettings.building_width)
@@ -39,6 +40,7 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
       setbuilding_x(mapSettings.building_x)
       setbuilding_y(mapSettings.building_y)
       setrestricted(mapSettings.restricted)
+      setShowOpeningHours(mapSettings.show_opening_hours)
     }
   }, [open, mapSettings])
 
@@ -59,13 +61,14 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
       width: finalWidth,
       height: finalHeight,
       grid_size: finalgrid_size,
+      show_opening_hours: showOpeningHours,
       show_grid: showGrid,
       building_width: building_width,
       building_height: building_height,
       building_x: bx,
       building_y: by,
       restricted,
-      isSynced : false
+      isSynced: false
     })
 
     onOpenChange(false)
@@ -125,14 +128,17 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
                 className="col-span-3"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="show-grid" className="col-span-1">
-                Show Grid
-              </Label>
-              <div className="col-span-3">
+            <div className="flex items-center space-x-6">
+              <div className="flex items-center space-x-4">
+                <Label htmlFor="show-hours">Show Open Hour</Label>
+                <Switch id="show-hours" checked={showOpeningHours} onCheckedChange={setShowOpeningHours} />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Label htmlFor="show-grid">Show Grid</Label>
                 <Switch id="show-grid" checked={showGrid} onCheckedChange={setShowGrid} />
               </div>
             </div>
+
             <div className="text-xs text-muted-foreground">Recommended minimum dimensions: 800 × 600 pixels</div>
           </TabsContent>
 
@@ -165,7 +171,7 @@ export function MapSettingsDialog({ open, onOpenChange }: MapSettingsDialogProps
                 className="col-span-3"
               />
             </div>
-         
+
             <div className="text-xs text-muted-foreground">
               The building footprint defines the area where elements can be placed
             </div>
