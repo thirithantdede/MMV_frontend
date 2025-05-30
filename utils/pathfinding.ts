@@ -19,7 +19,7 @@ export function findPath(
 ): RoutePoint[] {
   // If stores are on different floors, use multi-floor pathfinding
   if (sourceStore.floor !== targetStore.floor) {
-    return findMultiFloorPath(sourceStore, targetStore, allElements, mapSettings, avoidElements);
+    // return findMultiFloorPath(sourceStore, targetStore, allElements, mapSettings, avoidElements);
   }
 
   // If stores are on the same floor, use single-floor pathfinding
@@ -46,20 +46,33 @@ function findSingleFloorPath(
     return [{ x: startX * mapSettings.grid_size, y: startY * mapSettings.grid_size, floor }];
   }
 
-  // Create grid
-  const { gridWidth, gridHeight } = calculateGridBounds(sourceStore, targetStore, allElements, mapSettings);
+  // Create grid based on building boundaries
+  const { gridWidth, gridHeight, offsetX, offsetY } = calculateBuildingGrid(mapSettings);
   
-  // Check if start/end points are within grid bounds
-  if (startX < 0 || startX >= gridWidth || startY < 0 || startY >= gridHeight ||
-      endX < 0 || endX >= gridWidth || endY < 0 || endY >= gridHeight) {
-    console.error('Start or end point outside grid bounds:', {
-      start: { x: startX, y: startY },
-      end: { x: endX, y: endY },
-      gridBounds: { width: gridWidth, height: gridHeight }
+  // Convert coordinates to building-relative grid coordinates
+  const buildingStartX = Math.round((sourceStore.x + sourceStore.width / 2 - mapSettings.building_x) / mapSettings.grid_size);
+  const buildingStartY = Math.round((sourceStore.y + sourceStore.height / 2 - mapSettings.building_y) / mapSettings.grid_size);
+  const buildingEndX = Math.round((targetStore.x + targetStore.width / 2 - mapSettings.building_x) / mapSettings.grid_size);
+  const buildingEndY = Math.round((targetStore.y + targetStore.height / 2 - mapSettings.building_y) / mapSettings.grid_size);
+
+  // Check if start/end points are within building bounds
+  if (buildingStartX < 0 || buildingStartX >= gridWidth || buildingStartY < 0 || buildingStartY >= gridHeight ||
+      buildingEndX < 0 || buildingEndX >= gridWidth || buildingEndY < 0 || buildingEndY >= gridHeight) {
+    console.error('Start or end point outside building bounds:', {
+      start: { x: buildingStartX, y: buildingStartY },
+      end: { x: buildingEndX, y: buildingEndY },
+      buildingBounds: { width: gridWidth, height: gridHeight },
+      buildingArea: { 
+        x: mapSettings.building_x, 
+        y: mapSettings.building_y, 
+        width: mapSettings.building_width, 
+        height: mapSettings.building_height 
+      }
     });
     return [];
   }
 
+  // Create grid - initially all cells are walkable within building
   const grid: boolean[][] = Array(gridHeight)
     .fill(null)
     .map(() => Array(gridWidth).fill(true));
@@ -67,45 +80,47 @@ function findSingleFloorPath(
   // Mark obstacles if avoidElements is true
   if (avoidElements) {
     const floorElements = allElements.filter(
-      (el) => el.floor === floor && el.id !== sourceStore.id && el.id !== targetStore.id,
+      (el) => el.floor === floor && 
+               el.id !== sourceStore.id && 
+               el.id !== targetStore.id &&
+               !el.walkable // Only non-walkable elements are obstacles
     );
 
     floorElements.forEach((element) => {
-      const minX = Math.floor(element.x / mapSettings.grid_size);
-      const maxX = Math.ceil((element.x + element.width) / mapSettings.grid_size);
-      const minY = Math.floor(element.y / mapSettings.grid_size);
-      const maxY = Math.ceil((element.y + element.height) / mapSettings.grid_size);
+      // Convert element coordinates to building-relative grid coordinates
+      const minX = Math.floor((element.x - mapSettings.building_x) / mapSettings.grid_size);
+      const maxX = Math.ceil((element.x + element.width - mapSettings.building_x) / mapSettings.grid_size);
+      const minY = Math.floor((element.y - mapSettings.building_y) / mapSettings.grid_size);
+      const maxY = Math.ceil((element.y + element.height - mapSettings.building_y) / mapSettings.grid_size);
 
-      // Mark grid cells as obstacles
-      for (let y = minY; y < maxY && y < gridHeight; y++) {
-        for (let x = minX; x < maxX && x < gridWidth; x++) {
-          if (y >= 0 && x >= 0) {
-            grid[y][x] = false;
-          }
+      // Mark grid cells as obstacles (only within building bounds)
+      for (let y = Math.max(0, minY); y < Math.min(maxY, gridHeight); y++) {
+        for (let x = Math.max(0, minX); x < Math.min(maxX, gridWidth); x++) {
+          grid[y][x] = false;
         }
       }
     });
   }
 
   // Check if start and end positions are walkable
-  if (!grid[startY][startX]) {
-    console.error('Start position is blocked:', { x: startX, y: startY });
+  if (!grid[buildingStartY][buildingStartX]) {
+    console.error('Start position is blocked:', { x: buildingStartX, y: buildingStartY });
     return [];
   }
   
-  if (!grid[endY][endX]) {
-    console.error('End position is blocked:', { x: endX, y: endY });
+  if (!grid[buildingEndY][buildingEndX]) {
+    console.error('End position is blocked:', { x: buildingEndX, y: buildingEndY });
     return [];
   }
 
   // A* algorithm
   const openList: Node[] = [
     {
-      x: startX,
-      y: startY,
+      x: buildingStartX,
+      y: buildingStartY,
       f: 0,
       g: 0,
-      h: heuristic(startX, startY, endX, endY),
+      h: heuristic(buildingStartX, buildingStartY, buildingEndX, buildingEndY),
       parent: null,
     },
   ];
@@ -137,9 +152,9 @@ function findSingleFloorPath(
     let current = openList.reduce((min, node) => (node.f < min.f ? node : min), openList[0]);
 
     // If we reached the target
-    if (current.x === endX && current.y === endY) {
+    if (current.x === buildingEndX && current.y === buildingEndY) {
       console.log(`Path found in ${iterations} iterations`);
-      return reconstructPath(current, mapSettings.grid_size, floor);
+      return reconstructBuildingPath(current, mapSettings, floor);
     }
 
     // Remove current from open list and add to closed
@@ -151,7 +166,7 @@ function findSingleFloorPath(
       const nextX = current.x + dx;
       const nextY = current.y + dy;
 
-      // Check if neighbor is valid
+      // Check if neighbor is valid (within building bounds)
       if (
         nextX < 0 ||
         nextX >= gridWidth ||
@@ -165,7 +180,7 @@ function findSingleFloorPath(
 
       // Calculate costs
       const g = current.g + (Math.abs(dx) + Math.abs(dy) === 2 ? 1.414 : 1); // Diagonal cost
-      const h = heuristic(nextX, nextY, endX, endY);
+      const h = heuristic(nextX, nextY, buildingEndX, buildingEndY);
       const f = g + h;
 
       // Check if this path to neighbor is better
@@ -190,176 +205,31 @@ function findSingleFloorPath(
     openList.sort((a, b) => a.f - b.f);
   }
 
-
-  
+  console.error('No path found within building boundaries');
   return [];
 }
+
 // Manhattan distance heuristic
 function heuristic(x1: number, y1: number, x2: number, y2: number): number {
   return Math.abs(x1 - x2) + Math.abs(y1 - y2);
 }
 
-// Reconstruct path from end node
-function reconstructPath(node: Node, gridSize: number, floor: number): RoutePoint[] {
+// Reconstruct path from end node, converting back to absolute coordinates
+function reconstructBuildingPath(node: Node, mapSettings: MapSettings, floor: number): RoutePoint[] {
   const path: RoutePoint[] = [];
   let current: Node | null = node;
 
   while (current) {
+    // Convert building-relative coordinates back to absolute coordinates
     path.push({
-      x: current.x * gridSize,
-      y: current.y * gridSize,
+      x: current.x * mapSettings.grid_size + mapSettings.building_x,
+      y: current.y * mapSettings.grid_size + mapSettings.building_y,
       floor,
     });
     current = current.parent;
   }
 
   return path.reverse();
-}
-
-function findMultiFloorPath(
-  sourceStore: MapElement,
-  targetStore: MapElement,
-  allElements: MapElement[],
-  mapSettings: MapSettings,
-  avoidElements: boolean = false,
-): RoutePoint[] {
-  const path: RoutePoint[] = [];
-  const sourceFloor = sourceStore.floor;
-  const targetFloor = targetStore.floor;
-
-  // Get center points of stores
-  const startX = sourceStore.x + sourceStore.width / 2;
-  const startY = sourceStore.y + sourceStore.height / 2;
-  const endX = targetStore.x + targetStore.width / 2;
-  const endY = targetStore.y + targetStore.height / 2;
-
-  // Find transport elements (elevators/escalators) on source and target floors
-  const sourceFloorTransports = allElements.filter(
-    (el) => (el.type === "elevator" || el.type === "escalator") && el.floor === sourceFloor,
-  );
-  const targetFloorTransports = allElements.filter(
-    (el) => (el.type === "elevator" || el.type === "escalator") && el.floor === targetFloor,
-  );
-
-  if (sourceFloorTransports.length === 0 || targetFloorTransports.length === 0) {
-    // Fallback: Direct path with floor transition (no transport elements found)
-    path.push(
-      { x: startX, y: startY, floor: sourceFloor },
-      { x: (startX + endX) / 2, y: (startY + endY) / 2, floor: sourceFloor },
-      { x: (startX + endX) / 2, y: (startY + endY) / 2, floor: targetFloor },
-      { x: endX, y: endY, floor: targetFloor },
-    );
-    return path;
-  }
-
-  // Find the best pair of transport elements (closest combined distance)
-  let bestSourceTransport: MapElement | null = null;
-  let bestTargetTransport: MapElement | null = null;
-  let minTotalDistance = Number.MAX_VALUE;
-
-  sourceFloorTransports.forEach((sourceTransport) => {
-    const sourceTransportX = sourceTransport.x + sourceTransport.width / 2;
-    const sourceTransportY = sourceTransport.y + sourceTransport.height / 2;
-
-    // Prefer same-name transport on target floor (same elevator/escalator)
-    let targetTransport = targetFloorTransports.find((t) => t.name === sourceTransport.name);
-    if (!targetTransport) {
-      targetTransport = findNearestElement(endX, endY, targetFloorTransports);
-    }
-    const targetTransportX = targetTransport.x + targetTransport.width / 2;
-    const targetTransportY = targetTransport.y + targetTransport.height / 2;
-
-    // Calculate total distance: source -> sourceTransport -> targetTransport -> target
-    const sourceDistance = Math.sqrt(
-      Math.pow(sourceTransportX - startX, 2) + Math.pow(sourceTransportY - startY, 2),
-    );
-    const targetDistance = Math.sqrt(
-      Math.pow(endX - targetTransportX, 2) + Math.pow(endY - targetTransportY, 2),
-    );
-    const totalDistance = sourceDistance + targetDistance;
-
-    if (totalDistance < minTotalDistance) {
-      minTotalDistance = totalDistance;
-      bestSourceTransport = sourceTransport;
-      bestTargetTransport = targetTransport;
-    }
-  });
-
-  if (!bestSourceTransport || !bestTargetTransport) {
-    // Fallback if no valid transport pair found
-    return [
-      { x: startX, y: startY, floor: sourceFloor },
-      { x: endX, y: endY, floor: targetFloor },
-    ];
-  }
-
-  // Get transport coordinates
-  const sourceTransportX = bestSourceTransport.x + bestSourceTransport.width / 2;
-  const sourceTransportY = bestSourceTransport.y + bestSourceTransport.height / 2;
-  const targetTransportX = bestTargetTransport.x + bestTargetTransport.width / 2;
-  const targetTransportY = bestTargetTransport.y + bestTargetTransport.height / 2;
-
-  // Path from source to source transport (on source floor)
-  const sourceToTransport = findSingleFloorPath(
-    sourceStore,
-    {
-      ...bestSourceTransport,
-      x: sourceTransportX - bestSourceTransport.width / 2,
-      y: sourceTransportY - bestSourceTransport.height / 2,
-      width: bestSourceTransport.width,
-      height: bestSourceTransport.height,
-    },
-    allElements,
-    mapSettings,
-    avoidElements,
-  );
-
-  // Path from target transport to target (on target floor)
-  const transportToTarget = findSingleFloorPath(
-    {
-      ...bestTargetTransport,
-      x: targetTransportX - bestTargetTransport.width / 2,
-      y: targetTransportY - bestTargetTransport.height / 2,
-      width: bestTargetTransport.width,
-      height: bestTargetTransport.height,
-    },
-    targetStore,
-    allElements,
-    mapSettings,
-    avoidElements,
-  );
-
-  // Combine paths
-  path.push(...sourceToTransport);
-
-  // Add transition point if needed (remove duplicate points at transport)
-  if (path.length > 0) {
-    const lastPoint = path[path.length - 1];
-    if (
-      lastPoint.x !== sourceTransportX ||
-      lastPoint.y !== sourceTransportY ||
-      lastPoint.floor !== sourceFloor
-    ) {
-      path.push({ x: sourceTransportX, y: sourceTransportY, floor: sourceFloor });
-    }
-  }
-
-  // Add target transport entry point
-  path.push({ x: targetTransportX, y: targetTransportY, floor: targetFloor });
-
-  // Add target floor path (skip first point if it's the same as the transport point)
-  if (
-    transportToTarget.length > 0 &&
-    transportToTarget[0].x === targetTransportX &&
-    transportToTarget[0].y === targetTransportY &&
-    transportToTarget[0].floor === targetFloor
-  ) {
-    path.push(...transportToTarget.slice(1));
-  } else {
-    path.push(...transportToTarget);
-  }
-
-  return path;
 }
 
 // Helper function to find the nearest element from a point
@@ -381,40 +251,36 @@ function findNearestElement(x: number, y: number, elements: MapElement[]): MapEl
   return nearestElement;
 }
 
+// Calculate grid dimensions based on building footprint only
+function calculateBuildingGrid(mapSettings: MapSettings): { 
+  gridWidth: number; 
+  gridHeight: number; 
+  offsetX: number; 
+  offsetY: number; 
+} {
+  // Grid dimensions based only on building footprint
+  const gridWidth = Math.ceil(mapSettings.building_width / mapSettings.grid_size);
+  const gridHeight = Math.ceil(mapSettings.building_height / mapSettings.grid_size);
+  
+  // Offset for converting absolute coordinates to building-relative coordinates
+  const offsetX = mapSettings.building_x;
+  const offsetY = mapSettings.building_y;
+
+  return { gridWidth, gridHeight, offsetX, offsetY };
+}
+
+// Updated function to replace the old calculateGridBounds
 function calculateGridBounds(
   sourceStore: MapElement,
   targetStore: MapElement,
   allElements: MapElement[],
   mapSettings: MapSettings
 ): { gridWidth: number; gridHeight: number } {
-  // Find the maximum coordinates from all elements on the same floor
-  const floor = sourceStore.floor;
-  const floorElements = allElements.filter(el => el.floor === floor);
-  
-  let maxX = Math.max(
-    mapSettings.building_width,
-    sourceStore.x + sourceStore.width,
-    targetStore.x + targetStore.width
-  );
-  
-  let maxY = Math.max(
-    mapSettings.building_height,
-    sourceStore.y + sourceStore.height,
-    targetStore.y + targetStore.height
-  );
-
-  // Check all elements on this floor
-  floorElements.forEach(element => {
-    maxX = Math.max(maxX, element.x + element.width);
-    maxY = Math.max(maxY, element.y + element.height);
-  });
-
-  // Add some padding and convert to grid coordinates
-  const gridWidth = Math.ceil((maxX + mapSettings.grid_size * 2) / mapSettings.grid_size);
-  const gridHeight = Math.ceil((maxY + mapSettings.grid_size * 2) / mapSettings.grid_size);
-
+  // Use building-based grid calculation instead
+  const { gridWidth, gridHeight } = calculateBuildingGrid(mapSettings);
   return { gridWidth, gridHeight };
 }
+
 export function debugVerticalPathfinding(
   sourceStore: MapElement,
   targetStore: MapElement,
@@ -425,10 +291,16 @@ export function debugVerticalPathfinding(
   const targetCenterX = targetStore.x + (targetStore.width / 2);
   const targetCenterY = targetStore.y + (targetStore.height / 2);
 
-  const startGridX = Math.floor(sourceCenterX / mapSettings.grid_size);
-  const startGridY = Math.floor(sourceCenterY / mapSettings.grid_size);
-  const endGridX = Math.floor(targetCenterX / mapSettings.grid_size);
-  const endGridY = Math.floor(targetCenterY / mapSettings.grid_size);
+  // Calculate building-relative positions
+  const sourceBuildingX = sourceCenterX - mapSettings.building_x;
+  const sourceBuildingY = sourceCenterY - mapSettings.building_y;
+  const targetBuildingX = targetCenterX - mapSettings.building_x;
+  const targetBuildingY = targetCenterY - mapSettings.building_y;
+
+  const startGridX = Math.floor(sourceBuildingX / mapSettings.grid_size);
+  const startGridY = Math.floor(sourceBuildingY / mapSettings.grid_size);
+  const endGridX = Math.floor(targetBuildingX / mapSettings.grid_size);
+  const endGridY = Math.floor(targetBuildingY / mapSettings.grid_size);
 
   console.log('Vertical Pathfinding Debug:', {
     sourceElement: {
@@ -436,6 +308,7 @@ export function debugVerticalPathfinding(
       name: sourceStore.name,
       bounds: { x: sourceStore.x, y: sourceStore.y, w: sourceStore.width, h: sourceStore.height },
       center: { x: sourceCenterX, y: sourceCenterY },
+      buildingRelative: { x: sourceBuildingX, y: sourceBuildingY },
       gridPos: { x: startGridX, y: startGridY }
     },
     targetElement: {
@@ -443,12 +316,19 @@ export function debugVerticalPathfinding(
       name: targetStore.name,
       bounds: { x: targetStore.x, y: targetStore.y, w: targetStore.width, h: targetStore.height },
       center: { x: targetCenterX, y: targetCenterY },
+      buildingRelative: { x: targetBuildingX, y: targetBuildingY },
       gridPos: { x: endGridX, y: endGridY }
     },
     alignment: {
       isVertical: Math.abs(startGridX - endGridX) <= 1,
       isHorizontal: Math.abs(startGridY - endGridY) <= 1,
       gridDistance: { x: Math.abs(startGridX - endGridX), y: Math.abs(startGridY - endGridY) }
+    },
+    buildingBounds: {
+      x: mapSettings.building_x,
+      y: mapSettings.building_y,
+      width: mapSettings.building_width,
+      height: mapSettings.building_height
     },
     mapSettings: {
       gridSize: mapSettings.grid_size,
