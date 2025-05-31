@@ -240,7 +240,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {floors?.map(floor => (
+                  {Object.values(floors)?.map(floor => (
                     <SelectItem key={`source-floor-${floor.id}`} value={floor.level.toString()}>
                       Floor {floor.level}
                     </SelectItem>
@@ -283,7 +283,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {floors?.map(floor => (
+                  {Object.values(floors)?.map(floor => (
                     <SelectItem key={`target-floor-${floor.id}`} value={floor.level.toString()}>
                       Floor {floor.level}
                     </SelectItem>
