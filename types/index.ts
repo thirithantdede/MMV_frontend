@@ -41,6 +41,7 @@ export interface Project {
   published_at : string
   updated_at : string
   elements_count : number
+  view_count : number
   user?: User
 }
 

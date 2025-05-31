@@ -49,7 +49,7 @@ export default function ProjectCard( {project} : {project: Project} ) {
           <StatItem
             icon={<Users className="h-4 w-4 text-blue-500" />}
             label="Visitors"
-            value={formatNumber(124)}
+            value={formatNumber(project.view_count)}
           />
           <StatItem icon={<Store className="h-4 w-4 text-green-500" />} label="Stores" value={project.elements_count} />
           <StatItem

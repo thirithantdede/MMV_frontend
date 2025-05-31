@@ -182,7 +182,6 @@ function findMultiFloorPath(
     return [];
   }
 
-  console.log(nearestSourceTransition)
   
   // Get all elements for source floor
   const sourceFloorElements = loadFloorElements(sourceFloor);
