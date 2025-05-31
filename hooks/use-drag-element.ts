@@ -30,192 +30,232 @@ export function useDragElement({
 
   // Check if position is within building footprint
   const isWithinBuilding = useCallback(
-  (x: number, y: number, width: number, height: number, rotation: number) => {
+    (x: number, y: number, width: number, height: number, rotation: number = 0) => {
+      if (!mapSettings.restricted) return true;
+
+      const { building_x, building_y, building_width, building_height } = mapSettings;
+
+      // Calculate effective dimensions based on rotation
+      const isRotated = rotation === 90 || rotation === 270;
+      const effectiveWidth = isRotated ? height : width;
+      const effectiveHeight = isRotated ? width : height;
+
+      // Assuming (x, y) is the top-left corner of the element
+      const elementLeft = x;
+      const elementTop = y;
+      const elementRight = x + effectiveWidth;
+      const elementBottom = y + effectiveHeight;
+
+      // Check if element is completely within building bounds
+      const withinBounds = (
+        elementLeft >= building_x &&
+        elementTop >= building_y &&
+        elementRight <= building_x + building_width &&
+        elementBottom <= building_y + building_height
+      );
+
+      return withinBounds;
+    },
+    [mapSettings]
+  );
+
+  const isOverlapping = useCallback(
+    (x: number, y: number, width: number, height: number, elementId: string, rotation = 0) => {
+      // Filter elements on current floor and global elements (floor 0), excluding the dragged element
+      const floorElements = elements.filter((el) => 
+        el.id !== elementId && (el.floor === currentFloor || el.floor === 0)
+      );
+
+      // Calculate effective dimensions for the dragged element
+      const isRotated = rotation === 90 || rotation === 270;
+      const effectiveWidth = isRotated ? height : width;
+      const effectiveHeight = isRotated ? width : height;
+
+      for (const element of floorElements) {
+        // Calculate effective dimensions for the existing element
+        const isElementRotated = element.rotation === 90 || element.rotation === 270;
+        const elementEffectiveWidth = isElementRotated ? element.height : element.width;
+        const elementEffectiveHeight = isElementRotated ? element.width : element.height;
+
+        // Check for rectangle overlap
+        const overlap = !(
+          x >= element.x + elementEffectiveWidth ||
+          x + effectiveWidth <= element.x ||
+          y >= element.y + elementEffectiveHeight ||
+          y + effectiveHeight <= element.y
+        );
+
+        if (overlap) {
+          return true;
+        }
+      }
+
+      return false;
+    },
+    [elements, currentFloor]
+  );
+
+  // Fixed border check for doors
+  // Fixed border check for doors
+const isOnBuildingBorder = useCallback(
+  (x: number, y: number, width: number, height: number, rotation: number = 0) => {
     if (!mapSettings.restricted) return true;
 
     const { building_x, building_y, building_width, building_height } = mapSettings;
+    const tolerance = 15;
 
-    const isRotated = rotation == 90 || rotation == 270;
+    // Calculate effective dimensions
+    const isRotated = rotation === 90 || rotation === 270;
     const effectiveWidth = isRotated ? height : width;
     const effectiveHeight = isRotated ? width : height;
 
-    // Assuming (x, y) is the center, calculate the bounding box
-    const left = x - effectiveWidth ;
-    const top = y - effectiveHeight ;
-    const right = x + effectiveWidth ;
-    const bottom = y + effectiveHeight ;
+    // Element boundaries
+    const elementLeft = x;
+    const elementTop = y;
+    const elementRight = x + effectiveWidth;
+    const elementBottom = y + effectiveHeight;
 
-    return (
-      left >= building_x &&
-      top >= building_y &&
-      right <= building_x + building_width &&
-      bottom <= building_y + building_height
-    );
+    // Building boundaries
+    const buildingLeft = building_x;
+    const buildingTop = building_y;
+    const buildingRight = building_x + building_width;
+    const buildingBottom = building_y + building_height;
+
+    // Check if element touches any building border (with tolerance)
+    const touchesLeftBorder = Math.abs(elementLeft - buildingLeft) <= tolerance;
+    const touchesRightBorder = Math.abs(elementRight - buildingRight) <= tolerance;
+    const touchesTopBorder = Math.abs(elementTop - buildingTop) <= tolerance;
+    const touchesBottomBorder = Math.abs(elementBottom - buildingBottom) <= tolerance;
+
+    // If it touches a border, check if it's reasonably within bounds
+    if (touchesLeftBorder || touchesRightBorder || touchesTopBorder || touchesBottomBorder) {
+      // For doors touching borders, we allow them to extend slightly outside
+      const reasonablyWithinBounds = (
+        elementLeft >= buildingLeft - tolerance &&
+        elementTop >= buildingTop - tolerance &&
+        elementRight <= buildingRight + tolerance &&
+        elementBottom <= buildingBottom + tolerance
+      );
+
+      // Debug logging
+      console.log('Door border check:', {
+        elementBounds: { left: elementLeft, top: elementTop, right: elementRight, bottom: elementBottom },
+        buildingBounds: { left: buildingLeft, top: buildingTop, right: buildingRight, bottom: buildingBottom },
+        touches: {
+          left: touchesLeftBorder,
+          right: touchesRightBorder,
+          top: touchesTopBorder,
+          bottom: touchesBottomBorder
+        },
+        distances: {
+          left: Math.abs(elementLeft - buildingLeft),
+          right: Math.abs(elementRight - buildingRight),
+          top: Math.abs(elementTop - buildingTop),
+          bottom: Math.abs(elementBottom - buildingBottom)
+        },
+        reasonablyWithinBounds,
+        finalResult: reasonablyWithinBounds
+      });
+
+      return reasonablyWithinBounds;
+    }
+
+    return false;
   },
   [mapSettings]
 );
 
-  const isOverlapping = useCallback(
-    (x: number, y: number, width: number, height: number, elementId: string, rotation = 0) => {
-      // Only check elements on the current floor
-      const floorElements = elements.filter((el) => el.floor === currentFloor && el.id !== elementId || el.floor == 0)
-
-      // For 90° and 270° rotations, swap width and height for overlap check
-      const isRotated = rotation == 90 || rotation == 270
-      const effectiveWidth = isRotated ? height : width
-      const effectiveHeight = isRotated ? width : height
-
-      for (const element of floorElements) {
-        // Check if the other element is rotated
-        const isElementRotated = element.rotation === 90 || element.rotation === 270
-        const elementEffectiveWidth = isElementRotated ? element.height : element.width
-        const elementEffectiveHeight = isElementRotated ? element.width : element.height
-
-        // Check if rectangles overlap using effective dimensions
-        if (
-          x < element.x + elementEffectiveWidth &&
-          x + effectiveWidth > element.x &&
-          y < element.y + elementEffectiveHeight &&
-          y + effectiveHeight > element.y
-        ) {
-          return true
-        }
-      }
-
-      return false
-    },
-    [elements, currentFloor],
-  )
-
-  // Check if position is on building border (for doors)
-  const isOnBuildingBorder = useCallback(
-    (x: number, y: number, width: number, height: number,rotation : number) => {
-      const { building_x, building_y, building_width, building_height,restricted} = mapSettings
-
-      const allowX = [90,270];
-      const allowY = [0,180];
-
-      const midX = building_x + (building_width / 2);
-      const midY = building_y + (building_height / 2);
-      const isLeft = x < midX;
-      const isTop = y < midY;
-
-      let currentX = x;
-      let currentY = y;
-      let currentbuilding_x = building_x;
-      let toleranceX = 10;
-
-      if (allowX.includes(rotation)) {
-        currentX = isLeft ? x + width - height  : x - width + height;
-        toleranceX = isLeft ? 30 : 80;
-        currentbuilding_x = isLeft ? building_x : building_x ; 
-      } else if (allowY.includes(rotation)) {
-        currentY = isTop ? currentY : currentY  ;
-      }
-
-
-      if (!isWithinBuilding(currentX, currentY, width, height,rotation)){
-        console.log('out of buiding');
-        return false
-      }
-      // Check if the element touches any of the building borders
-      const touchesLeftBorder = Math.abs(currentX - currentbuilding_x) < toleranceX
-      const touchesRightBorder = Math.abs(currentX + height - (currentbuilding_x + building_width+height)) < toleranceX
-      const touchesTopBorder = Math.abs(y - building_y) < 5
-      const touchesBottomBorder = Math.abs((currentY + height) - (building_y + building_height)) < 10
-
-      return touchesLeftBorder || touchesRightBorder || touchesTopBorder || touchesBottomBorder
-    },
-    [mapSettings, isWithinBuilding],
-  )
 
   const handleElementDragStart = useCallback((e: React.MouseEvent, element: MapElement) => {
-    e.stopPropagation()
-    e.preventDefault() // Prevent text selection
+    e.stopPropagation();
+    e.preventDefault();
 
-    setIsDragging(true)
-    draggedElementRef.current = element
+    setIsDragging(true);
+    draggedElementRef.current = element;
 
-    const rect = (e.target as HTMLElement).getBoundingClientRect()
+    const rect = (e.target as HTMLElement).getBoundingClientRect();
     setDragOffset({
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
-    })
+    });
 
-    // Add a global class to disable text selection during drag
-    document.body.classList.add("dragging-element")
+    document.body.classList.add("dragging-element");
 
-    return element
-  }, [])
+    return element;
+  }, []);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent, element: MapElement | null) => {
-      if (!isDragging || !element || !mapRef.current) return
+      if (!isDragging || !element || !mapRef.current) return;
 
-      // Cancel any existing animation frame to prevent queuing
+      // Cancel any existing animation frame
       if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
+        cancelAnimationFrame(rafRef.current);
       }
 
-      // Use requestAnimationFrame for smoother updates
       rafRef.current = requestAnimationFrame(() => {
-        const mapRect = mapRef.current?.getBoundingClientRect()
-        if (!mapRect) return
+        const mapRect = mapRef.current?.getBoundingClientRect();
+        if (!mapRect) return;
 
-        // Adjust for zoom level
-        const x = Math.floor((e.clientX - mapRect.left - dragOffset.x) / zoomLevel / gridSize) * gridSize
-        const y = Math.floor((e.clientY - mapRect.top - dragOffset.y) / zoomLevel / gridSize) * gridSize
-        const rotation = element.rotation || 0
+        // Calculate new position with grid snapping
+        const rawX = (e.clientX - mapRect.left - dragOffset.x) / zoomLevel;
+        const rawY = (e.clientY - mapRect.top - dragOffset.y) / zoomLevel;
+        
+        const x = Math.round(rawX / gridSize) * gridSize;
+        const y = Math.round(rawY / gridSize) * gridSize;
+        
+        const rotation = element.rotation || 0;
 
-        // Special case for doors - they must stay on the building border
+        // Validation based on element type
+        let isValidPosition = false;
+
         if (element.type === "door") {
-          if (!isOnBuildingBorder(x, y, element.width, element.height, rotation)) {
-            return
+          // Doors must be on building border
+          isValidPosition = isOnBuildingBorder(x, y, element.width, element.height, rotation);
+          
+          // Debug logging for doors (remove after testing)
+          if (!isValidPosition) {
+            console.log('Door position invalid:', { x, y, width: element.width, height: element.height, rotation });
           }
         } else {
-          // For other elements, they must stay within the building footprint
-          // and not overlap with other elements
-          if (
-            !isWithinBuilding(x, y, element.width, element.height,rotation) ||
-            isOverlapping(x, y, element.width, element.height, element.id,rotation)
-          ) {
-            return
-          }
+          // Other elements must be within building and not overlap
+          const withinBuilding = isWithinBuilding(x, y, element.width, element.height, rotation);
+          const notOverlapping = !isOverlapping(x, y, element.width, element.height, element.id, rotation);
+          isValidPosition = withinBuilding && notOverlapping;
         }
 
-        onElementUpdate({
-          ...element,
-          x,
-          y,
-        })
-      })
+        if (isValidPosition) {
+          onElementUpdate({
+            ...element,
+            x,
+            y,
+          });
+        }
+      });
     },
-    [isDragging, dragOffset, gridSize, onElementUpdate, zoomLevel, isWithinBuilding, isOnBuildingBorder, isOverlapping],
-  )
+    [isDragging, dragOffset, gridSize, onElementUpdate, zoomLevel, isWithinBuilding, isOnBuildingBorder, isOverlapping]
+  );
 
   const handleMouseUp = useCallback(() => {
-    setIsDragging(false)
-    draggedElementRef.current = null
+    setIsDragging(false);
+    draggedElementRef.current = null;
+    document.body.classList.remove("dragging-element");
 
-    // Remove the global class when drag ends
-    document.body.classList.remove("dragging-element")
-
-    // Cancel any pending animation frame
     if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current)
-      rafRef.current = null
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
     }
-  }, [])
+  }, []);
 
   // Clean up on unmount
   useEffect(() => {
     return () => {
       if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current)
+        cancelAnimationFrame(rafRef.current);
       }
-      document.body.classList.remove("dragging-element")
-    }
-  }, [])
+      document.body.classList.remove("dragging-element");
+    };
+  }, []);
 
   return {
     isDragging,
@@ -227,5 +267,5 @@ export function useDragElement({
     isOnBuildingBorder,
     isOverlapping,
     draggedElementRef,
-  }
+  };
 }

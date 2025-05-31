@@ -102,7 +102,7 @@ export default function LoginPage() {
         {/* Right Side - Login Form */}
         <div className="flex items-center justify-center w-full px-4 lg:px-0">
           <Card className="w-full max-w-md bg-transparent border-none md:bg-white/80 md:backdrop-blur-xl md:border-white/20 md:shadow-2xl shadow-blue-500/10">
-            <CardHeader className="space-y-6 pb-8">
+            <CardHeader className="space-y-1 pb-8">
               <div className="flex flex-col items-center justify-center space-y-4">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-30" />
@@ -119,7 +119,7 @@ export default function LoginPage() {
                 <Image
                   src={LogoText || "/placeholder.svg"}
                   alt="Logo"
-                  width={200}
+                  width={300}
                   height={40}
                   className="object-contain"
                 />

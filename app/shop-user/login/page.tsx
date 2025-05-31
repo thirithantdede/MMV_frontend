@@ -54,7 +54,7 @@ export default function LoginPage() {
                 <Image
                   src={LogoText || "/placeholder.svg"}
                   alt="Logo"
-                  width={200}
+                  width={500}
                   height={40}
                   className="object-contain"
                 />

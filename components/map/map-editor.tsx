@@ -81,10 +81,13 @@ export function MapEditor() {
           if (!clientOffset) return false
 
           // Adjust for zoom level
-          const x = Math.floor((clientOffset.x - mapRect.left) / zoomLevel / mapSettings.grid_size) * mapSettings.grid_size
-          const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.grid_size) * mapSettings.grid_size
-          const width = item.defaultWidth || 100
-          const height = item.defaultHeight || 100
+          const rawX = (clientOffset.x - mapRect.left) / zoomLevel
+          const rawY = (clientOffset.y - mapRect.top) / zoomLevel
+          const x = Math.round(rawX / mapSettings.grid_size) * mapSettings.grid_size
+          const y = Math.round(rawY / mapSettings.grid_size) * mapSettings.grid_size
+
+          const width = item.defaultHeight || 100
+          const height = item.defaultWidth || 100
           const rotation = item.rotation || 0
 
           // Special case for doors - they must be on the building border
@@ -94,6 +97,7 @@ export function MapEditor() {
 
           // Check if the new element would overlap with existing elements
           if (isOverlapping(x, y, width, height, "new-element",rotation)) {
+            console.log("Overlapping with existing elements")
             return false
           }
           return isWithinBuilding(x, y, width, height,rotation)
@@ -108,8 +112,11 @@ export function MapEditor() {
           if (!clientOffset) return
 
           // Adjust for zoom level
-          const x = Math.floor((clientOffset.x - mapRect.left) / zoomLevel / mapSettings.grid_size) * mapSettings.grid_size
-          const y = Math.floor((clientOffset.y - mapRect.top) / zoomLevel / mapSettings.grid_size) * mapSettings.grid_size
+          const rawX = (clientOffset.x - mapRect.left) / zoomLevel
+          const rawY = (clientOffset.y - mapRect.top) / zoomLevel
+          const x = Math.round(rawX / mapSettings.grid_size) * mapSettings.grid_size
+          const y = Math.round(rawY / mapSettings.grid_size) * mapSettings.grid_size
+
           const width = item.defaultWidth || 100
           const height = item.defaultHeight || 100
           const rotation = item.rotation || 0

@@ -34,7 +34,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
   const [selectedSource, setSelectedSource] = useState<MapElement | null>(null)
   const [selectedTarget, setSelectedTarget] = useState<MapElement | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const { mapSettings, project, floors, currentFloor } = useMapEditor()
+  const { mapSettings, project, floors, currentFloor,floorElements} = useMapEditor()
   
   // Initialize filters with current floor as default
   const [sourceTypeFilter, setSourceTypeFilter] = useState(currentFloor.toString())
@@ -141,7 +141,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
       setError("Source and destination cannot be the same")
       return
     }
-    const path = findPath(selectedSource, selectedTarget, elements, mapSettings, isGuestMode)
+    const path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
     onRouteSelect(selectedSource, selectedTarget, path)
     onOpenChange(false)
   }, [selectedSource, selectedTarget, elements, mapSettings, isGuestMode, onRouteSelect, onOpenChange])

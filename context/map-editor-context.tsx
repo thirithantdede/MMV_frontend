@@ -1,5 +1,5 @@
 "use client"
-
+import { clearAllCaches, clearFloorElementsCache } from "@/utils/pathfinding"
 import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react"
 import { FloorCollection, Project, type MapElement, type MapSettings } from "@/types"
 import useMutate from "@/hooks/use-mutate"
@@ -15,6 +15,8 @@ interface MapEditorContextType {
 
   project : Project
   updateProject: (project: Project) => void
+  floorElements : MapElement[],
+  setFloorElements : (elements: MapElement[]) => void
 
   fetchFromServer: boolean,
   setFetchFromServer: (isFetchFromServer: boolean) => void
@@ -122,7 +124,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   const [floors, setFloors] = useState<FloorCollection | null>(loadFromStorage("mall-project", [])?.floors)
   const [project, setProject] = useState<Project>(()=>loadFromStorage("mall-project", []) as unknown as Project)
   const [selectedElement, setSelectedElement] = useState<MapElement | null>(null)
-  // Floor state
+  const [floorElements, setFloorElements] = useState<MapElement[]>(() => loadFromStorage("floor-elements", []))
   const [totalFloors, setTotalFloors] = useState(loadFromStorage("mall-project", [])?.total_floors)
 
   // Map settings - load from localStorage if available
@@ -173,11 +175,13 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   },[isError])
 
   useEffect(() => {
-    const toSaveElements = elements.filter(el => el.floor != 0);
-    saveToStorage("mall-map-elements-" + currentFloor, toSaveElements)
-    const floorElements = elements.filter(el => el.floor == 0);
-    saveToStorage("floor-elements", floorElements)
-  }, [elements])
+  const toSaveElements = elements.filter(el => el.floor != 0);
+  saveToStorage("mall-map-elements-" + currentFloor, toSaveElements)
+  const floorElements = elements.filter(el => el.floor == 0);
+  saveToStorage("floor-elements", floorElements)
+  clearFloorElementsCache();
+}, [elements, currentFloor])
+
 
   // Save map settings to localStorage whenever they change
   useEffect(() => {
@@ -203,10 +207,16 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   // Floor operations
   // Update the handleSetCurrentFloor function to handle transitions
-  const handleSetCurrentFloor = useCallback((floor: number) => {
-    setCurrentFloor(floor)
-    setSelectedElement(null) // Clear selection when changing floors
-  }, [])
+const handleSetCurrentFloor = useCallback((floor: number) => {
+  // Add a small delay to prevent rapid floor switching
+  setIsFloorTransitioning(true);
+  
+  setTimeout(() => {
+    setCurrentFloor(floor);
+    setSelectedElement(null);
+    setIsFloorTransitioning(false);
+  }, 100); // Small delay to batch updates
+}, [])
 
   const addFloor = useCallback(() => {
     setTotalFloors((prev) => prev + 1)
@@ -232,10 +242,10 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   }, [])
 
   // Map settings update
-  const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
-    setMapSettings((prev) => ({ ...prev, ...settings }))
-  }, [mapSettings])
-
+const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
+  setMapSettings((prev) => ({ ...prev, ...settings }))
+  clearAllCaches();
+}, [])
   // Zoom controls - updated min zoom to 0.3 (30%)
   const zoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(prev + 0.1, 3))
@@ -339,6 +349,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       setFetchFromServer,
       floors,
       updateFloors,
+      floorElements,
+      setFloorElements,
       project,
       updateProject,
       currentFloor,
@@ -373,6 +385,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       setFetchFromServer,
       floors,
       updateFloors,
+      floorElements,
+      setFloorElements,
       project,
       updateProject,
       currentFloor,

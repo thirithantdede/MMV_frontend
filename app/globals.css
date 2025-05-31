@@ -306,3 +306,63 @@ body {
 .pulsing-dot {
   animation: pulsing-dot 1.5s ease-in-out infinite;
 }
+
+
+/* Add these optimizations to your global CSS */
+
+/* Optimize animations */
+@keyframes dash {
+  to {
+    stroke-dashoffset: -10;
+  }
+}
+
+.animate-dash {
+  animation: dash 1s linear infinite;
+}
+
+/* Optimize transforms */
+.will-change-transform {
+  will-change: transform;
+}
+
+/* Reduce paint operations */
+.map-element {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Optimize floor transitions */
+.floor-transition {
+  transition: opacity 0.2s ease-in-out;
+}
+
+.floor-transition-enter {
+  opacity: 0;
+}
+
+.floor-transition-enter-active {
+  opacity: 1;
+}
+
+.floor-transition-exit {
+  opacity: 1;
+}
+
+.floor-transition-exit-active {
+  opacity: 0;
+}
+
+/* Optimize bounce animation */
+@keyframes bounce-gentle {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.animate-bounce-gentle {
+  animation: bounce-gentle 2s ease-in-out infinite;
+}
