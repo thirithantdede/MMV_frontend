@@ -2,6 +2,7 @@ export interface Project {
   id: string
   name: string
   slug: string
+  uri : string
   description: string
   imageUrl: string
   category: string

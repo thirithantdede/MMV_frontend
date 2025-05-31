@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState, useMemo, useEffect } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { useMapEditor } from "@/context/map-editor-context"
@@ -22,11 +22,10 @@ interface QueryErrorInterface {
 
 export function ElementSearch({ onElementSelect }: ElementSearchProps) {
   const { project } = useMapEditor()
-  const [searchQuery, setSearchQuery] = useState(" ")
+  const [searchQuery, setSearchQuery] = useState("")
   const [showSearchResults, setShowSearchResults] = useState(false)
   const [selectedElement, setSelectedElement] = useState<MapElement | null>(null)
   const [showElementDetails, setShowElementDetails] = useState(false)
-  const [typeFilter, setTypeFilter] = useState("all")
 
   const dataFetching = useQuery(`/search-elements/${project.id}?search=${searchQuery}`)
 
@@ -38,52 +37,25 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
   }, [searchQuery, dataFetching?.refetch])
 
   // Ensure elements is always an array
-  const elements = useMemo(() => {
-    if (!dataFetching?.data) return []
-    if (Array.isArray(dataFetching.data)) {
-      return dataFetching.data as MapElement[]
-    } else if (dataFetching.data && typeof dataFetching.data === "object" && Array.isArray(dataFetching.data.elements)) {
-      return dataFetching.data.elements as MapElement[]
-    }
-    console.warn("Unexpected data format for search elements:", dataFetching.data)
-    return []
-  }, [dataFetching?.data])
+  const elements = dataFetching?.data?.elements && Array.isArray(dataFetching.data.elements)
+    ? dataFetching.data.elements as MapElement[]
+    : []
 
-  // Get unique element types for filter dropdown
-  const elementTypes = useMemo(() => {
-    const types = new Set<string>()
-    elements.forEach((element) => {
-      types.add(element.type)
-    })
-    return Array.from(types)
-  }, [elements])
-
-  // Filter elements based on search query and type filter
-  const filteredElements = useMemo(() => {
-    if (!searchQuery.trim() && typeFilter === "all") return []
-
-    let filtered = elements
-
-    // Apply type filter
-    if (typeFilter !== "all") {
-      filtered = filtered.filter((element) => element.type === typeFilter)
-    }
-
-    // Apply search filter
-    if (searchQuery.trim()) {
-      const searchLower = searchQuery.toLowerCase()
-      filtered = filtered.filter((element) => element.name.toLowerCase().includes(searchLower))
-    }
-
-    return filtered.sort((a, b) => a.name.localeCompare(b.name))
-  }, [elements, searchQuery, typeFilter])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    if (searchQuery.trim() || typeFilter !== "all") {
+    if (searchQuery.trim()) {
+      console.log('open moodal')
       setShowSearchResults(true)
     }
   }
+
+  useEffect(()=>{
+    console.log('elements',elements)
+    if(searchQuery.trim()){
+        setShowSearchResults(true)
+    }
+  },[searchQuery])
 
   const handleElementClick = (element: MapElement) => {
     setSelectedElement(element)
@@ -96,16 +68,10 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
       setShowElementDetails(false)
       setShowSearchResults(false)
       setSearchQuery("")
-      setTypeFilter("all")
     }
   }
 
-  const clearSearch = () => {
-    setSearchQuery("")
-    setTypeFilter("all")
-  }
-
-  // Error UI for 404 or other errors
+  // Error UI
   if (dataFetching.error) {
     const error = dataFetching.error as QueryErrorInterface
     return (
@@ -116,7 +82,7 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
           </h3>
           <p className="text-sm text-slate-600 mt-2">
             {error.status === 404
-              ? `The project with ID "${project.id}" could not be found. Please check the project ID or try again.`
+              ? `The project with ID "${project.id}" could not be found.`
               : `An error occurred: ${error.data?.message || "Please try again."}`}
           </p>
         </div>
@@ -149,25 +115,8 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
           value={searchQuery}
           onChange={setSearchQuery}
           placeholder="Search elements..."
-          onClear={clearSearch}
           className="w-full"
         />
-        <div className="absolute right-10 top-1">
-          {/* Uncomment if Select component is needed */}
-          {/* <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="h-7 w-[100px] text-xs">
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {elementTypes.map((type) => (
-                <SelectItem key={type} value={type}>
-                  {type.charAt(0).toUpperCase() + type.slice(1)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select> */}
-        </div>
       </form>
 
       {/* Search Results Dialog */}
@@ -189,7 +138,7 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
             </div>
           ) : (
             <ElementList
-              elements={filteredElements}
+              elements={elements}
               onElementClick={handleElementClick}
               emptyMessage={
                 searchQuery
@@ -230,40 +179,12 @@ export function ElementSearch({ onElementSelect }: ElementSearchProps) {
                 </div>
               )}
 
-              {selectedElement.type === "store" &&
-                selectedElement.shop_information?.closed_days &&
-                selectedElement.shop_information?.closed_days !== "none" && (
-                  <div className="mb-4">
-                    <p className="text-sm font-medium">Closed on:</p>
-                    <p className="text-sm capitalize">{selectedElement.shop_information?.closed_days}</p>
-                  </div>
-                )}
-
               {selectedElement.notes && (
                 <div className="bg-muted/30 p-4 rounded-md mb-4">
                   <p className="text-sm font-medium">Description:</p>
                   <p className="text-sm whitespace-pre-line">{selectedElement.notes}</p>
                 </div>
               )}
-
-              {selectedElement.type === "store" &&
-                selectedElement.shop_information?.promotions.is_now &&
-                selectedElement.shop_information?.promotions.detail && (
-                  <div className="bg-primary/10 p-4 rounded-md mb-4">
-                    <p className="text-sm font-medium">Current Promotion:</p>
-                    <p className="text-sm whitespace-pre-line">
-                      {selectedElement.shop_information?.promotions?.detail}
-                    </p>
-                    {selectedElement.shop_information?.promotions.end_date && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Ends:{" "}
-                        {new Date(
-                          selectedElement?.shop_information?.promotions?.end_date
-                        ).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                )}
 
               <div className="flex justify-end mt-6">
                 <Button onClick={handleFindOnMap}>Find on Map</Button>

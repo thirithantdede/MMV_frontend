@@ -7,44 +7,40 @@ import Image from "next/image"
 import { Users, Store, Calendar, MapPin, Star, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Project } from "@/types/project"
+import { Project } from "@/types"
 
-interface ProjectCardProps {
-  project: Project
-}
-
-export default function ProjectCard({ project }: ProjectCardProps) {
+export default function ProjectCard( {project} : {project: Project} ) {
   const router = useRouter()
 
   const handleViewProject = () => {
-    router.push(`/project/${project.slug}`)
+    router.push(`/projects/${project.uri}`)
   }
 
   return (
     <Card className="overflow-hidden transition-all duration-300 hover:shadow-lg">
       <div className="relative h-48 w-full">
-        <Image src={project.imageUrl || "/placeholder.svg"} alt={project.name} fill className="object-cover" />
-        <div className="absolute top-3 right-3 bg-white/90 rounded-full px-2 py-1 text-xs font-medium flex items-center">
+        <Image src={project.photo_path || "/placeholder.svg"} alt={project.name} fill className="object-cover" />
+        {/* <div className="absolute top-3 right-3 bg-white/90 rounded-full px-2 py-1 text-xs font-medium flex items-center">
           <Star className="h-3 w-3 text-yellow-500 mr-1" />
           {project.rating.toFixed(1)}
-        </div>
+        </div> */}
       </div>
 
       <CardContent className="pt-4">
         <div className="flex items-start justify-between mb-2">
           <h3 className="text-lg font-bold line-clamp-1">{project.name}</h3>
-          <span
+          {/* <span
             className={`text-xs font-medium px-2 py-1 rounded-full ${
               project.category === "Shopping Center" ? "bg-blue-100 text-blue-800" : "bg-purple-100 text-purple-800"
             }`}
           >
             {project.category}
-          </span>
+          </span> */}
         </div>
 
         <div className="flex items-center text-gray-500 text-sm mb-1">
           <MapPin className="h-3.5 w-3.5 mr-1" />
-          <span className="line-clamp-1">{project.location}</span>
+          <span className="line-clamp-1">{project.address}</span>
         </div>
 
         <p className="text-gray-600 text-sm mt-2 line-clamp-2">{project.description}</p>
@@ -53,13 +49,13 @@ export default function ProjectCard({ project }: ProjectCardProps) {
           <StatItem
             icon={<Users className="h-4 w-4 text-blue-500" />}
             label="Visitors"
-            value={formatNumber(project.visitorCount)}
+            value={formatNumber(124)}
           />
-          <StatItem icon={<Store className="h-4 w-4 text-green-500" />} label="Stores" value={project.storeCount} />
+          <StatItem icon={<Store className="h-4 w-4 text-green-500" />} label="Stores" value={project.elements_count} />
           <StatItem
             icon={<Calendar className="h-4 w-4 text-purple-500" />}
             label="Created"
-            value={formatDate(project.createdAt)}
+            value={formatDate(project.published_at)}
           />
         </div>
       </CardContent>
@@ -67,7 +63,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
       <CardFooter className="pt-0">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden relative">
+            {/* <div className="h-8 w-8 rounded-full bg-gray-200 overflow-hidden relative">
               <Image
                 src={project.adminAvatar || "/placeholder.svg"}
                 alt={project.adminName}
@@ -77,7 +73,7 @@ export default function ProjectCard({ project }: ProjectCardProps) {
             </div>
             <span className="text-sm text-gray-600 ml-2">
               by <span className="font-medium">{project.adminName}</span>
-            </span>
+            </span> */}
           </div>
 
           <Button

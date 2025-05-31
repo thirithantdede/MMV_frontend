@@ -8,6 +8,7 @@ import StatsOverview from "./stats-overview"
 import FeaturedProjects from "./featured-projects"
 import SearchFilters from "./search-filters"
 import ProjectGrid from "./project-grid"
+import useQuery from "@/hooks/use-query"
 
 
 export default function ExplorePageContent() {
@@ -16,26 +17,7 @@ export default function ExplorePageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [sortBy, setSortBy] = useState<"popular" | "newest" | "rating">("popular")
 
-  // Filter projects based on search query and category
-  const filteredProjects = mockProjects.filter((project) => {
-    const matchesSearch =
-      project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      project.location.toLowerCase().includes(searchQuery.toLowerCase())
-
-    const matchesCategory = !selectedCategory || project.category === selectedCategory
-
-    return matchesSearch && matchesCategory
-  })
-
-  // Sort projects based on selected sort option
-  const sortedProjects = [...filteredProjects].sort((a, b) => {
-    if (sortBy === "popular") return b.visitorCount - a.visitorCount
-    if (sortBy === "newest") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    return b.rating - a.rating
-  })
-
-  // Featured projects (top 3 by visitor count)
-  const featuredProjects = [...mockProjects].sort((a, b) => b.visitorCount - a.visitorCount).slice(0, 3)
+  const projectDataQuery = useQuery('projects');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,11 +26,24 @@ export default function ExplorePageContent() {
       <div className="flex flex-col">
         <HeroSection onMenuClick={() => setIsDrawerOpen(true)} />
 
-        <main className="container mx-auto px-4 py-8">
-          <StatsOverview projects={mockProjects} />
+        <main className="container mx-auto px-4 py-4">
 
-          <FeaturedProjects projects={featuredProjects} />
-
+          {
+            projectDataQuery.isLoading ? (
+              <div className="flex justify-center items-center h-screen">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid">
+                  <span className="sr-only">Loading...</span>
+                </div>
+              </div>
+            ) : projectDataQuery.data ? (
+              <ProjectGrid projects={projectDataQuery.data?.data} />
+            ) : (
+              <div className="flex justify-center items-center h-screen">
+                <p className="text-gray-500">No projects found.</p>
+              </div>
+            )
+          }
+{/* 
           <SearchFilters
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
@@ -56,9 +51,9 @@ export default function ExplorePageContent() {
             onCategoryChange={setSelectedCategory}
             sortBy={sortBy}
             onSortChange={setSortBy}
-          />
+          /> */}
 
-          <ProjectGrid projects={sortedProjects} />
+          {/* <ProjectGrid projects={sortedProjects} /> */}
         </main>
       </div>
     </div>

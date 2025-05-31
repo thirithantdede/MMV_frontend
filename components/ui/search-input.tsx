@@ -31,6 +31,12 @@ export const SearchInput = memo(function SearchInput({
         className="pl-9 pr-10"
         defaultValue={value}
         onBlur={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault()
+            onChange(e.currentTarget.value)
+          }
+        }}
         autoFocus={autoFocus}
       />
       {value && onClear && (

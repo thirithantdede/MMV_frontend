@@ -37,6 +37,7 @@ export const PreviewHeader = memo(function PreviewHeader({
 
   const {project} = useMapEditor();
 
+  
   return (
     <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-3">
       <div className="flex items-center justify-between mb-2">

@@ -40,6 +40,14 @@ export interface Project {
   map_settings : MapSettings
   published_at : string
   updated_at : string
+  elements_count : number
+  user?: User
+}
+
+export interface User{
+  id : string
+  name : string,
+  email : string,
 }
 
 export type FloorCollection = Floor[];

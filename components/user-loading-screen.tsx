@@ -39,14 +39,17 @@ export const UserLoadingScreen = memo(function LoadingScreen({
   } = useMapEditor()
 
   const projectDataQuery = useQuery(`/projects/${project_uri}`)
-
+  
   const syncToLocal = useCallback(() => {
-    const { building_footprint, floors, project, elements } = projectDataQuery.data
+    
+    if(projectDataQuery.isLoading) return;
+    const { building_footprint, floors, project, elements } = projectDataQuery.data.data
 
     const updatedBuildingFootprint = {
       ...building_footprint,
       isSynced: true,
     }
+
 
     updateMapSettings(updatedBuildingFootprint)
     updateFloors(floors)
@@ -70,7 +73,7 @@ export const UserLoadingScreen = memo(function LoadingScreen({
     setStatus("Syncing local storage...")
     setProgress(95)
     setLocalSynced(true)
-  }, [projectDataQuery.data, updateMapSettings, updateFloors, updateProject])
+  }, [projectDataQuery.data,projectDataQuery.isLoading, updateMapSettings, updateFloors, updateProject])
 
   useEffect(() => {
     if (skipLoading) {

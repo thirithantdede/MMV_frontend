@@ -119,11 +119,11 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   const [syncError, setSyncError] = useState<string | null>(null);
   const [fetchFromServer, setFetchFromServer] = useState<boolean>(true);
 
-  const [floors, setFloors] = useState<FloorCollection | null>(null)
+  const [floors, setFloors] = useState<FloorCollection | null>(loadFromStorage("mall-project", [])?.floors)
   const [project, setProject] = useState<Project>(()=>loadFromStorage("mall-project", []) as unknown as Project)
   const [selectedElement, setSelectedElement] = useState<MapElement | null>(null)
   // Floor state
-  const [totalFloors, setTotalFloors] = useState(2)
+  const [totalFloors, setTotalFloors] = useState(loadFromStorage("mall-project", [])?.total_floors)
 
   // Map settings - load from localStorage if available
   const [mapSettings, setMapSettings] = useState<MapSettings>(() =>

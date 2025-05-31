@@ -34,48 +34,106 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
   const [selectedSource, setSelectedSource] = useState<MapElement | null>(null)
   const [selectedTarget, setSelectedTarget] = useState<MapElement | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [sourceTypeFilter, setSourceTypeFilter] = useState("all")
-  const [targetTypeFilter, setTargetTypeFilter] = useState("all")
-  const { mapSettings, project } = useMapEditor()
+  const { mapSettings, project, floors, currentFloor } = useMapEditor()
+  
+  // Initialize filters with current floor as default
+  const [sourceTypeFilter, setSourceTypeFilter] = useState(currentFloor.toString())
+  const [targetTypeFilter, setTargetTypeFilter] = useState(currentFloor.toString())
 
-  const sourceQuery = useQuery(`/search-elements/${project.id}?search=${sourceSearch}`)
-  const targetQuery = useQuery(`/search-elements/${project.id}?search=${targetSearch}`)
+  // Reset filters to current floor when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSourceTypeFilter(currentFloor.toString())
+      setTargetTypeFilter(currentFloor.toString())
+      setSourceSearch("")
+      setTargetSearch("")
+      setSelectedSource(null)
+      setSelectedTarget(null)
+      setError(null)
+    }
+  }, [open, currentFloor])
+
+  // Build search query with floor filter
+  const buildSearchQuery = (search: string, floorFilter: string) => {
+    const params = new URLSearchParams()
+    if (search.trim()) {
+      params.append('search', search.trim())
+    }
+    if (floorFilter !== "all") {
+      params.append('floor', floorFilter)
+    }
+    return params.toString()
+  }
+
+  const sourceQueryString = buildSearchQuery(sourceSearch, sourceTypeFilter)
+  const targetQueryString = buildSearchQuery(targetSearch, targetTypeFilter)
+
+  const sourceQuery = useQuery(`/search-elements/${project.id}?${sourceQueryString}`)
+  const targetQuery = useQuery(`/search-elements/${project.id}?${targetQueryString}`)
+
+  // Refetch when search or filter changes
+  useEffect(() => {
+    if (sourceQuery.refetch) {
+      sourceQuery.refetch()
+    }
+  }, [sourceSearch, sourceTypeFilter])
 
   useEffect(() => {
-    if (sourceSearch.trim() && sourceQuery.refetch) sourceQuery.refetch()
-  }, [sourceSearch, sourceQuery.refetch])
+    if (targetQuery.refetch) {
+      targetQuery.refetch()
+    }
+  }, [targetSearch, targetTypeFilter])
 
-  useEffect(() => {
-    if (targetSearch.trim() && targetQuery.refetch) targetQuery.refetch()
-  }, [targetSearch, targetQuery.refetch])
-
-  const parseElements = (data: any): MapElement[] =>
-    !data ? [] :
-    Array.isArray(data) ? data :
-    Array.isArray(data.elements) ? data.elements :
-    (console.warn("Unexpected data format:", data), [])
+  const parseElements = (data: any): MapElement[] => {
+    if (!data) return []
+    if (Array.isArray(data)) return data
+    if (Array.isArray(data.elements)) return data.elements
+    console.warn("Unexpected data format:", data)
+    return []
+  }
 
   const sourceElements = useMemo(() => parseElements(sourceQuery.data), [sourceQuery.data])
   const targetElements = useMemo(() => parseElements(targetQuery.data), [targetQuery.data])
 
-  const elementTypes = useMemo(() => 
-    [...new Set([...sourceElements, ...targetElements].map(e => e.type))], 
-    [sourceElements, targetElements]
-  )
-
-  const filterElements = (elems: MapElement[], typeFilter: string) =>
-    elems
-      .filter(e => !["pathway", "floor"].includes(e.type))
-      .filter(e => typeFilter === "all" || e.type === typeFilter)
+  // Filter out non-navigable elements
+  const filterNavigableElements = (elems: MapElement[]) =>
+    elems.filter(e => !["pathway", "floor"].includes(e.type))
 
   const filteredSourceElements = useMemo(() => 
-    filterElements(sourceElements, sourceTypeFilter), 
-    [sourceElements, sourceTypeFilter]
+    filterNavigableElements(sourceElements), 
+    [sourceElements]
   )
+  
   const filteredTargetElements = useMemo(() => 
-    filterElements(targetElements, targetTypeFilter), 
-    [targetElements, targetTypeFilter]
+    filterNavigableElements(targetElements), 
+    [targetElements]
   )
+
+  // Show all elements when no search query and "all" floors selected
+  const shouldShowAllElements = (search: string, filter: string) => 
+    !search.trim() && filter === "all"
+
+  // Get all elements for the current context when no search is performed
+  const getAllElementsForFilter = (filter: string) => {
+    const allElements = elements.filter(e => !["pathway", "floor"].includes(e.type))
+    if (filter === "all") return allElements
+    return allElements.filter(e => e.floor.toString() === filter)
+  }
+
+  // Final elements to display
+  const finalSourceElements = useMemo(() => {
+    if (shouldShowAllElements(sourceSearch, sourceTypeFilter)) {
+      return getAllElementsForFilter(sourceTypeFilter)
+    }
+    return filteredSourceElements
+  }, [sourceSearch, sourceTypeFilter, filteredSourceElements, elements])
+
+  const finalTargetElements = useMemo(() => {
+    if (shouldShowAllElements(targetSearch, targetTypeFilter)) {
+      return getAllElementsForFilter(targetTypeFilter)
+    }
+    return filteredTargetElements
+  }, [targetSearch, targetTypeFilter, filteredTargetElements, elements])
 
   const handleFindRoute = useCallback(() => {
     if (!selectedSource || !selectedTarget) return
@@ -87,8 +145,6 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
     onRouteSelect(selectedSource, selectedTarget, path)
     onOpenChange(false)
   }, [selectedSource, selectedTarget, elements, mapSettings, isGuestMode, onRouteSelect, onOpenChange])
-
-  
 
   const handleSelectSource = useCallback((element: MapElement) => {
     setSelectedSource(element)
@@ -111,6 +167,10 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
       </span>
     </div>
   )
+
+  const isLoading = (search: string, query: any) => {
+    return search.trim() && query.isLoading
+  }
 
   if (sourceQuery.error || targetQuery.error) {
     const err = (sourceQuery.error || targetQuery.error) as QueryError
@@ -179,26 +239,26 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {elementTypes.map(type => (
-                    <SelectItem key={`source-${type}`} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                  <SelectItem value="all">All</SelectItem>
+                  {floors?.map(floor => (
+                    <SelectItem key={`source-floor-${floor.id}`} value={floor.level.toString()}>
+                      Floor {floor.level}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             {renderSelectedElement(selectedSource)}
-            {sourceQuery.isLoading ? (
+            {isLoading(sourceSearch, sourceQuery) ? (
               <div className="flex flex-col items-center justify-center h-[120px] text-center">
                 <div className="p-2 bg-muted rounded-full mb-2">
-                  <Ticket className="h-8 w-8 text-muted-foreground" />
+                  <Ticket className="h-8 w-8 text-muted-foreground animate-spin" />
                 </div>
                 <p className="text-sm text-muted-foreground">Loading...</p>
               </div>
             ) : (
               <ElementList
-                elements={filteredSourceElements}
+                elements={finalSourceElements}
                 onElementClick={handleSelectSource}
                 selectedElementId={selectedSource?.id}
                 disabledElementId={selectedTarget?.id}
@@ -222,26 +282,26 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  {elementTypes.map(type => (
-                    <SelectItem key={`target-${type}`} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                  <SelectItem value="all">All</SelectItem>
+                  {floors?.map(floor => (
+                    <SelectItem key={`target-floor-${floor.id}`} value={floor.level.toString()}>
+                      Floor {floor.level}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
             {renderSelectedElement(selectedTarget)}
-            {targetQuery.isLoading ? (
+            {isLoading(targetSearch, targetQuery) ? (
               <div className="flex flex-col items-center justify-center h-[120px] text-center">
                 <div className="p-2 bg-muted rounded-full mb-2">
-                  <Ticket className="h-8 w-8 text-muted-foreground" />
+                  <Ticket className="h-8 w-8 text-muted-foreground animate-spin" />
                 </div>
                 <p className="text-sm text-muted-foreground">Loading...</p>
               </div>
             ) : (
               <ElementList
-                elements={filteredTargetElements}
+                elements={finalTargetElements}
                 onElementClick={handleSelectTarget}
                 selectedElementId={selectedTarget?.id}
                 disabledElementId={selectedSource?.id}
