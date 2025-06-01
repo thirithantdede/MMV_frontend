@@ -14,6 +14,7 @@ import { ElementList } from "@/components/ui/element-list"
 import { ElementIcon } from "./map/element-icon"
 import useQuery from "@/hooks/use-query"
 import type { MapElement } from "@/types"
+import { storeCategories } from "./panels/store-properties-panel"
 
 interface RouteDialogProps {
   open: boolean
@@ -33,6 +34,8 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
   const [targetSearch, setTargetSearch] = useState("")
   const [selectedSource, setSelectedSource] = useState<MapElement | null>(null)
   const [selectedTarget, setSelectedTarget] = useState<MapElement | null>(null)
+  const [selectedSourceCategory, setSelectedSourceCategory] = useState<string>("all")
+  const [selectedTargetCategory, setSelectedTargetCategory] = useState<string>("all")
   const [error, setError] = useState<string | null>(null)
   const { mapSettings, project, floors, currentFloor,floorElements} = useMapEditor()
   
@@ -54,7 +57,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
   }, [open, currentFloor])
 
   // Build search query with floor filter
-  const buildSearchQuery = (search: string, floorFilter: string) => {
+  const buildSearchQuery = (search: string, floorFilter: string, selectedCategory: string) => {
     const params = new URLSearchParams()
     if (search.trim()) {
       params.append('search', search.trim())
@@ -62,11 +65,16 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
     if (floorFilter !== "all") {
       params.append('floor', floorFilter)
     }
+
+    // Add category filter if selected
+    if (selectedCategory !== "all") {
+      params.append('category', selectedCategory)
+    }
     return params.toString()
   }
 
-  const sourceQueryString = buildSearchQuery(sourceSearch, sourceTypeFilter)
-  const targetQueryString = buildSearchQuery(targetSearch, targetTypeFilter)
+  const sourceQueryString = buildSearchQuery(sourceSearch, sourceTypeFilter,selectedSourceCategory)
+  const targetQueryString = buildSearchQuery(targetSearch, targetTypeFilter,selectedTargetCategory)
 
   const sourceQuery = useQuery(`/search-elements/${project.id}?${sourceQueryString}`)
   const targetQuery = useQuery(`/search-elements/${project.id}?${targetQueryString}`)
@@ -247,6 +255,22 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                   ))}
                 </SelectContent>
               </Select>
+                <Select
+                      value={selectedSourceCategory} 
+                      onValueChange={setSelectedSourceCategory}
+                      >
+                        <SelectTrigger id="store-category" className="w-[120px]">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          {storeCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                </Select>
             </div>
             {renderSelectedElement(selectedSource)}
             {isLoading(sourceSearch, sourceQuery) ? (
@@ -290,6 +314,22 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                   ))}
                 </SelectContent>
               </Select>
+                <Select
+                      value={selectedTargetCategory} 
+                      onValueChange={setSelectedTargetCategory}
+                      >
+                        <SelectTrigger id="store-category" className="w-[120px]">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All</SelectItem>
+                          {storeCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                </Select>
             </div>
             {renderSelectedElement(selectedTarget)}
             {isLoading(targetSearch, targetQuery) ? (

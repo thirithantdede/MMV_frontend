@@ -59,9 +59,14 @@ export const MapElementComponent = memo(function MapElementComponent({
   const avgCharWidth = 0.6 * fontSize // Estimate average character width
   const maxChars = Math.min(Math.max(Math.floor(availableWidth / avgCharWidth), 5), 50)
   const displayName = element.name.length > maxChars ? `${element.name.substring(0, maxChars)}...` : element.name
+  const displayCategory = element?.shop_information?.category || ""
 
   // Determine border color
   const borderColor = isSelected ? undefined : isHighlighted ? undefined : element.border_color || "#6B7280" // Fallback to gray-500
+
+  // Dynamically adjust category badge background and border for a more specular look
+  const categoryBgColor = element.color ? `color-mix(in srgb, ${element.color} 70%, #1D4ED8)` : "#1D4ED8" // Mix with blue-700 for vibrancy
+  const categoryBorderColor = element.color ? `color-mix(in srgb, ${element.color} 50%, #1E40AF)` : "#1E40AF" // Mix with blue-800 for contrast
 
   return (
     <div
@@ -94,9 +99,35 @@ export const MapElementComponent = memo(function MapElementComponent({
       onMouseDown={isGuestMode ? undefined : onDragStart}
     >
       <ElementIcon type={element.type} className={iconSizeClass} />
-      <span className={`mt-1 font-bold pointer-events-none ${fontSizeClass} text-center truncate`} style={{ maxWidth: `${availableWidth}px` }}>
+      <span
+        className={`mt-1 font-bold pointer-events-none ${fontSizeClass} text-center truncate`}
+        style={{ maxWidth: `${availableWidth}px` }}
+      >
         {displayName}
       </span>
+      {displayCategory && (
+        <div className="absolute top-2 left-2 pointer-events-none">
+          <span
+            className={`inline-flex items-center px-2 py-1 text-xs font-medium text-white shadow-sm border ${
+              fontSizeClass.includes("xs") || fontSizeClass.includes("sm") ? "rounded" : "rounded-full"
+            }`}
+            style={{
+              backgroundColor: categoryBgColor,
+              borderColor: categoryBorderColor,
+              borderRadius: `${
+                fontSizeClass.includes("xs") || fontSizeClass.includes("sm")
+                  ? Math.min(element.border_radius.topLeft / 1.5, 8)
+                  : Math.min(element.border_radius.topLeft, 12)
+              }px`,
+              backgroundImage: `linear-gradient(145deg, ${categoryBgColor}, color-mix(in srgb, ${categoryBgColor} 80%, #ffffff))`,
+              boxShadow: `0 0 8px color-mix(in srgb, ${categoryBgColor} 70%, #ffffff)`,
+              minWidth: "40px", // Ensure minimum width to prevent text clipping
+            }}
+          >
+            {displayCategory.length > 8 ? `${displayCategory.substring(0, 8)}...` : displayCategory}
+          </span>
+        </div>
+      )}
       <ElementBadges element={element} mapsetting={mapsetting} />
     </div>
   )
