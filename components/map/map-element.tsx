@@ -108,7 +108,7 @@ export const MapElementComponent = memo(function MapElementComponent({
       {displayCategory && (
         <div className="absolute top-2 left-2 pointer-events-none">
           <span
-            className={`inline-flex items-center px-2 py-1 text-xs font-medium text-white shadow-sm border ${
+            className={`inline-flex items-center px-2 py-1 text-sm font-medium  shadow-sm border ${
               fontSizeClass.includes("xs") || fontSizeClass.includes("sm") ? "rounded" : "rounded-full"
             }`}
             style={{

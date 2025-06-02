@@ -171,6 +171,8 @@ function findMultiFloorPath(
   
   // Step 1: Find path from source to nearest transition on source floor
   const sourceFloorTransitions = findTransitionElements(sourceFloor);
+  console.log(`Found ${sourceFloorTransitions.length} transitions on source floor ${sourceFloor}:`, sourceFloorTransitions.map(t => t.name || t.type));
+  
   if (sourceFloorTransitions.length === 0) {
     console.error(`No transition elements found on floor ${sourceFloor}`);
     return [];
@@ -182,26 +184,44 @@ function findMultiFloorPath(
     return [];
   }
 
+  console.log(`Using nearest transition on source floor: ${nearestSourceTransition.name || nearestSourceTransition.type}`);
   
-  // Get all elements for source floor
+  // Get all elements for source floor - FIXED: Use the correct elements array
   const sourceFloorElements = loadFloorElements(sourceFloor);
+  console.log(`Loaded ${sourceFloorElements.length} elements for source floor ${sourceFloor}`);
+  
+  // FIXED: Combine allElements and fElements for pathfinding
+  const combinedSourceElements = [...sourceFloorElements, ...allElements.filter(el => el.floor === sourceFloor)];
   
   // Get path from source to transition on source floor
   const sourceToTransitionPath = findSingleFloorPath(
     sourceStore,
     nearestSourceTransition,
-    sourceFloorElements,
+    combinedSourceElements, // Use combined elements
     fElements,
     mapSettings,
     avoidElements
   );
   
+  console.log(`Source to transition path length: ${sourceToTransitionPath.length}`);
+  
   if (sourceToTransitionPath.length === 0) {
     console.error(`Could not find path from source to transition on floor ${sourceFloor}`);
-    return [];
+    // Try alternative approach: add direct connection to transition
+    console.log('Attempting direct connection to transition...');
+    path.push({
+      x: sourceStore.x + sourceStore.width / 2,
+      y: sourceStore.y + sourceStore.height / 2,
+      floor: sourceFloor
+    });
+    path.push({
+      x: nearestSourceTransition.x + nearestSourceTransition.width / 2,
+      y: nearestSourceTransition.y + nearestSourceTransition.height / 2,
+      floor: sourceFloor
+    });
+  } else {
+    path.push(...sourceToTransitionPath);
   }
-  
-  path.push(...sourceToTransitionPath);
   
   // Step 2: Create transition points for intermediate floors
   let currentFloor = sourceFloor;
@@ -209,9 +229,16 @@ function findMultiFloorPath(
   
   while (currentFloor !== targetFloor) {
     const nextFloor = currentFloor + floorDirection;
+    console.log(`Moving from floor ${currentFloor} to floor ${nextFloor}`);
     
     // Find corresponding transition element on the next floor
     const nextFloorTransitions = findTransitionElements(nextFloor);
+    console.log(`Found ${nextFloorTransitions.length} transitions on next floor ${nextFloor}:`, nextFloorTransitions.map(t => t.name || t.type));
+    
+    if (nextFloorTransitions.length === 0) {
+      console.error(`No transition elements found on floor ${nextFloor}`);
+      return path; // Return partial path
+    }
     
     const correspondingTransition = nextFloorTransitions.find(t => 
       t.type === currentTransition.type &&
@@ -223,6 +250,7 @@ function findMultiFloorPath(
       // Use the nearest transition as fallback
       const fallbackTransition = findNearestTransition(currentTransition, nextFloorTransitions);
       if (fallbackTransition) {
+        console.log(`Using fallback transition on floor ${nextFloor}: ${fallbackTransition.name || fallbackTransition.type}`);
         path.push({
           x: fallbackTransition.x + fallbackTransition.width / 2,
           y: fallbackTransition.y + fallbackTransition.height / 2,
@@ -234,6 +262,7 @@ function findMultiFloorPath(
         return path;
       }
     } else {
+      console.log(`Using corresponding transition on floor ${nextFloor}: ${correspondingTransition.name || correspondingTransition.type}`);
       // Add transition point on the next floor
       path.push({
         x: correspondingTransition.x + correspondingTransition.width / 2,
@@ -248,6 +277,8 @@ function findMultiFloorPath(
   
   // Step 3: Find path from transition to target on target floor
   const targetFloorElements = loadFloorElements(targetFloor);
+  console.log(`Loaded ${targetFloorElements.length} elements for target floor ${targetFloor}`);
+  
   const targetFloorTransitions = findTransitionElements(targetFloor);
   
   // Find the transition element on target floor that corresponds to our current transition
@@ -257,21 +288,29 @@ function findMultiFloorPath(
     Math.abs(t.y - currentTransition.y) < 50
   ) || currentTransition; // Use current transition if no corresponding one found
   
+  console.log(`Using transition on target floor: ${targetFloorTransition.name || targetFloorTransition.type}`);
+  
+  // FIXED: Combine allElements and fElements for pathfinding on target floor
+  const combinedTargetElements = [...targetFloorElements, ...allElements.filter(el => el.floor === targetFloor)];
+  
   // Get path from transition to target on target floor
   const transitionToTargetPath = findSingleFloorPath(
     targetFloorTransition,
     targetStore,
-    targetFloorElements,
+    combinedTargetElements, // Use combined elements
     fElements,
     mapSettings,
     avoidElements
   );
   
+  console.log(`Transition to target path length: ${transitionToTargetPath.length}`);
+  
   if (transitionToTargetPath.length > 0) {
     // Remove the first point to avoid duplication with the last transition point
     path.push(...transitionToTargetPath.slice(1));
   } else {
-    // If no path found, at least add the target point
+    console.log('No path found from transition to target, adding direct connection...');
+    // If no path found, add direct connection to target
     path.push({
       x: targetStore.x + targetStore.width / 2,
       y: targetStore.y + targetStore.height / 2,
@@ -293,10 +332,13 @@ function findSingleFloorPath(
   avoidElements: boolean = false,
 ): RoutePoint[] {
   const floor = sourceStore.floor != 0 ? sourceStore.floor : targetStore.floor;
+  
+  console.log(`Finding single floor path on floor ${floor} from ${sourceStore.name || sourceStore.type} to ${targetStore.name || targetStore.type}`);
 
   // Quick distance check - if stores are very close, return direct path
   const directDistance = calculateDistance(sourceStore, targetStore);
   if (directDistance < mapSettings.grid_size * 3) {
+    console.log('Stores are very close, returning direct path');
     return [
       { x: sourceStore.x + sourceStore.width / 2, y: sourceStore.y + sourceStore.height / 2, floor },
       { x: targetStore.x + targetStore.width / 2, y: targetStore.y + targetStore.height / 2, floor }
@@ -317,6 +359,7 @@ function findSingleFloorPath(
   if (buildingStartX < 0 || buildingStartX >= buildingGridWidth || buildingStartY < 0 || buildingStartY >= buildingGridHeight ||
       buildingEndX < 0 || buildingEndX >= buildingGridWidth || buildingEndY < 0 || buildingEndY >= buildingGridHeight) {
     console.error('Start or end point outside building bounds');
+    console.log(`Start: (${buildingStartX}, ${buildingStartY}), End: (${buildingEndX}, ${buildingEndY}), Grid: ${buildingGridWidth}x${buildingGridHeight}`);
     return [];
   }
 
@@ -332,6 +375,7 @@ function findSingleFloorPath(
 
   // Mark obstacles if avoidElements is true
   if (avoidElements) {
+    // FIXED: Filter elements properly for the current floor
     const floorElements = allElements.filter(
       (el) => (el.floor === floor && 
                el.id !== sourceStore.id && 
@@ -339,9 +383,12 @@ function findSingleFloorPath(
                el.walkable === false)
     );
 
-    // Process fElements
+    console.log(`Processing ${floorElements.length} floor elements and ${fElements.length} fElements for obstacles`);
+
+    // Process fElements - FIXED: Check floor properly
     for (const element of fElements) {
       if (element.id === sourceStore.id || element.id === targetStore.id) continue;
+      if (element.floor !== floor) continue; // Only process elements on current floor
       
       const minX = Math.max(0, Math.floor((element.x - mapSettings.building_x) / mapSettings.grid_size));
       const maxX = Math.min(buildingGridWidth, Math.ceil((element.x + element.width - mapSettings.building_x) / mapSettings.grid_size));
@@ -373,27 +420,75 @@ function findSingleFloorPath(
   // Check if start and end positions are walkable
   if (grid[buildingStartY * buildingGridWidth + buildingStartX] === 0) {
     console.error('Start position is blocked');
+    // FIXED: Try to find a nearby walkable position
+    const nearbyStart = findNearbyWalkablePosition(buildingStartX, buildingStartY, grid, buildingGridWidth, buildingGridHeight);
+    if (nearbyStart) {
+      console.log(`Found nearby walkable start position: (${nearbyStart.x}, ${nearbyStart.y})`);
+      return findSingleFloorPathWithCoords(nearbyStart.x, nearbyStart.y, buildingEndX, buildingEndY, grid, buildingGridWidth, buildingGridHeight, mapSettings, floor);
+    }
     return [];
   }
   
   if (grid[buildingEndY * buildingGridWidth + buildingEndX] === 0) {
     console.error('End position is blocked');
+    // FIXED: Try to find a nearby walkable position
+    const nearbyEnd = findNearbyWalkablePosition(buildingEndX, buildingEndY, grid, buildingGridWidth, buildingGridHeight);
+    if (nearbyEnd) {
+      console.log(`Found nearby walkable end position: (${nearbyEnd.x}, ${nearbyEnd.y})`);
+      return findSingleFloorPathWithCoords(buildingStartX, buildingStartY, nearbyEnd.x, nearbyEnd.y, grid, buildingGridWidth, buildingGridHeight, mapSettings, floor);
+    }
     return [];
   }
 
+  return findSingleFloorPathWithCoords(buildingStartX, buildingStartY, buildingEndX, buildingEndY, grid, buildingGridWidth, buildingGridHeight, mapSettings, floor);
+}
+
+// FIXED: Helper function to find nearby walkable position
+function findNearbyWalkablePosition(x: number, y: number, grid: Uint8Array, gridWidth: number, gridHeight: number, maxRadius: number = 5): { x: number, y: number } | null {
+  for (let radius = 1; radius <= maxRadius; radius++) {
+    for (let dx = -radius; dx <= radius; dx++) {
+      for (let dy = -radius; dy <= radius; dy++) {
+        if (Math.abs(dx) !== radius && Math.abs(dy) !== radius) continue; // Only check perimeter
+        
+        const newX = x + dx;
+        const newY = y + dy;
+        
+        if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
+          if (grid[newY * gridWidth + newX] === 1) {
+            return { x: newX, y: newY };
+          }
+        }
+      }
+    }
+  }
+  return null;
+}
+
+// FIXED: Separate function for A* pathfinding with coordinates
+function findSingleFloorPathWithCoords(
+  startX: number,
+  startY: number,
+  endX: number,
+  endY: number,
+  grid: Uint8Array,
+  gridWidth: number,
+  gridHeight: number,
+  mapSettings: MapSettings,
+  floor: number
+): RoutePoint[] {
   // Optimized A* with binary heap for open list
   const openList: Node[] = [];
   const closedSet = new Set<number>();
   
   // Use array indexing instead of string keys for better performance
-  const getIndex = (x: number, y: number) => y * buildingGridWidth + x;
+  const getIndex = (x: number, y: number) => y * gridWidth + x;
   
   const startNode: Node = {
-    x: buildingStartX,
-    y: buildingStartY,
+    x: startX,
+    y: startY,
     f: 0,
     g: 0,
-    h: heuristic(buildingStartX, buildingStartY, buildingEndX, buildingEndY),
+    h: heuristic(startX, startY, endX, endY),
     parent: null,
   };
   startNode.f = startNode.g + startNode.h;
@@ -413,7 +508,7 @@ function findSingleFloorPath(
   ];
 
   let iterations = 0;
-  const maxIterations = Math.min(gridSize, 10000); // Limit iterations for performance
+  const maxIterations = Math.min(gridWidth * gridHeight, 10000); // Limit iterations for performance
 
   while (openList.length > 0 && iterations < maxIterations) {
     iterations++;
@@ -429,7 +524,8 @@ function findSingleFloorPath(
     const current = openList[currentIndex];
 
     // If we reached the target
-    if (current.x === buildingEndX && current.y === buildingEndY) {
+    if (current.x === endX && current.y === endY) {
+      console.log(`Path found in ${iterations} iterations`);
       return reconstructPath(current, mapSettings, floor);
     }
 
@@ -446,9 +542,9 @@ function findSingleFloorPath(
       // Check if neighbor is valid
       if (
         nextX < 0 ||
-        nextX >= buildingGridWidth ||
+        nextX >= gridWidth ||
         nextY < 0 ||
-        nextY >= buildingGridHeight ||
+        nextY >= gridHeight ||
         closedSet.has(nextIndex) ||
         grid[nextIndex] === 0
       ) {
@@ -457,7 +553,7 @@ function findSingleFloorPath(
 
       // Calculate costs
       const g = current.g + cost;
-      const h = heuristic(nextX, nextY, buildingEndX, buildingEndY);
+      const h = heuristic(nextX, nextY, endX, endY);
       const f = g + h;
 
       // Check if this path to neighbor is better
@@ -479,7 +575,7 @@ function findSingleFloorPath(
     }
   }
 
-  console.error('No path found within building boundaries');
+  console.error(`No path found within building boundaries after ${iterations} iterations`);
   return [];
 }
 
@@ -517,3 +613,4 @@ export function clearAllCaches() {
   clearPathCache();
   transitionElementsCache.clear();
 }
+
