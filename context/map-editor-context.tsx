@@ -13,10 +13,10 @@ interface MapEditorContextType {
   updateElement: (element: MapElement) => void
   removeElement: (id: string) => void
 
-  project : Project
+  project: Project
   updateProject: (project: Project) => void
-  floorElements : MapElement[],
-  setFloorElements : (elements: MapElement[]) => void
+  floorElements: MapElement[],
+  setFloorElements: (elements: MapElement[]) => void
 
   fetchFromServer: boolean,
   setFetchFromServer: (isFetchFromServer: boolean) => void
@@ -24,8 +24,8 @@ interface MapEditorContextType {
   selectedElement: MapElement | null
   setSelectedElement: (element: MapElement | null) => void
 
-  isSyncing : boolean,
-  setIsSyncing: (isSyncing : boolean) => void
+  isSyncing: boolean,
+  setIsSyncing: (isSyncing: boolean) => void
 
   // Floor management
   floors: FloorCollection | null
@@ -74,7 +74,7 @@ export const loadFromStorage = <T extends object>(
   try {
     const sv = localStorage.getItem(key);
     const storedValue = sv ? JSON.parse(sv) : {};
-    
+
     const floorRaw = localStorage.getItem("floor-elements");
     const floorElements = floorRaw ? JSON.parse(floorRaw) : [];
 
@@ -89,7 +89,7 @@ export const loadFromStorage = <T extends object>(
       return [
         ...storedValue,
         ...floorElements,
-       ] as T;
+      ] as T;
     } else {
       return storedValue as T;
     }
@@ -116,13 +116,13 @@ export const saveToStorage = <T,>(key: string, value: T): void => {
 export function MapEditorProvider({ children }: { children: ReactNode }) {
   // Elements state - load from localStorage if available
   const [currentFloor, setCurrentFloor] = useState(1)
-  const [elements, setElements] = useState<MapElement[]>(() => loadFromStorage("mall-map-elements-" + currentFloor, [],true))
+  const [elements, setElements] = useState<MapElement[]>(() => loadFromStorage("mall-map-elements-" + currentFloor, [], true))
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
   const [fetchFromServer, setFetchFromServer] = useState<boolean>(true);
 
   const [floors, setFloors] = useState<FloorCollection | null>(loadFromStorage("mall-project", [])?.floors)
-  const [project, setProject] = useState<Project>(()=>loadFromStorage("mall-project", []) as unknown as Project)
+  const [project, setProject] = useState<Project>(() => loadFromStorage("mall-project", []) as unknown as Project)
   const [selectedElement, setSelectedElement] = useState<MapElement | null>(null)
   const [floorElements, setFloorElements] = useState<MapElement[]>(() => loadFromStorage("floor-elements", []))
   const [totalFloors, setTotalFloors] = useState(loadFromStorage("mall-project", [])?.total_floors)
@@ -134,13 +134,13 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
       height: 1000,
       grid_size: 20,
       show_grid: true,
-      show_opening_hours : false,
+      show_opening_hours: false,
       building_width: 1200,
       building_height: 800,
       building_x: 700,
       building_y: 400,
       restricted: true,
-      isSynced : true
+      isSynced: true
     }),
   )
 
@@ -157,30 +157,30 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   // Add these new state variables to the useState declarations in the MapEditorProvider
   const [isFloorTransitioning, setIsFloorTransitioning] = useState(false)
 
-  const [syncToServer, { isLoading,isError,error }] = useMutate({ callback: undefined });
+  const [syncToServer, { isLoading, isError, error }] = useMutate({ callback: undefined });
 
   // Save elements to localStorage whenever they change
   useEffect(() => {
-    setElements(loadFromStorage("mall-map-elements-" + currentFloor, [],true))
-  }, [currentFloor,isSyncing])
-
-  useEffect(()=>{
-    if(isError){
-      toast({
-      title: "Error",
-      description: error?.data?.message,
-      variant: "destructive"
-    })
-    }
-  },[isError])
+    setElements(loadFromStorage("mall-map-elements-" + currentFloor, [], true))
+  }, [currentFloor, isSyncing])
 
   useEffect(() => {
-  const toSaveElements = elements.filter(el => el.floor != 0);
-  saveToStorage("mall-map-elements-" + currentFloor, toSaveElements)
-  const floorElements = elements.filter(el => el.floor == 0);
-  saveToStorage("floor-elements", floorElements)
-  clearFloorElementsCache();
-}, [elements, currentFloor])
+    if (isError) {
+      toast({
+        title: "Error",
+        description: error?.data?.message,
+        variant: "destructive"
+      })
+    }
+  }, [isError])
+
+  useEffect(() => {
+    const toSaveElements = elements.filter(el => el.floor != 0);
+    saveToStorage("mall-map-elements-" + currentFloor, toSaveElements)
+    const floorElements = elements.filter(el => el.floor == 0);
+    saveToStorage("floor-elements", floorElements)
+    clearFloorElementsCache();
+  }, [elements, currentFloor])
 
 
   // Save map settings to localStorage whenever they change
@@ -191,7 +191,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   // Element operations
   const addElement = useCallback((element: MapElement) => {
     setElements((prev) => [...prev, element]);
-}, [totalFloors]);
+  }, [totalFloors]);
 
 
   const updateElement = useCallback((updatedElement: MapElement) => {
@@ -207,16 +207,16 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   // Floor operations
   // Update the handleSetCurrentFloor function to handle transitions
-const handleSetCurrentFloor = useCallback((floor: number) => {
-  // Add a small delay to prevent rapid floor switching
-  setIsFloorTransitioning(true);
-  
-  setTimeout(() => {
-    setCurrentFloor(floor);
-    setSelectedElement(null);
-    setIsFloorTransitioning(false);
-  }, 100); // Small delay to batch updates
-}, [])
+  const handleSetCurrentFloor = useCallback((floor: number) => {
+    // Add a small delay to prevent rapid floor switching
+    setIsFloorTransitioning(true);
+
+    setTimeout(() => {
+      setCurrentFloor(floor);
+      setSelectedElement(null);
+      setIsFloorTransitioning(false);
+    }, 100); // Small delay to batch updates
+  }, [])
 
   const addFloor = useCallback(() => {
     setTotalFloors((prev) => prev + 1)
@@ -242,10 +242,10 @@ const handleSetCurrentFloor = useCallback((floor: number) => {
   }, [])
 
   // Map settings update
-const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
-  setMapSettings((prev) => ({ ...prev, ...settings }))
-  clearAllCaches();
-}, [])
+  const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
+    setMapSettings((prev) => ({ ...prev, ...settings }))
+    clearAllCaches();
+  }, [])
   // Zoom controls - updated min zoom to 0.3 (30%)
   const zoomIn = useCallback(() => {
     setZoomLevel((prev) => Math.min(prev + 0.1, 3))
@@ -255,85 +255,104 @@ const updateMapSettings = useCallback((settings: Partial<MapSettings>) => {
     setZoomLevel((prev) => Math.max(prev - 0.1, 0.3))
   }, [])
 
-  const syncUnsyncedElements = useCallback(async () => {
-    try {
-      const checkMap = loadFromStorage("mall-map-settings", {}) as MapSettings;
-      if(checkMap.isSynced == false) {
-         const mapFromLocalStorage = loadFromStorage("mall-map-settings", {});
-         const response = await syncToServer("sync-map", { map_setting: mapFromLocalStorage });
-         const responseMap = response?.data ?? [];
-         const updatedMap = {...responseMap, isSynced: true };
-         console.log('updatedMap', updatedMap);
-        
-          setMapSettings((prev) => ({ ...prev, ...updatedMap}));
-          saveToStorage("mall-map-settings", updatedMap)
+  const syncUnsyncedElements = useCallback(() => {
+    // Static lock to track if a sync is in progress
+    let isSyncing = false;
+
+    return async () => {
+      if (isSyncing) {
+        console.log('Sync already in progress, waiting...');
+        // Wait until the current sync is complete
+        await new Promise<void>((resolve) => {
+          const check = setInterval(() => {
+            if (!isSyncing) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 100);
+        });
       }
 
-      for (let floor = 1; floor <= totalFloors; floor++) {
-        const floorKey = "mall-map-elements-" + floor;
-        const storedElements: MapElement[] = loadFromStorage(floorKey, [],true);
+      try {
+        isSyncing = true; // Set lock
+        const checkMap = loadFromStorage("mall-map-settings", {}) as MapSettings;
+        if (checkMap.isSynced === false) {
+          const mapFromLocalStorage = loadFromStorage("mall-map-settings", {});
+          const response = await syncToServer("sync-map", { map_setting: mapFromLocalStorage });
+          const responseMap = response?.data ?? [];
+          const updatedMap = { ...responseMap, isSynced: true };
+          console.log('updatedMap', updatedMap);
 
-        let unsynced = storedElements.filter(el => !el.isSynced);
-        if(floor != 1) {
-          unsynced = storedElements.filter(el => !el.isSynced && el.floor != 0);
+          setMapSettings((prev) => ({ ...prev, ...updatedMap }));
+          saveToStorage("mall-map-settings", updatedMap);
         }
-        if (unsynced.length > 0) {
-          const response = await syncToServer("sync-elements", { elements: unsynced });
-          const responseElements: MapElement[] = response?.data ?? [];
-          const updated = storedElements.filter(localEl => localEl.floor !== 0).map(localEl => {
-            const matched = responseElements.find(serverEl =>
-            serverEl.old_element_id == localEl.id || serverEl.id == localEl.id 
-            )
-            if (matched) {
-              return {
-                ...localEl,
-                ...matched,
-                id: matched.id,
-                isSynced: true
+
+        for (let floor = 1; floor <= totalFloors; floor++) {
+          const floorKey = "mall-map-elements-" + floor;
+          const storedElements: MapElement[] = loadFromStorage(floorKey, [], true);
+
+          let unsynced = storedElements.filter(el => !el.isSynced);
+          if (floor !== 1) {
+            unsynced = storedElements.filter(el => !el.isSynced && el.floor !== 0);
+          }
+          if (unsynced.length > 0) {
+            const response = await syncToServer("sync-elements", { elements: unsynced });
+            const responseElements: MapElement[] = response?.data ?? [];
+            const updated = storedElements.filter(localEl => localEl.floor !== 0).map(localEl => {
+              const matched = responseElements.find(serverEl =>
+                serverEl.old_element_id === localEl.id || serverEl.id === localEl.id
+              );
+              if (matched) {
+                return {
+                  ...localEl,
+                  ...matched,
+                  id: matched.id,
+                  isSynced: true
+                };
               }
-            }
+              return localEl;
+            });
+            saveToStorage(floorKey, updated);
 
-            return localEl;
-          })
-          saveToStorage(floorKey, updated);
-
-          const floorUpdated =storedElements.filter(localEl => localEl.floor == 0).map(localEl => {
-            const matched = responseElements.find(serverEl =>
-            serverEl.old_element_id == localEl.id || serverEl.id == localEl.id
-            )
-            if(matched){
-              return {
-                 ...localEl,
-                ...matched,
-                id: matched.id,
-                isSynced: true
+            const floorUpdated = storedElements.filter(localEl => localEl.floor === 0).map(localEl => {
+              const matched = responseElements.find(serverEl =>
+                serverEl.old_element_id === localEl.id || serverEl.id === localEl.id
+              );
+              if (matched) {
+                return {
+                  ...localEl,
+                  ...matched,
+                  id: matched.id,
+                  isSynced: true
+                };
               }
+              return localEl;
+            });
+
+            saveToStorage("floor-elements", floorUpdated);
+
+            if (floor === currentFloor) {
+              const allUpdated = [...updated, ...floorUpdated];
+              setElements(allUpdated as any);
             }
-            return localEl
-          })
-
-          saveToStorage("floor-elements",floorUpdated)
-
-          if (floor == currentFloor) {
-            const allUpdated = [...updated,...floorUpdated]
-            setElements(allUpdated as any);
           }
         }
+      } catch (error) {
+        console.error("Sync error:", error);
+      } finally {
+        isSyncing = false; // Release lock
       }
-    } catch (error) {
-      console.error("Sync error:", error);
-    }
-  }, [totalFloors, currentFloor, mapSettings]);
-
+    };
+  }, [totalFloors, currentFloor, mapSettings])();
 
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('syned')
-      syncUnsyncedElements()
-    }, 5000)
+      console.log('synced');
+      syncUnsyncedElements(); // No need for await here since it's handled internally
+    }, 5000);
 
-    return () => clearInterval(interval)
-  }, [syncUnsyncedElements])
+    return () => clearInterval(interval);
+  }, [syncUnsyncedElements]);
 
 
   // Memoize the context value to prevent unnecessary re-renders
