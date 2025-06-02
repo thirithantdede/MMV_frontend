@@ -220,6 +220,8 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
 
   const addFloor = useCallback(() => {
     setTotalFloors((prev) => prev + 1)
+    // add to new floor mall-map-elements-floor
+    saveToStorage("mall-map-elements-" + (totalFloors + 1), [])
   }, [])
 
   const updateProject = useCallback((project: Project) => {
@@ -252,7 +254,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const zoomOut = useCallback(() => {
-    setZoomLevel((prev) => Math.max(prev - 0.1, 0.3))
+    setZoomLevel((prev) => Math.max(prev - 0.1, 0.1))
   }, [])
 
   const syncUnsyncedElements = useCallback(() => {

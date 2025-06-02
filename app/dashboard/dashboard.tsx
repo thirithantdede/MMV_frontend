@@ -1,10 +1,10 @@
 "use client"
 
 import { useState } from "react"
-import { Building, Users, ShoppingBag, Map, ArrowUpRight, BarChart3, TrendingUp, Clock, Calendar } from "lucide-react"
+import { Building, Users, ShoppingBag, Map } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { UserNav } from "@/components/user-nav"
 import { Progress } from "@/components/ui/progress"
 
@@ -28,30 +28,15 @@ export default function Dashboard() {
       <main className="flex-1 space-y-4 p-4 pt-6 sm:p-6 sm:pt-8">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Calendar className="mr-2 h-4 w-4" />
-              Last 30 Days
-            </Button>
-            <Button size="sm">
-              <Map className="mr-2 h-4 w-4" />
-              Create New Map
-            </Button>
-          </div>
         </div>
 
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
-            <TabsTrigger value="maps">My Maps</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
+         
           <TabsContent value="overview" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Maps</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Events</CardTitle>
                   <Building className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -124,35 +109,6 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
               <Card className="col-span-3">
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                  <CardDescription>Your recent map activities</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {[
-                      { title: "Downtown Mall updated", time: "2 hours ago", icon: Building },
-                      { title: "Westside Shopping Center published", time: "Yesterday", icon: ArrowUpRight },
-                      { title: "City Center Mall viewed by 120 visitors", time: "2 days ago", icon: Users },
-                      { title: "New store added to Riverside Mall", time: "3 days ago", icon: ShoppingBag },
-                    ].map((item, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted">
-                          <item.icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1 space-y-1">
-                          <p className="text-sm font-medium leading-none">{item.title}</p>
-                          <p className="text-xs text-muted-foreground">{item.time}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              <Card>
                 <CardHeader className="pb-2">
                   <CardTitle>Popular Stores</CardTitle>
                 </CardHeader>
@@ -175,57 +131,8 @@ export default function Dashboard() {
                   </div>
                 </CardContent>
               </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Map Performance</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {[
-                      { name: "Downtown Mall", views: 1245, icon: TrendingUp },
-                      { name: "Westside Shopping Center", views: 856, icon: BarChart3 },
-                      { name: "City Center Mall", views: 642, icon: TrendingUp },
-                      { name: "Riverside Mall", views: 421, icon: Clock },
-                    ].map((map, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                          <map.icon className="h-4 w-4" />
-                        </div>
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">{map.name}</p>
-                          <p className="text-xs text-muted-foreground">{map.views} views</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle>Quick Actions</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <Button variant="outline" className="w-full justify-start">
-                      <Map className="mr-2 h-4 w-4" />
-                      Create New Map
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Building className="mr-2 h-4 w-4" />
-                      Edit Existing Map
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <Users className="mr-2 h-4 w-4" />
-                      Manage Collaborators
-                    </Button>
-                    <Button variant="outline" className="w-full justify-start">
-                      <ArrowUpRight className="mr-2 h-4 w-4" />
-                      Publish Map
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
             </div>
+
           </TabsContent>
           <TabsContent value="analytics" className="space-y-4">
             <Card>

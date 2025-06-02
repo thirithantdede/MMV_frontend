@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
-import { Ticket, Calendar, Facebook, Instagram, Twitter, Globe, MapPin, Clock, Sparkles } from "lucide-react"
+import { useState, useMemo, useEffect, useCallback } from "react"
+import { Ticket, Calendar, Facebook, Instagram, Twitter, Globe, MapPin, Clock, Sparkles, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
@@ -17,6 +17,20 @@ interface PromotionsListProps {
   onOpenChange: (open: boolean) => void
   onStoreSelect?: (store: MapElement) => void
 }
+
+interface PromotionStatus {
+  isActive: boolean
+  isExpired: boolean
+  isEndingSoon: boolean
+  daysRemaining: number
+}
+
+interface StoreStatus {
+  isCurrentlyOpen: boolean
+  nextOpenTime?: string
+  closedReason?: string
+}
+
 export function PromotionsList({ open, onOpenChange, onStoreSelect }: PromotionsListProps) {
   const { project } = useMapEditor()
   const [selectedPromotion, setSelectedPromotion] = useState<MapElement | null>(null)
@@ -30,60 +44,199 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     }
   }, [open, dataFetching?.refetch])
 
-  // Ensure elements is always an array
+  // Memoized current time to avoid recalculations
+  const currentTime = useMemo(() => new Date(), [open])
+
+  // Helper function to get promotion status
+  const getPromotionStatus = useCallback((endDate?: string): PromotionStatus => {
+    if (!endDate) {
+      return {
+        isActive: true,
+        isExpired: false,
+        isEndingSoon: false,
+        daysRemaining: Infinity
+      }
+    }
+
+    const end = new Date(endDate)
+    const now = new Date()
+    
+    // Set time to end of day for end date to be more accurate
+    end.setHours(23, 59, 59, 999)
+    
+    const diffTime = end.getTime() - now.getTime()
+    const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    return {
+      isActive: daysRemaining > 0,
+      isExpired: daysRemaining <= 0,
+      isEndingSoon: daysRemaining > 0 && daysRemaining <= 3,
+      daysRemaining: Math.max(0, daysRemaining)
+    }
+  }, [])
+
+  // Helper function to check if store is currently open
+  const getStoreStatus = useCallback((store: MapElement): StoreStatus => {
+    const shopInfo = store.shop_information
+    if (!shopInfo) {
+      return { isCurrentlyOpen: true }
+    }
+
+    // Check if store is marked as closed
+    if (store.is_closed) {
+      return {
+        isCurrentlyOpen: false,
+        closedReason: "Temporarily closed"
+      }
+    }
+
+    const now = new Date()
+    const currentDay = now.toLocaleDateString('en-US', { weekday: 'short' }).toLowerCase() // mon, tue, wed, etc.
+    const currentTime = now.getHours() * 60 + now.getMinutes() // minutes since midnight
+
+    // Check closed days - handle both array and string formats
+    let closedDays: string[] = []
+    if (shopInfo.closed_days) {
+      if (Array.isArray(shopInfo.closed_days)) {
+        closedDays = shopInfo.closed_days.map(day => day.toLowerCase())
+      } else if (typeof shopInfo.closed_days === 'string') {
+        try {
+          // Try to parse as JSON array
+          const parsed = JSON.parse(shopInfo.closed_days)
+          if (Array.isArray(parsed)) {
+            closedDays = parsed.map(day => day.toLowerCase())
+          } else {
+            // Single day as string
+            closedDays = [shopInfo.closed_days.toLowerCase()]
+          }
+        } catch {
+          // Not JSON, treat as single day
+          if (shopInfo.closed_days !== "none") {
+            closedDays = [shopInfo.closed_days.toLowerCase()]
+          }
+        }
+      }
+    }
+
+    // Check if today is a closed day
+    const fullDayName = now.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase()
+    if (closedDays.includes(currentDay) || closedDays.includes(fullDayName)) {
+      return {
+        isCurrentlyOpen: false,
+        closedReason: "Closed today"
+      }
+    }
+
+    // Check opening hours
+    if (shopInfo.opening_hours?.start && shopInfo.opening_hours?.end) {
+      const [startHour, startMin] = shopInfo.opening_hours.start.split(':').map(Number)
+      const [endHour, endMin] = shopInfo.opening_hours.end.split(':').map(Number)
+      
+      const openTime = startHour * 60 + startMin
+      const closeTime = endHour * 60 + endMin
+
+      if (currentTime < openTime) {
+        return {
+          isCurrentlyOpen: false,
+          nextOpenTime: shopInfo.opening_hours.start,
+          closedReason: "Opens later today"
+        }
+      } else if (currentTime > closeTime) {
+        return {
+          isCurrentlyOpen: false,
+          closedReason: "Closed for today"
+        }
+      }
+    }
+
+    return { isCurrentlyOpen: true }
+  }, [])
+
+  // Process elements from server response
   const elements = useMemo(() => {
     if (!dataFetching?.data) return []
-    // Handle case where data is an object with a promotions array
-    if (Array.isArray(dataFetching.data?.elements)) {
-      return dataFetching.data.elements as MapElement[]
-    } else if (dataFetching.data?.elements && typeof dataFetching.data?.elements === "object" ) {
-      return dataFetching.data.elements as MapElement[]
+    
+    try {
+      // Handle direct array response
+      if (Array.isArray(dataFetching.data)) {
+        return dataFetching.data as MapElement[]
+      }
+      // Handle object with elements property
+      if (Array.isArray(dataFetching.data?.elements)) {
+        return dataFetching.data.elements as MapElement[]
+      }
+      // Handle object where elements is an object
+      if (dataFetching.data?.elements && typeof dataFetching.data?.elements === "object") {
+        return Object.values(dataFetching.data.elements) as MapElement[]
+      }
+    } catch (error) {
+      console.error("Error processing promotions data:", error)
     }
-    console.warn("Unexpected data format for promotions:", dataFetching.data)
+    
     return []
   }, [dataFetching?.data])
 
-  // Filter stores with active promotions
-  const storesWithPromotions = useMemo(() => {
-    return elements.filter(
+  // Filter and categorize stores with promotions
+  const { activePromotions, expiredPromotions } = useMemo(() => {
+    const storesWithPromotions = elements.filter(
       (element: MapElement) =>
-        element.type === "store" &&
-        element.shop_information?.promotions?.is_now &&
-        !element.is_closed
+        (element.type === "store" || element.type === "cafe" || element.type === "restaurant") &&
+        element.shop_information?.promotions?.detail && // Has promotion details
+        element.shop_information?.promotions?.is_now === true // Promotion is currently active
     ) as MapElement[]
-  }, [elements])
 
-  // Sort by promotion end date (soonest ending first)
-  const sortedPromotions = useMemo(() => {
-    return [...storesWithPromotions].sort((a, b) => {
+    const active: MapElement[] = []
+    const expired: MapElement[] = []
+
+    storesWithPromotions.forEach(store => {
+      const promotionStatus = getPromotionStatus(store.shop_information?.promotions?.end_date)
+      
+      if (promotionStatus.isExpired) {
+        expired.push(store)
+      } else {
+        active.push(store)
+      }
+    })
+
+    return { activePromotions: active, expiredPromotions: expired }
+  }, [elements, getPromotionStatus])
+
+  // Sort active promotions by end date (soonest ending first)
+  const sortedActivePromotions = useMemo(() => {
+    return [...activePromotions].sort((a, b) => {
       const aEndDate = a.shop_information?.promotions?.end_date
       const bEndDate = b.shop_information?.promotions?.end_date
-      if (!aEndDate || !bEndDate) return 0
+      
+      if (!aEndDate && !bEndDate) return 0
+      if (!aEndDate) return 1
+      if (!bEndDate) return -1
+      
       return new Date(aEndDate).getTime() - new Date(bEndDate).getTime()
     })
-  }, [storesWithPromotions])
+  }, [activePromotions])
 
-  const handleViewDetails = (promotion: MapElement) => {
+  const handleViewDetails = useCallback((promotion: MapElement) => {
     setSelectedPromotion(promotion)
     setShowPromotionDetails(true)
-  }
+  }, [])
 
-  const handleStoreSelect = (store: MapElement) => {
+  const handleStoreSelect = useCallback((store: MapElement) => {
     if (onStoreSelect) {
       onStoreSelect(store)
       onOpenChange(false)
       setShowPromotionDetails(false)
     }
-  }
+  }, [onStoreSelect, onOpenChange])
 
-  const renderSocialMediaLinks = (store: MapElement) => {
-    if (!store.shop_information?.social_media) return null
+  const renderSocialMediaLinks = useCallback((store: MapElement) => {
+    const socialMedia = store.shop_information?.social_media
+    if (!socialMedia || (Array.isArray(socialMedia) && socialMedia.length === 0)) return null
 
     const socialLinks = [
-      { icon: Globe, url: store.shop_information.social_media.website, label: "Website" },
-      { icon: Facebook, url: store.shop_information.social_media.facebook, label: "Facebook" },
-      { icon: Instagram, url: store.shop_information.social_media.instagram, label: "Instagram" },
-      { icon: Twitter, url: store.shop_information.social_media.twitter, label: "Twitter" },
+      { icon: Globe, url: socialMedia.website, label: "Website" },
+      { icon: Facebook, url: socialMedia.facebook, label: "Facebook" },
+      { icon: Instagram, url: socialMedia.instagram, label: "Instagram" },
+      { icon: Twitter, url: socialMedia.twitter, label: "Twitter" },
     ].filter((link) => link.url)
 
     if (socialLinks.length === 0) return null
@@ -104,39 +257,144 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
         ))}
       </div>
     )
-  }
+  }, [])
 
-  const formatDate = (dateString?: string) => {
+  const formatDate = useCallback((dateString?: string) => {
     if (!dateString) return "Not specified"
     return new Date(dateString).toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
       year: "numeric",
     })
-  }
+  }, [])
 
-  const isPromotionEndingSoon = (endDate?: string) => {
-    if (!endDate) return false
-    const end = new Date(endDate)
-    const now = new Date()
-    const diffTime = end.getTime() - now.getTime()
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    return diffDays <= 3
-  }
+  const renderPromotionCard = useCallback((store: MapElement) => {
+    const promotionStatus = getPromotionStatus(store.shop_information?.promotions?.end_date)
+    const storeStatus = getStoreStatus(store)
+
+    return (
+      <Card
+        key={store.id}
+        className={`overflow-hidden hover:shadow-md transition-shadow border-l-4 ${
+          promotionStatus.isExpired 
+            ? "border-l-red-300 opacity-75" 
+            : promotionStatus.isEndingSoon 
+              ? "border-l-orange-300" 
+              : "border-l-primary/20"
+        }`}
+      >
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start gap-4">
+            <div className="flex-1">
+              <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                {store.name}
+                {!storeStatus.isCurrentlyOpen && (
+                  <Badge variant="outline" className="text-xs">
+                    <Clock className="h-3 w-3 mr-1" />
+                    {storeStatus.closedReason}
+                  </Badge>
+                )}
+              </CardTitle>
+              <div className="flex items-center gap-4 mt-2 flex-wrap">
+                <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                  <MapPin className="h-3 w-3" />
+                  Floor {store.floor}
+                </div>
+                {store.shop_information?.promotions?.end_date && (
+                  <div className="flex items-center gap-1 text-sm">
+                    <Calendar className="h-3 w-3" />
+                    <span
+                      className={
+                        promotionStatus.isExpired
+                          ? "text-red-600 font-medium"
+                          : promotionStatus.isEndingSoon
+                            ? "text-orange-600 font-medium"
+                            : "text-muted-foreground"
+                      }
+                    >
+                      {promotionStatus.isExpired 
+                        ? `Ended ${formatDate(store.shop_information.promotions.end_date)}`
+                        : `Ends ${formatDate(store.shop_information.promotions.end_date)}`
+                      }
+                    </span>
+                    {promotionStatus.isExpired && (
+                      <Badge variant="destructive" className="ml-1 text-xs">
+                        <AlertCircle className="h-3 w-3 mr-1" />
+                        Ended
+                      </Badge>
+                    )}
+                    {promotionStatus.isEndingSoon && !promotionStatus.isExpired && (
+                      <Badge variant="destructive" className="ml-1 text-xs">
+                        Ending Soon
+                      </Badge>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardHeader>
+
+        {store.shop_information?.promotions?.detail && (
+          <CardContent className="pt-0 pb-3">
+            <div className={`p-3 rounded-lg border ${
+              promotionStatus.isExpired 
+                ? "bg-red-50 border-red-200" 
+                : "bg-gradient-to-r from-primary/5 to-primary/10 border-primary/10"
+            }`}>
+              <p className="text-sm line-clamp-2 text-foreground/90">
+                {store.shop_information.promotions.detail}
+              </p>
+            </div>
+          </CardContent>
+        )}
+
+        <CardFooter className="pt-0 flex justify-between items-center">
+          {renderSocialMediaLinks(store)}
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleViewDetails(store)}
+              className="hover:bg-primary hover:text-primary-foreground"
+            >
+              View Details
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => handleStoreSelect(store)}
+              className="bg-primary hover:bg-primary/90"
+              disabled={promotionStatus.isExpired}
+            >
+              <MapPin className="h-4 w-4 mr-1" />
+              Find on Map
+            </Button>
+          </div>
+        </CardFooter>
+      </Card>
+    )
+  }, [getPromotionStatus, getStoreStatus, formatDate, renderSocialMediaLinks, handleViewDetails, handleStoreSelect])
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
+                <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader className="pb-4">
             <DialogTitle className="flex items-center gap-3 text-xl">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
-              Current Promotions
-              <Badge variant="secondary" className="ml-auto">
-                {sortedPromotions.length} active
-              </Badge>
+              Promotions
+              <div className="flex gap-2 ml-auto">
+                <Badge variant="secondary">
+                  {sortedActivePromotions.length} active
+                </Badge>
+                {expiredPromotions.length > 0 && (
+                  <Badge variant="outline" className="text-red-600">
+                    {expiredPromotions.length} expired
+                  </Badge>
+                )}
+              </div>
             </DialogTitle>
           </DialogHeader>
 
@@ -144,95 +402,45 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
             {dataFetching?.isLoading ? (
               <div className="flex flex-col items-center justify-center max-h-[400px] text-center">
                 <div className="p-4 bg-muted/30 rounded-full mb-4">
-                  <Ticket className="h-12 w-12 text-muted-foreground" />
+                  <Ticket className="h-12 w-12 text-muted-foreground animate-pulse" />
                 </div>
                 <h3 className="text-lg font-medium mb-2">Loading Promotions</h3>
                 <p className="text-muted-foreground max-w-sm">
                   Please wait while we fetch the latest promotions...
                 </p>
               </div>
-            ) : sortedPromotions.length > 0 ? (
-              <div className="space-y-4 pb-4 max-h-[400px] ">
-                {sortedPromotions.map((store) => (
-                  <Card
-                    key={store.id}
-                    className="overflow-hidden hover:shadow-md transition-shadow border-l-4 border-l-primary/20"
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex justify-between items-start gap-4">
-                        <div className="flex-1">
-                          <CardTitle className="text-lg font-semibold">{store.name}</CardTitle>
-                          <div className="flex items-center gap-4 mt-2">
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <MapPin className="h-3 w-3" />
-                              Floor {store.floor}
-                            </div>
-                            {store.shop_information?.promotions?.end_date && (
-                              <div className="flex items-center gap-1 text-sm">
-                                <Calendar className="h-3 w-3" />
-                                <span
-                                  className={
-                                    isPromotionEndingSoon(store.shop_information.promotions.end_date)
-                                      ? "text-orange-600 font-medium"
-                                      : "text-muted-foreground"
-                                  }
-                                >
-                                  Ends {formatDate(store.shop_information.promotions.end_date)}
-                                </span>
-                                {isPromotionEndingSoon(store.shop_information.promotions.end_date) && (
-                                  <Badge variant="destructive" className="ml-1 text-xs">
-                                    Ending Soon
-                                  </Badge>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
+            ) : (sortedActivePromotions.length > 0 || expiredPromotions.length > 0) ? (
+              <div className="space-y-6 pb-4 max-h-[400px]">
+                {/* Active Promotions */}
+                {sortedActivePromotions.length > 0 && (
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                      Active Promotions ({sortedActivePromotions.length})
+                    </h3>
+                    {sortedActivePromotions.map(renderPromotionCard)}
+                  </div>
+                )}
 
-                    {store.shop_information?.promotions?.detail && (
-                      <CardContent className="pt-0 pb-3">
-                        <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-3 rounded-lg border border-primary/10">
-                          <p className="text-sm line-clamp-2 text-foreground/90">
-                            {store.shop_information.promotions.detail}
-                          </p>
-                        </div>
-                      </CardContent>
-                    )}
-
-                    <CardFooter className="pt-0 flex justify-between items-center">
-                      {renderSocialMediaLinks(store)}
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewDetails(store)}
-                          className="hover:bg-primary hover:text-primary-foreground"
-                        >
-                          View Details
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleStoreSelect(store)}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          <MapPin className="h-4 w-4 mr-1" />
-                          Find on Map
-                        </Button>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                ))}
+                {/* Expired Promotions */}
+                {expiredPromotions.length > 0 && (
+                  <div className="space-y-4">
+                    <Separator />
+                    <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-red-500" />
+                      Expired Promotions ({expiredPromotions.length})
+                    </h3>
+                    {expiredPromotions.map(renderPromotionCard)}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center justify-center h-[400px] text-center">
                 <div className="p-4 bg-muted/30 rounded-full mb-4">
                   <Ticket className="h-12 w-12 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium mb-2">No Active Promotions</h3>
+                <h3 className="text-lg font-medium mb-2">No Promotions Available</h3>
                 <p className="text-muted-foreground max-w-sm">
-                  There are no active promotions at the moment. Check back later for exciting deals and offers!
+                  There are no promotions at the moment. Check back later for exciting deals and offers!
                 </p>
               </div>
             )}
@@ -243,9 +451,37 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
       {/* Promotion Details Dialog */}
       {selectedPromotion && (
         <Dialog open={showPromotionDetails} onOpenChange={setShowPromotionDetails}>
-          <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-hidden">
+          <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-scroll">
             <DialogHeader className="pb-4">
-              <DialogTitle className="text-xl">{selectedPromotion.name}</DialogTitle>
+              <DialogTitle className="text-xl flex items-center gap-2">
+                {selectedPromotion.name}
+                {(() => {
+                  const promotionStatus = getPromotionStatus(selectedPromotion.shop_information?.promotions?.end_date)
+                  const storeStatus = getStoreStatus(selectedPromotion)
+                  
+                  return (
+                    <div className="flex gap-2">
+                      {promotionStatus.isExpired && (
+                        <Badge variant="destructive" className="text-xs">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          Expired
+                        </Badge>
+                      )}
+                      {promotionStatus.isEndingSoon && !promotionStatus.isExpired && (
+                        <Badge variant="destructive" className="text-xs">
+                          Ending Soon
+                        </Badge>
+                      )}
+                      {!storeStatus.isCurrentlyOpen && (
+                        <Badge variant="outline" className="text-xs">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {storeStatus.closedReason}
+                        </Badge>
+                      )}
+                    </div>
+                  )
+                })()}
+              </DialogTitle>
               <div className="flex items-center gap-4 pt-2">
                 <Badge variant="outline" className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
@@ -254,7 +490,12 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                 {selectedPromotion.shop_information?.promotions?.end_date && (
                   <div className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Calendar className="h-4 w-4" />
-                    Ends {formatDate(selectedPromotion.shop_information.promotions.end_date)}
+                    {(() => {
+                      const promotionStatus = getPromotionStatus(selectedPromotion.shop_information?.promotions?.end_date)
+                      return promotionStatus.isExpired 
+                        ? `Ended ${formatDate(selectedPromotion.shop_information.promotions.end_date)}`
+                        : `Ends ${formatDate(selectedPromotion.shop_information.promotions.end_date)}`
+                    })()}
                   </div>
                 )}
               </div>
@@ -268,7 +509,11 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                       <Sparkles className="h-4 w-4 text-primary" />
                       Promotion Details
                     </h4>
-                    <div className="bg-gradient-to-r from-primary/5 to-primary/10 p-4 rounded-lg border border-primary/10">
+                    <div className={`p-4 rounded-lg border ${
+                      getPromotionStatus(selectedPromotion.shop_information?.promotions?.end_date).isExpired
+                        ? "bg-red-50 border-red-200"
+                        : "bg-gradient-to-r from-primary/5 to-primary/10 border-primary/10"
+                    }`}>
                       <p className="whitespace-pre-line text-sm leading-relaxed">
                         {selectedPromotion.shop_information.promotions.detail}
                       </p>
@@ -291,22 +536,44 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                   </div>
                 )}
 
-                {selectedPromotion.shop_information?.closed_days &&
-                 selectedPromotion.shop_information.closed_days.length > 0 &&
-                 selectedPromotion.shop_information.closed_days !== "none" && (
-                  <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-primary" />
-                      Closed Days
-                    </h4>
-                    <div className="bg-muted/30 p-3 rounded-lg">
-                      <p className="text-sm">
-                        Closed on {selectedPromotion.shop_information.closed_days.charAt(0).toUpperCase() +
-                          selectedPromotion.shop_information.closed_days.slice(1)}
-                      </p>
+                {(() => {
+                  const shopInfo = selectedPromotion.shop_information
+                  if (!shopInfo?.closed_days) return null
+
+                  let closedDays: string[] = []
+                  if (Array.isArray(shopInfo.closed_days)) {
+                    closedDays = shopInfo.closed_days.filter(day => day && day !== "none")
+                  } else if (typeof shopInfo.closed_days === 'string') {
+                    try {
+                      const parsed = JSON.parse(shopInfo.closed_days)
+                      if (Array.isArray(parsed)) {
+                        closedDays = parsed.filter(day => day && day !== "none")
+                      } else {
+                        closedDays = shopInfo.closed_days !== "none" ? [shopInfo.closed_days] : []
+                      }
+                    } catch {
+                      closedDays = shopInfo.closed_days !== "none" ? [shopInfo.closed_days] : []
+                    }
+                  }
+
+                  if (closedDays.length === 0) return null
+
+                  return (
+                    <div>
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-primary" />
+                        Closed Days
+                      </h4>
+                      <div className="bg-muted/30 p-3 rounded-lg">
+                        <p className="text-sm">
+                          Closed on {closedDays.map(day => 
+                            day.charAt(0).toUpperCase() + day.slice(1)
+                          ).join(', ')}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )
+                })()}
 
                 {selectedPromotion.shop_information?.social_media && (
                   <div>
@@ -320,7 +587,11 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
             <Separator className="my-4" />
 
             <div className="flex justify-end">
-              <Button onClick={() => handleStoreSelect(selectedPromotion)} className="bg-primary hover:bg-primary/90">
+              <Button 
+                onClick={() => handleStoreSelect(selectedPromotion)} 
+                className="bg-primary hover:bg-primary/90"
+                disabled={getPromotionStatus(selectedPromotion.shop_information?.promotions?.end_date).isExpired}
+              >
                 <MapPin className="h-4 w-4 mr-2" />
                 Find on Map
               </Button>
@@ -331,3 +602,4 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     </>
   )
 }
+

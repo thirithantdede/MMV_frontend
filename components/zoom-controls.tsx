@@ -17,7 +17,7 @@ export const ZoomControls = memo(function ZoomControls({ showSlider = false }: Z
 
   return (
     <div className="flex items-center gap-2">
-      <Button variant="outline" size="icon" onClick={zoomOut} disabled={zoomLevel <= 0.3}>
+      <Button variant="outline" size="icon" onClick={zoomOut} disabled={zoomLevel <= 0.2}>
         <ZoomOut className="h-4 w-4" />
         <span className="sr-only">Zoom out</span>
       </Button>

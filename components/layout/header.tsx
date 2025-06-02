@@ -32,10 +32,10 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
   }, [router])
 
   return (
-    <header className="flex h-14 items-center border-b px-4 lg:px-6">
+    <header className="flex h-14 items-center border-b px-4 lg:px-0">
       <div className="flex items-center">
         {/* <Image src={LogoIcon} alt="Logo" width={40} /> */}
-        <Image src={LogoText} alt="Logo" width={240} />
+        <Image src={LogoText} alt="Logo" width={320} />
       </div>
       <div className="ml-auto flex items-center gap-2">
 

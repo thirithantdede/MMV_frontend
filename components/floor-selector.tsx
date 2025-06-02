@@ -7,6 +7,7 @@ import { ChevronDown, ChevronUp, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { useMapEditor } from "@/context/map-editor-context"
+import useMutate from "@/hooks/use-mutate"
 
 interface FloorButtonProps {
   icon: React.ReactNode
@@ -41,6 +42,9 @@ const FloorButton = memo(function FloorButton({
 export const FloorSelector = memo(function FloorSelector() {
   const { currentFloor, totalFloors, setCurrentFloor, addFloor } = useMapEditor()
 
+   const [createNewFloor] = useMutate({ callback: undefined, navigateBack: false })
+
+
   const handleFloorUp = useCallback(() => {
     if (currentFloor < totalFloors) {
       setCurrentFloor(currentFloor + 1)
@@ -53,8 +57,13 @@ export const FloorSelector = memo(function FloorSelector() {
     }
   }, [currentFloor, setCurrentFloor])
 
-  const handleAddFloor = useCallback(() => {
-    addFloor()
+  const handleAddFloor = useCallback(async () => {
+    const newFloor = await createNewFloor("create-new-floor",{
+      grid : 30
+    });
+    if(newFloor?.status == "success"){
+       addFloor()
+    }
   }, [addFloor])
 
   return (

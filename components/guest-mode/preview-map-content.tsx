@@ -75,7 +75,7 @@ export const PreviewMapContent = memo(function PreviewMapContent({
             key={element.id}
             element={element}
             isSelected={false}
-            onClick={handleElementClick}
+            onClick={() => handleElementClick(element)}
             onDragStart={() => {}}
             isGuestMode={true}
             isHighlighted={highlightedElement?.id === element.id}

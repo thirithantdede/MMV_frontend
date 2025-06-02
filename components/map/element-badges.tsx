@@ -10,7 +10,7 @@ interface ElementBadgesProps {
   mapsetting?: MapSettings
 }
 
-export const ElementBadges = memo(function ElementBadges({ element,mapsetting }: ElementBadgesProps) {
+export const ElementBadges = memo(function ElementBadges({ element, mapsetting }: ElementBadgesProps) {
   const isClosed = element.is_closed || false
   const hasPromotion = storeTypes.includes(element.type) && element.shop_information?.promotions.is_now
   const isActiveEvent =
@@ -22,25 +22,50 @@ export const ElementBadges = memo(function ElementBadges({ element,mapsetting }:
     new Date(element?.event?.end_date) >= new Date()
   const isEventFree = element.type === "event" && element.event?.is_foc
 
-  // Calculate badge font and icon sizes based on element dimensions
+  // Use the same calculation logic as map-element.tsx
   const minDimension = Math.min(element.width, element.height)
-  const badgeFontSize = Math.min(Math.max(0.12 * minDimension, 6), 12)
-  const badgeIconSize = Math.min(Math.max(0.25 * minDimension, 8), 16)
+  const fontSize = Math.min(Math.max(0.15 * minDimension, 10), 24)
+  const iconSize = Math.min(Math.max(0.4 * minDimension, 16), 48)
 
-  // Map calculated sizes to Tailwind classes
+  // Use the same font size mapping as map-element.tsx
+  const getFontSizeClass = (size: number) => {
+    if (size <= 12) return "text-xs"
+    if (size <= 14) return "text-sm"
+    if (size <= 16) return "text-md"
+    if (size <= 18) return "text-lg"
+    if (size <= 20) return "text-xl"
+    return "text-2xl"
+  }
+
+  // Use the same icon size mapping as map-element.tsx
+  const getIconSizeClass = (size: number) => {
+    if (size <= 16) return "h-4 w-4"
+    if (size <= 24) return "h-6 w-6"
+    if (size <= 32) return "h-8 w-8"
+    if (size <= 40) return "h-10 w-10"
+    return "h-12 w-12"
+  }
+
+  const fontSizeClass = getFontSizeClass(fontSize)
+  const iconSizeClass = getIconSizeClass(iconSize)
+
+  // Calculate badge-specific sizes (slightly smaller than main element)
+  const badgeFontSize = Math.max(fontSize * 0.7, 8) // 70% of main font size, minimum 8px
+  const badgeIconSize = Math.max(iconSize * 0.5, 12) // 50% of main icon size, minimum 12px
+
   const getBadgeFontSizeClass = (size: number) => {
-    if (size <= 7) return "text-[6px]"
-    if (size <= 8) return "text-[7px]"
-    if (size <= 9) return "text-[8px]"
-    if (size <= 10) return "text-[9px]"
-    if (size <= 11) return "text-[10px]"
-    return "text-[11px]"
+    if (size <= 10) return "text-[8px]"
+    if (size <= 12) return "text-[10px]"
+    if (size <= 14) return "text-xs"
+    if (size <= 16) return "text-sm"
+    return "text-md"
   }
 
   const getBadgeIconSizeClass = (size: number) => {
-    if (size <= 8) return "h-2 w-2"
     if (size <= 12) return "h-3 w-3"
-    return "h-4 w-4"
+    if (size <= 16) return "h-4 w-4"
+    if (size <= 20) return "h-5 w-5"
+    return "h-6 w-6"
   }
 
   const badgeFontSizeClass = getBadgeFontSizeClass(badgeFontSize)
