@@ -1,6 +1,6 @@
 "use client"
 import { clearAllCaches, clearFloorElementsCache } from "@/utils/pathfinding"
-import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode } from "react"
+import { createContext, useContext, useState, useCallback, useMemo, useEffect, type ReactNode, useRef } from "react"
 import { FloorCollection, Project, type MapElement, type MapSettings } from "@/types"
 import useMutate from "@/hooks/use-mutate"
 import { useDragElement } from "@/hooks/use-drag-element"
@@ -77,6 +77,7 @@ export const loadFromStorage = <T extends object>(
 
     const floorRaw = localStorage.getItem("floor-elements");
     const floorElements = floorRaw ? JSON.parse(floorRaw) : [];
+    
 
     if (fe) {
       const isStoredEmpty = Object.keys(storedValue).length === 0;
@@ -126,7 +127,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
   const [selectedElement, setSelectedElement] = useState<MapElement | null>(null)
   const [floorElements, setFloorElements] = useState<MapElement[]>(() => loadFromStorage("floor-elements", []))
   const [totalFloors, setTotalFloors] = useState(loadFromStorage("mall-project", [])?.total_floors)
-
+  const syncLockRef = useRef(false);
   // Map settings - load from localStorage if available
   const [mapSettings, setMapSettings] = useState<MapSettings>(() =>
     loadFromStorage("mall-map-settings", {
@@ -257,100 +258,93 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
     setZoomLevel((prev) => Math.max(prev - 0.1, 0.1))
   }, [])
 
-  const syncUnsyncedElements = useCallback(() => {
-    // Static lock to track if a sync is in progress
-    let isSyncing = false;
+   const syncUnsyncedElements = useCallback(async () => {
+    // Check if sync is already in progress
+    if (syncLockRef.current) {
+      console.log('Sync already in progress, skipping...');
+      return;
+    }
 
-    return async () => {
-      if (isSyncing) {
-        console.log('Sync already in progress, waiting...');
-        // Wait until the current sync is complete
-        await new Promise<void>((resolve) => {
-          const check = setInterval(() => {
-            if (!isSyncing) {
-              clearInterval(check);
-              resolve();
-            }
-          }, 100);
-        });
+    try {
+      syncLockRef.current = true; // Set lock
+      setIsSyncing(true);
+
+      const checkMap = loadFromStorage("mall-map-settings", {}) as MapSettings;
+      if (checkMap.isSynced === false) {
+        const mapFromLocalStorage = loadFromStorage("mall-map-settings", {});
+        const response = await syncToServer("sync-map", { map_setting: mapFromLocalStorage });
+        const responseMap = response?.data ?? [];
+        const updatedMap = { ...responseMap, isSynced: true };
+        console.log('updatedMap', updatedMap);
+
+        setMapSettings((prev) => ({ ...prev, ...updatedMap }));
+        saveToStorage("mall-map-settings", updatedMap);
       }
 
-      try {
-        isSyncing = true; // Set lock
-        const checkMap = loadFromStorage("mall-map-settings", {}) as MapSettings;
-        if (checkMap.isSynced === false) {
-          const mapFromLocalStorage = loadFromStorage("mall-map-settings", {});
-          const response = await syncToServer("sync-map", { map_setting: mapFromLocalStorage });
-          const responseMap = response?.data ?? [];
-          const updatedMap = { ...responseMap, isSynced: true };
-          console.log('updatedMap', updatedMap);
+      for (let floor = 1; floor <= totalFloors; floor++) {
+        const floorKey = "mall-map-elements-" + floor;
+        const storedElements: MapElement[] = loadFromStorage(floorKey, [], true);
 
-          setMapSettings((prev) => ({ ...prev, ...updatedMap }));
-          saveToStorage("mall-map-settings", updatedMap);
+        let unsynced = storedElements.filter(el => !el.isSynced);
+        if (floor !== 1) {
+          unsynced = storedElements.filter(el => !el.isSynced && el.floor !== 0);
         }
-
-        for (let floor = 1; floor <= totalFloors; floor++) {
-          const floorKey = "mall-map-elements-" + floor;
-          const storedElements: MapElement[] = loadFromStorage(floorKey, [], true);
-
-          let unsynced = storedElements.filter(el => !el.isSynced);
-          if (floor !== 1) {
-            unsynced = storedElements.filter(el => !el.isSynced && el.floor !== 0);
-          }
-          if (unsynced.length > 0) {
-            const response = await syncToServer("sync-elements", { elements: unsynced });
-            const responseElements: MapElement[] = response?.data ?? [];
-            const updated = storedElements.filter(localEl => localEl.floor !== 0).map(localEl => {
-              const matched = responseElements.find(serverEl =>
-                serverEl.old_element_id === localEl.id || serverEl.id === localEl.id
-              );
-              if (matched) {
-                return {
-                  ...localEl,
-                  ...matched,
-                  id: matched.id,
-                  isSynced: true
-                };
-              }
-              return localEl;
-            });
-            saveToStorage(floorKey, updated);
-
-            const floorUpdated = storedElements.filter(localEl => localEl.floor === 0).map(localEl => {
-              const matched = responseElements.find(serverEl =>
-                serverEl.old_element_id === localEl.id || serverEl.id === localEl.id
-              );
-              if (matched) {
-                return {
-                  ...localEl,
-                  ...matched,
-                  id: matched.id,
-                  isSynced: true
-                };
-              }
-              return localEl;
-            });
-
-            saveToStorage("floor-elements", floorUpdated);
-
-            if (floor === currentFloor) {
-              const allUpdated = [...updated, ...floorUpdated];
-              setElements(allUpdated as any);
+        
+        if (unsynced.length > 0) {
+          const response = await syncToServer("sync-elements", { elements: unsynced });
+          const responseElements: MapElement[] = response?.data ?? [];
+          
+          const updated = storedElements.filter(localEl => localEl.floor !== 0).map(localEl => {
+            const matched = responseElements.find(serverEl =>
+              serverEl.old_element_id === localEl.id || serverEl.id === localEl.id
+            );
+            if (matched) {
+              return {
+                ...localEl,
+                ...matched,
+                id: matched.id,
+                isSynced: true
+              };
             }
+            return localEl;
+          });
+          saveToStorage(floorKey, updated);
+
+          const floorUpdated = storedElements.filter(localEl => localEl.floor === 0).map(localEl => {
+            const matched = responseElements.find(serverEl =>
+              serverEl.old_element_id === localEl.id || serverEl.id === localEl.id
+            );
+            if (matched) {
+              return {
+                ...localEl,
+                ...matched,
+                id: matched.id,
+                isSynced: true
+              };
+            }
+            return localEl;
+          });
+
+          saveToStorage("floor-elements", floorUpdated);
+
+          if (floor === currentFloor) {
+            const allUpdated = [...updated, ...floorUpdated];
+            setElements(allUpdated as any);
           }
         }
-      } catch (error) {
-        console.error("Sync error:", error);
-      } finally {
-        isSyncing = false; // Release lock
       }
-    };
-  }, [totalFloors, currentFloor, mapSettings])();
+    } catch (error) {
+      console.error("Sync error:", error);
+    } finally {
+      syncLockRef.current = false; // Release lock
+      setIsSyncing(false);
+    }
+  }, [totalFloors, currentFloor, mapSettings, syncToServer, setMapSettings, setElements, setIsSyncing]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      console.log('synced');
-      syncUnsyncedElements(); // No need for await here since it's handled internally
+      console.log('Attempting sync...');
+      syncUnsyncedElements();
     }, 3000);
 
     return () => clearInterval(interval);
