@@ -15,6 +15,7 @@ import { ElementIcon } from "./map/element-icon"
 import useQuery from "@/hooks/use-query"
 import type { MapElement } from "@/types"
 import { storeCategories } from "./panels/store-properties-panel"
+import useMutate from "@/hooks/use-mutate"
 
 interface RouteDialogProps {
   open: boolean
@@ -78,6 +79,8 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
 
   const sourceQuery = useQuery(`/search-elements/${project.id}?${sourceQueryString}`)
   const targetQuery = useQuery(`/search-elements/${project.id}?${targetQueryString}`)
+  const [syncRoute] = useMutate({ callback: undefined, navigateBack: false })
+
 
   // Refetch when search or filter changes
   useEffect(() => {
@@ -152,6 +155,10 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
     const path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
     onRouteSelect(selectedSource, selectedTarget, path)
     onOpenChange(false)
+    syncRoute('sync-routes',{
+      from_element_id: selectedSource.id,
+      to_element_id: selectedTarget.id,
+    })
   }, [selectedSource, selectedTarget, elements, mapSettings, isGuestMode, onRouteSelect, onOpenChange])
 
   const handleSelectSource = useCallback((element: MapElement) => {

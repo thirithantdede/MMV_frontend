@@ -351,7 +351,7 @@ export function MapEditorProvider({ children }: { children: ReactNode }) {
     const interval = setInterval(() => {
       console.log('synced');
       syncUnsyncedElements(); // No need for await here since it's handled internally
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(interval);
   }, [syncUnsyncedElements]);

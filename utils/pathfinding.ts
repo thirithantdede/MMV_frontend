@@ -1,5 +1,6 @@
 // pathfinding.ts
-import type { MapElement, MapSettings, RoutePoint } from "@/types";
+import type { MapElement, MapSettings, RoutePoint, ElementType } from "@/types";
+import { accept, storeTypes } from "./global";
 
 interface Node {
   x: number;
@@ -15,9 +16,9 @@ const floorElementsCache = new Map<number, MapElement[]>();
 const cacheTimestamp = new Map<number, number>();
 const CACHE_DURATION = 5000; // 5 seconds cache
 
-// ENHANCED: Configurable buffer distance around elements
-const ELEMENT_BUFFER_GRIDS = 1; // Number of grid cells to maintain as buffer around elements
-const MIN_PATH_WIDTH_GRIDS = 2; // Minimum path width in grid cells
+// Buffer distance - will fallback to 0 if no path found
+const ELEMENT_BUFFER_GRIDS = 1;
+const MIN_PATH_WIDTH_GRIDS = 2;
 
 // Helper function to load elements from localStorage for a specific floor with caching
 function loadFloorElements(floor: number): MapElement[] {
@@ -56,7 +57,6 @@ function loadFloorElements(floor: number): MapElement[] {
     
     return combined;
   } catch (error) {
-    console.error(`Error loading floor ${floor} elements:`, error);
     return [];
   }
 }
@@ -76,8 +76,8 @@ function findTransitionElements(floor: number): MapElement[] {
   if (cached) return cached;
   
   const floorElements = loadFloorElements(floor);
-  const transitionTypes = ["elevator", "escalator", "stairs"];
-  const transitions = floorElements.filter(element => transitionTypes.includes(element.type));
+  const transitionTypes: ElementType[] = ["elevator", "escalator", "stairs"];
+  const transitions = floorElements.filter(element => transitionTypes.includes(element.type as ElementType));
   
   transitionElementsCache.set(floor, transitions);
   return transitions;
@@ -131,7 +131,7 @@ export function findPath(
   allElements: MapElement[],
   fElements: MapElement[],
   mapSettings: MapSettings,
-  avoidElements: boolean = false,
+  avoidElements: boolean = true,
 ): RoutePoint[] {
   // Check cache first for multi-floor paths (they're more expensive)
   if (sourceStore.floor !== targetStore.floor) {
@@ -140,7 +140,6 @@ export function findPath(
     const now = Date.now();
     
     if (cached && (now - cached.timestamp) < PATH_CACHE_DURATION) {
-      console.log('Using cached multi-floor path');
       return cached.path;
     }
     
@@ -151,8 +150,35 @@ export function findPath(
     return path;
   }
 
-  // Single floor paths are usually fast enough not to cache
-  return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements);
+  // Single floor paths with fallback system
+  return findSingleFloorPathWithFallback(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements);
+}
+
+// NEW: Single floor path with fallback system
+function findSingleFloorPathWithFallback(
+  sourceStore: MapElement,
+  targetStore: MapElement,
+  allElements: MapElement[],
+  fElements: MapElement[],
+  mapSettings: MapSettings,
+  avoidElements: boolean = true,
+): RoutePoint[] {
+  // First try with buffer
+  let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, ELEMENT_BUFFER_GRIDS);
+  
+  if (path.length > 0) {
+    return path;
+  }
+
+  // If no path found, try with no buffer
+  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 0);
+  
+  if (path.length > 0) {
+    return path;
+  }
+
+  // Last resort: try without avoiding elements at all
+  return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, false, 0);
 }
 
 function findMultiFloorPath(
@@ -161,10 +187,8 @@ function findMultiFloorPath(
   allElements: MapElement[],
   fElements: MapElement[],
   mapSettings: MapSettings,
-  avoidElements: boolean = false,
+  avoidElements: boolean = true,
 ): RoutePoint[] {
-  console.log(`Finding multi-floor path from floor ${sourceStore.floor} to floor ${targetStore.floor}`);
-  
   const path: RoutePoint[] = [];
   const sourceFloor = sourceStore.floor;
   const targetFloor = targetStore.floor;
@@ -175,44 +199,40 @@ function findMultiFloorPath(
   
   // Step 1: Find path from source to nearest transition on source floor
   const sourceFloorTransitions = findTransitionElements(sourceFloor);
-  console.log(`Found ${sourceFloorTransitions.length} transitions on source floor ${sourceFloor}:`, sourceFloorTransitions.map(t => t.name || t.type));
   
   if (sourceFloorTransitions.length === 0) {
-    console.error(`No transition elements found on floor ${sourceFloor}`);
     return [];
   }
   
   const nearestSourceTransition = findNearestTransition(sourceStore, sourceFloorTransitions);
   if (!nearestSourceTransition) {
-    console.error(`Could not find nearest transition on floor ${sourceFloor}`);
     return [];
   }
-
-  console.log(`Using nearest transition on source floor: ${nearestSourceTransition.name || nearestSourceTransition.type}`);
   
-  // Get all elements for source floor - FIXED: Use the correct elements array
-  const sourceFloorElements = loadFloorElements(sourceFloor);
-  console.log(`Loaded ${sourceFloorElements.length} elements for source floor ${sourceFloor}`);
+  // Get ALL elements for source floor - FIXED: Properly consolidate all elements
+  const sourceFloorElementsFromStorage = loadFloorElements(sourceFloor);
+  const sourceFloorElementsFromAll = allElements.filter(el => el.floor === sourceFloor);
+  const sourceFloorElementsFromF = fElements.filter(el => el.floor === sourceFloor);
   
-  // FIXED: Combine allElements and fElements for pathfinding
-  const combinedSourceElements = [...sourceFloorElements, ...allElements.filter(el => el.floor === sourceFloor)];
+  // Combine and deduplicate all elements
+  const allSourceFloorElements = consolidateElements([
+    ...sourceFloorElementsFromStorage,
+    ...sourceFloorElementsFromAll,
+    ...sourceFloorElementsFromF
+  ]);
   
-  // Get path from source to transition on source floor
-  const sourceToTransitionPath = findSingleFloorPath(
+  // Get path from source to transition on source floor with fallback
+  const sourceToTransitionPath = findSingleFloorPathWithFallback(
     sourceStore,
     nearestSourceTransition,
-    combinedSourceElements, // Use combined elements
-    fElements,
+    allSourceFloorElements,
+    [], // Don't pass fElements again since we already included them
     mapSettings,
     avoidElements
   );
   
-  console.log(`Source to transition path length: ${sourceToTransitionPath.length}`);
-  
   if (sourceToTransitionPath.length === 0) {
-    console.error(`Could not find path from source to transition on floor ${sourceFloor}`);
-    // Try alternative approach: add direct connection to transition
-    console.log('Attempting direct connection to transition...');
+    // Add direct connection as last resort
     path.push({
       x: sourceStore.x + sourceStore.width / 2,
       y: sourceStore.y + sourceStore.height / 2,
@@ -233,28 +253,25 @@ function findMultiFloorPath(
   
   while (currentFloor !== targetFloor) {
     const nextFloor = currentFloor + floorDirection;
-    console.log(`Moving from floor ${currentFloor} to floor ${nextFloor}`);
     
     // Find corresponding transition element on the next floor
     const nextFloorTransitions = findTransitionElements(nextFloor);
-    console.log(`Found ${nextFloorTransitions.length} transitions on next floor ${nextFloor}:`, nextFloorTransitions.map(t => t.name || t.type));
     
     if (nextFloorTransitions.length === 0) {
-      console.error(`No transition elements found on floor ${nextFloor}`);
       return path; // Return partial path
     }
     
+    // Better transition matching
     const correspondingTransition = nextFloorTransitions.find(t => 
       t.type === currentTransition.type &&
-      Math.abs(t.x - currentTransition.x) < 50 && // Allow some tolerance for positioning
-      Math.abs(t.y - currentTransition.y) < 50
+      Math.abs(t.x - currentTransition.x) < 100 && // Increased tolerance
+      Math.abs(t.y - currentTransition.y) < 100
     );
     
     if (!correspondingTransition) {
       // Use the nearest transition as fallback
       const fallbackTransition = findNearestTransition(currentTransition, nextFloorTransitions);
       if (fallbackTransition) {
-        console.log(`Using fallback transition on floor ${nextFloor}: ${fallbackTransition.name || fallbackTransition.type}`);
         path.push({
           x: fallbackTransition.x + fallbackTransition.width / 2,
           y: fallbackTransition.y + fallbackTransition.height / 2,
@@ -262,11 +279,9 @@ function findMultiFloorPath(
         });
         currentTransition = fallbackTransition;
       } else {
-        console.error(`No fallback transition found on floor ${nextFloor}`);
         return path;
       }
     } else {
-      console.log(`Using corresponding transition on floor ${nextFloor}: ${correspondingTransition.name || correspondingTransition.type}`);
       // Add transition point on the next floor
       path.push({
         x: correspondingTransition.x + correspondingTransition.width / 2,
@@ -280,40 +295,40 @@ function findMultiFloorPath(
   }
   
   // Step 3: Find path from transition to target on target floor
-  const targetFloorElements = loadFloorElements(targetFloor);
-  console.log(`Loaded ${targetFloorElements.length} elements for target floor ${targetFloor}`);
+  const targetFloorElementsFromStorage = loadFloorElements(targetFloor);
+  const targetFloorElementsFromAll = allElements.filter(el => el.floor === targetFloor);
+  const targetFloorElementsFromF = fElements.filter(el => el.floor === targetFloor);
+  
+  // Combine and deduplicate all elements
+  const allTargetFloorElements = consolidateElements([
+    ...targetFloorElementsFromStorage,
+    ...targetFloorElementsFromAll,
+    ...targetFloorElementsFromF
+  ]);
   
   const targetFloorTransitions = findTransitionElements(targetFloor);
   
   // Find the transition element on target floor that corresponds to our current transition
   const targetFloorTransition = targetFloorTransitions.find(t => 
     t.type === currentTransition.type &&
-    Math.abs(t.x - currentTransition.x) < 50 &&
-    Math.abs(t.y - currentTransition.y) < 50
-  ) || currentTransition; // Use current transition if no corresponding one found
+    Math.abs(t.x - currentTransition.x) < 100 &&
+    Math.abs(t.y - currentTransition.y) < 100
+  ) || currentTransition;
   
-  console.log(`Using transition on target floor: ${targetFloorTransition.name || targetFloorTransition.type}`);
-  
-  // FIXED: Combine allElements and fElements for pathfinding on target floor
-  const combinedTargetElements = [...targetFloorElements, ...allElements.filter(el => el.floor === targetFloor)];
-  
-  // Get path from transition to target on target floor
-  const transitionToTargetPath = findSingleFloorPath(
+  // Get path from transition to target on target floor with fallback
+  const transitionToTargetPath = findSingleFloorPathWithFallback(
     targetFloorTransition,
     targetStore,
-    combinedTargetElements, // Use combined elements
-    fElements,
+    allTargetFloorElements,
+    [], // Don't pass fElements again since we already included them
     mapSettings,
     avoidElements
   );
-  
-  console.log(`Transition to target path length: ${transitionToTargetPath.length}`);
   
   if (transitionToTargetPath.length > 0) {
     // Remove the first point to avoid duplication with the last transition point
     path.push(...transitionToTargetPath.slice(1));
   } else {
-    console.log('No path found from transition to target, adding direct connection...');
     // If no path found, add direct connection to target
     path.push({
       x: targetStore.x + targetStore.width / 2,
@@ -322,11 +337,41 @@ function findMultiFloorPath(
     });
   }
   
-  console.log(`Multi-floor path found with ${path.length} points`);
   return path;
 }
 
-// ENHANCED: Improved element avoidance with proper buffer zones
+// NEW: Consolidate elements and remove duplicates
+function consolidateElements(elements: MapElement[]): MapElement[] {
+  const elementMap = new Map<string, MapElement>();
+  
+  for (const element of elements) {
+    if (element && element.id) {
+      elementMap.set(element.id, element);
+    }
+  }
+  
+  return Array.from(elementMap.values());
+}
+
+// FIXED: Proper element obstacle detection using your existing types
+function isElementObstacle(element: MapElement, sourceId: string, targetId: string): boolean {
+  // Skip source and target elements
+  if (element.id === sourceId || element.id === targetId) return false;
+  
+  // Elements explicitly marked as walkable are not obstacles
+  if (element.walkable === true) return false;
+  
+  // STRICT: All elements except pathways, doors, and transitions should be obstacles
+  const walkableTypes = ['pathway', 'door', 'elevator', 'escalator', 'stairs'];
+  
+  // If it's not in walkable types, it's an obstacle
+  if (!walkableTypes.includes(element.type)) {
+    return true;
+  }
+  
+  return false;
+}
+
 function markElementObstacles(
   grid: Uint8Array,
   elements: MapElement[],
@@ -335,119 +380,118 @@ function markElementObstacles(
   mapSettings: MapSettings,
   sourceId: string,
   targetId: string,
-  floor: number
+  floor: number,
+  bufferGrids: number = 0
 ) {
-  console.log(`Marking obstacles for ${elements.length} elements with ${ELEMENT_BUFFER_GRIDS} grid buffer`);
-  
   for (const element of elements) {
-    // Skip source and target elements
-    if (element.id === sourceId || element.id === targetId) continue;
-    
     // Only process elements on current floor
     if (element.floor !== floor) continue;
     
-    // Skip walkable elements (like pathways) unless they're specifically marked as obstacles
-    if (element.walkable === true && !['wall', 'pillar', 'obstacle'].includes(element.type)) continue;
+    // Use the strict obstacle detection function
+    if (!isElementObstacle(element, sourceId, targetId)) continue;
     
-    // Calculate element bounds in grid coordinates
-    const elementGridMinX = Math.floor((element.x - mapSettings.building_x) / mapSettings.grid_size);
-    const elementGridMaxX = Math.ceil((element.x + element.width - mapSettings.building_x) / mapSettings.grid_size);
-    const elementGridMinY = Math.floor((element.y - mapSettings.building_y) / mapSettings.grid_size);
-    const elementGridMaxY = Math.ceil((element.y + element.height - mapSettings.building_y) / mapSettings.grid_size);
+    // FIXED: Simpler grid coverage calculation
+    // Convert element bounds to grid coordinates with proper rounding
+    const elementLeft = element.x - mapSettings.building_x;
+    const elementTop = element.y - mapSettings.building_y;
+    const elementRight = elementLeft + element.width;
+    const elementBottom = elementTop + element.height;
     
-    // ENHANCED: Add buffer around elements
-    const bufferedMinX = Math.max(0, elementGridMinX - ELEMENT_BUFFER_GRIDS);
-    const bufferedMaxX = Math.min(gridWidth, elementGridMaxX + ELEMENT_BUFFER_GRIDS);
-    const bufferedMinY = Math.max(0, elementGridMinY - ELEMENT_BUFFER_GRIDS);
-    const bufferedMaxY = Math.min(gridHeight, elementGridMaxY + ELEMENT_BUFFER_GRIDS);
+    // Calculate which grid cells this element occupies
+    // Use Math.floor for start and Math.ceil for end to ensure full coverage
+    const startGridX = Math.max(0, Math.floor(elementLeft / mapSettings.grid_size) - bufferGrids);
+    const endGridX = Math.min(gridWidth, Math.ceil(elementRight / mapSettings.grid_size) + bufferGrids);
+    const startGridY = Math.max(0, Math.floor(elementTop / mapSettings.grid_size) - bufferGrids);
+    const endGridY = Math.min(gridHeight, Math.ceil(elementBottom / mapSettings.grid_size) + bufferGrids);
     
-    // Mark the buffered area as blocked
-    for (let y = bufferedMinY; y < bufferedMaxY; y++) {
-      for (let x = bufferedMinX; x < bufferedMaxX; x++) {
-        grid[y * gridWidth + x] = 0;
+    // Mark all grid cells that this element covers
+    for (let gridY = startGridY; gridY < endGridY; gridY++) {
+      for (let gridX = startGridX; gridX < endGridX; gridX++) {
+        const gridIndex = gridY * gridWidth + gridX;
+        if (gridIndex >= 0 && gridIndex < grid.length) {
+          grid[gridIndex] = 0; // Mark as blocked
+        }
       }
     }
-    
-    console.log(`Marked element ${element.name || element.type} with buffer: (${bufferedMinX},${bufferedMinY}) to (${bufferedMaxX},${bufferedMaxY})`);
   }
 }
 
-// ENHANCED: Improved single floor pathfinding with better obstacle handling
+// ENHANCED: Improved single floor pathfinding with proper element consolidation
 function findSingleFloorPath(
   sourceStore: MapElement,
   targetStore: MapElement,
   allElements: MapElement[],
   fElements: MapElement[],
   mapSettings: MapSettings,
-  avoidElements: boolean = false,
+  avoidElements: boolean = true,
+  bufferGrids: number = 0,
 ): RoutePoint[] {
-  const floor = sourceStore.floor != 0 ? sourceStore.floor : targetStore.floor;
-  
-  console.log(`Finding single floor path on floor ${floor} from ${sourceStore.name || sourceStore.type} to ${targetStore.name || targetStore.type}`);
+  const floor = sourceStore.floor !== 0 ? sourceStore.floor : targetStore.floor;
 
-  // Quick distance check - if stores are very close, return direct path
-  const directDistance = calculateDistance(sourceStore, targetStore);
-  if (directDistance < mapSettings.grid_size * (MIN_PATH_WIDTH_GRIDS + 1)) {
-    console.log('Stores are very close, checking for direct path viability');
-    
-    // ENHANCED: Check if direct path is actually clear
-    if (!avoidElements || isDirectPathClear(sourceStore, targetStore, allElements, fElements, mapSettings, floor)) {
-      return [
-        { x: sourceStore.x + sourceStore.width / 2, y: sourceStore.y + sourceStore.height / 2, floor },
-        { x: targetStore.x + targetStore.width / 2, y: targetStore.y + targetStore.height / 2, floor }
-      ];
-    }
+  // Get ALL elements for this floor and consolidate them
+  const floorElementsFromStorage = loadFloorElements(floor);
+  const floorElementsFromAll = allElements.filter(el => el.floor === floor);
+  const floorElementsFromF = fElements.filter(el => el.floor === 0);
+  
+  const consolidatedElements = consolidateElements([
+    ...floorElementsFromStorage,
+    ...floorElementsFromAll,
+    ...floorElementsFromF
+  ]);
+
+  // FIXED: Better coordinate conversion
+  const sourceX = sourceStore.x + sourceStore.width / 2;
+  const sourceY = sourceStore.y + sourceStore.height / 2;
+  const targetX = targetStore.x + targetStore.width / 2;
+  const targetY = targetStore.y + targetStore.height / 2;
+
+  // Quick direct path check first
+  if (!avoidElements || isDirectPathClear(sourceStore, targetStore, consolidatedElements, mapSettings, floor, bufferGrids)) {
+    return [
+      { x: sourceX, y: sourceY, floor },
+      { x: targetX, y: targetY, floor }
+    ];
   }
 
-  // Create grid based on building boundaries
-  const buildingGridWidth = Math.ceil(mapSettings.building_width / mapSettings.grid_size);
-  const buildingGridHeight = Math.ceil(mapSettings.building_height / mapSettings.grid_size);
+  // Create grid with proper bounds
+  const gridSize = mapSettings.grid_size;
+  const buildingGridWidth = Math.ceil(mapSettings.building_width / gridSize);
+  const buildingGridHeight = Math.ceil(mapSettings.building_height / gridSize);
   
-  // Convert absolute coordinates to building-relative coordinates
-  const buildingStartX = Math.round((sourceStore.x + sourceStore.width / 2 - mapSettings.building_x) / mapSettings.grid_size);
-  const buildingStartY = Math.round((sourceStore.y + sourceStore.height / 2 - mapSettings.building_y) / mapSettings.grid_size);
-  const buildingEndX = Math.round((targetStore.x + targetStore.width / 2 - mapSettings.building_x) / mapSettings.grid_size);
-  const buildingEndY = Math.round((targetStore.y + targetStore.height / 2 - mapSettings.building_y) / mapSettings.grid_size);
+  // FIXED: More precise grid coordinate conversion
+  const buildingStartX = Math.floor((sourceX - mapSettings.building_x) / gridSize);
+  const buildingStartY = Math.floor((sourceY - mapSettings.building_y) / gridSize);
+  const buildingEndX = Math.floor((targetX - mapSettings.building_x) / gridSize);
+  const buildingEndY = Math.floor((targetY - mapSettings.building_y) / gridSize);
 
-  // Check bounds
-  if (buildingStartX < 0 || buildingStartX >= buildingGridWidth || buildingStartY < 0 || buildingStartY >= buildingGridHeight ||
-      buildingEndX < 0 || buildingEndX >= buildingGridWidth || buildingEndY < 0 || buildingEndY >= buildingGridHeight) {
-    console.error('Start or end point outside building bounds');
-    console.log(`Start: (${buildingStartX}, ${buildingStartY}), End: (${buildingEndX}, ${buildingEndY}), Grid: ${buildingGridWidth}x${buildingGridHeight}`);
+  // Bounds checking
+  if (buildingStartX < 0 || buildingStartX >= buildingGridWidth || 
+      buildingStartY < 0 || buildingStartY >= buildingGridHeight ||
+      buildingEndX < 0 || buildingEndX >= buildingGridWidth || 
+      buildingEndY < 0 || buildingEndY >= buildingGridHeight) {
     return [];
   }
 
-  // If same point, return single point
+  // Same point check
   if (buildingStartX === buildingEndX && buildingStartY === buildingEndY) {
-    return [{ x: buildingStartX * mapSettings.grid_size + mapSettings.building_x, y: buildingStartY * mapSettings.grid_size + mapSettings.building_y, floor }];
+    return [{ x: sourceX, y: sourceY, floor }];
   }
 
-  // Create grid - use Uint8Array for better memory efficiency
-  const gridSize = buildingGridWidth * buildingGridHeight;
-  const grid = new Uint8Array(gridSize);
+  // Create and populate grid
+  const totalGridSize = buildingGridWidth * buildingGridHeight;
+  const grid = new Uint8Array(totalGridSize);
   grid.fill(1); // 1 = walkable, 0 = blocked
 
-  // ENHANCED: Mark obstacles with improved buffer system
+  // Mark obstacles
   if (avoidElements) {
-    const floorElements = allElements.filter(el => el.floor === floor);
-    console.log(`Processing ${floorElements.length} floor elements and ${fElements.length} fElements for obstacles`);
-
-    // Mark obstacles from both element arrays
-    markElementObstacles(grid, floorElements, buildingGridWidth, buildingGridHeight, mapSettings, sourceStore.id, targetStore.id, floor);
-    markElementObstacles(grid, fElements, buildingGridWidth, buildingGridHeight, mapSettings, sourceStore.id, targetStore.id, floor);
+    markElementObstacles(grid, consolidatedElements, buildingGridWidth, buildingGridHeight, mapSettings, sourceStore.id, targetStore.id, floor, bufferGrids);
   }
 
-  // ENHANCED: Ensure start and end positions are accessible
-  const accessibleStart = ensureAccessiblePosition(buildingStartX, buildingStartY, grid, buildingGridWidth, buildingGridHeight);
-  const accessibleEnd = ensureAccessiblePosition(buildingEndX, buildingEndY, grid, buildingGridWidth, buildingGridHeight);
+  // Ensure start and end positions are accessible
+  const accessibleStart = ensureAccessiblePosition(buildingStartX, buildingStartY, grid, buildingGridWidth, buildingGridHeight, bufferGrids);
+  const accessibleEnd = ensureAccessiblePosition(buildingEndX, buildingEndY, grid, buildingGridWidth, buildingGridHeight, bufferGrids);
 
-  if (!accessibleStart) {
-    console.error('Cannot find accessible start position');
-    return [];
-  }
-
-  if (!accessibleEnd) {
-    console.error('Cannot find accessible end position');
+  if (!accessibleStart || !accessibleEnd) {
     return [];
   }
 
@@ -463,15 +507,14 @@ function findSingleFloorPath(
     floor
   );
 }
-
-// ENHANCED: Check if direct path between two elements is clear
+// FIXED: Check if direct path between two elements is clear with exact element bounds checking
 function isDirectPathClear(
   sourceStore: MapElement,
   targetStore: MapElement,
-  allElements: MapElement[],
-  fElements: MapElement[],
+  consolidatedElements: MapElement[],
   mapSettings: MapSettings,
-  floor: number
+  floor: number,
+  bufferGrids: number = 0
 ): boolean {
   const sourceX = sourceStore.x + sourceStore.width / 2;
   const sourceY = sourceStore.y + sourceStore.height / 2;
@@ -479,21 +522,21 @@ function isDirectPathClear(
   const targetY = targetStore.y + targetStore.height / 2;
 
   // Get all obstacles on this floor
-  const obstacles = [
-    ...allElements.filter(el => el.floor === floor && el.id !== sourceStore.id && el.id !== targetStore.id && !el.walkable),
-    ...fElements.filter(el => el.floor === floor && el.id !== sourceStore.id && el.id !== targetStore.id && !el.walkable)
-  ];
+  const obstacles = consolidatedElements.filter(el => 
+    el.floor === floor && isElementObstacle(el, sourceStore.id, targetStore.id)
+  );
 
-  // Check if line intersects with any obstacle (with buffer)
+  // FIXED: Simpler line-rectangle intersection
   for (const obstacle of obstacles) {
-    const bufferedObstacle = {
-      x: obstacle.x - ELEMENT_BUFFER_GRIDS * mapSettings.grid_size,
-      y: obstacle.y - ELEMENT_BUFFER_GRIDS * mapSettings.grid_size,
-      width: obstacle.width + 2 * ELEMENT_BUFFER_GRIDS * mapSettings.grid_size,
-      height: obstacle.height + 2 * ELEMENT_BUFFER_GRIDS * mapSettings.grid_size
+    const buffer = bufferGrids * mapSettings.grid_size;
+    const obstacleRect = {
+      left: obstacle.x - buffer,
+      top: obstacle.y - buffer,
+      right: obstacle.x + obstacle.width + buffer,
+      bottom: obstacle.y + obstacle.height + buffer
     };
 
-    if (lineIntersectsRectangle(sourceX, sourceY, targetX, targetY, bufferedObstacle)) {
+    if (lineIntersectsRect(sourceX, sourceY, targetX, targetY, obstacleRect)) {
       return false;
     }
   }
@@ -501,58 +544,61 @@ function isDirectPathClear(
   return true;
 }
 
-// ENHANCED: Line-rectangle intersection check
-function lineIntersectsRectangle(
+function lineIntersectsRect(
   x1: number, y1: number, x2: number, y2: number,
-  rect: { x: number, y: number, width: number, height: number }
+  rect: { left: number, top: number, right: number, bottom: number }
 ): boolean {
-  // Check if line endpoints are inside rectangle
-  if ((x1 >= rect.x && x1 <= rect.x + rect.width && y1 >= rect.y && y1 <= rect.y + rect.height) ||
-      (x2 >= rect.x && x2 <= rect.x + rect.width && y2 >= rect.y && y2 <= rect.y + rect.height)) {
+  // Check if either endpoint is inside the rectangle
+  if ((x1 >= rect.left && x1 <= rect.right && y1 >= rect.top && y1 <= rect.bottom) ||
+      (x2 >= rect.left && x2 <= rect.right && y2 >= rect.top && y2 <= rect.bottom)) {
     return true;
   }
 
-  // Check intersection with rectangle edges
-  const rectRight = rect.x + rect.width;
-  const rectBottom = rect.y + rect.height;
-
+  // Check intersection with each edge of the rectangle
   return (
-    lineIntersectsLine(x1, y1, x2, y2, rect.x, rect.y, rectRight, rect.y) || // top edge
-    lineIntersectsLine(x1, y1, x2, y2, rectRight, rect.y, rectRight, rectBottom) || // right edge
-    lineIntersectsLine(x1, y1, x2, y2, rectRight, rectBottom, rect.x, rectBottom) || // bottom edge
-    lineIntersectsLine(x1, y1, x2, y2, rect.x, rectBottom, rect.x, rect.y) // left edge
+    lineSegmentsIntersect(x1, y1, x2, y2, rect.left, rect.top, rect.right, rect.top) ||     // top edge
+    lineSegmentsIntersect(x1, y1, x2, y2, rect.right, rect.top, rect.right, rect.bottom) || // right edge
+    lineSegmentsIntersect(x1, y1, x2, y2, rect.right, rect.bottom, rect.left, rect.bottom) || // bottom edge
+    lineSegmentsIntersect(x1, y1, x2, y2, rect.left, rect.bottom, rect.left, rect.top)     // left edge
   );
 }
 
-// Helper function to check line-line intersection
-function lineIntersectsLine(
+// FIXED: Proper line segment intersection
+function lineSegmentsIntersect(
   x1: number, y1: number, x2: number, y2: number,
   x3: number, y3: number, x4: number, y4: number
 ): boolean {
-  const denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
-  if (denom === 0) return false; // Lines are parallel
+  const denominator = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4);
+  
+  if (Math.abs(denominator) < 1e-10) {
+    return false; // Lines are parallel
+  }
 
-  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom;
-  const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denom;
+  const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
+  const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator;
 
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 }
 
-// ENHANCED: Ensure position is accessible, find nearby walkable position if needed
+
+
+// ENHANCED: Ensure position is accessible with configurable search radius
 function ensureAccessiblePosition(
   x: number, 
   y: number, 
   grid: Uint8Array, 
   gridWidth: number, 
-  gridHeight: number
+  gridHeight: number,
+  bufferGrids: number = 0
 ): { x: number, y: number } | null {
   // Check if current position is walkable
-  if (grid[y * gridWidth + x] === 1) {
+  const currentIndex = y * gridWidth + x;
+  if (currentIndex >= 0 && currentIndex < grid.length && grid[currentIndex] === 1) {
     return { x, y };
   }
 
   // Try to find nearby walkable position using expanding search
-  const maxRadius = Math.min(ELEMENT_BUFFER_GRIDS + 2, Math.min(gridWidth, gridHeight) / 4);
+  const maxRadius = Math.min(bufferGrids + 3, Math.min(gridWidth, gridHeight) / 4);
   
   for (let radius = 1; radius <= maxRadius; radius++) {
     // Check positions in expanding rings
@@ -565,8 +611,8 @@ function ensureAccessiblePosition(
         const newY = y + dy;
         
         if (newX >= 0 && newX < gridWidth && newY >= 0 && newY < gridHeight) {
-          if (grid[newY * gridWidth + newX] === 1) {
-            console.log(`Found accessible position at (${newX}, ${newY}) with radius ${radius} from blocked (${x}, ${y})`);
+          const newIndex = newY * gridWidth + newX;
+          if (newIndex >= 0 && newIndex < grid.length && grid[newIndex] === 1) {
             return { x: newX, y: newY };
           }
         }
@@ -574,11 +620,10 @@ function ensureAccessiblePosition(
     }
   }
 
-  console.error(`Could not find accessible position near (${x}, ${y}) within radius ${maxRadius}`);
   return null;
 }
 
-// ENHANCED: A* pathfinding with improved movement costs and path smoothing
+// A* pathfinding with improved movement costs and path smoothing
 function findSingleFloorPathWithCoords(
   startX: number,
   startY: number,
@@ -609,8 +654,7 @@ function findSingleFloorPathWithCoords(
   
   openList.push(startNode);
 
-  // ENHANCED: Improved movement directions with better cost calculation
-  // Prioritize cardinal directions and penalize unnecessary diagonal movement
+  // Improved movement directions with better cost calculation
   const directions = [
     [0, 1, 1.0],     // down
     [1, 0, 1.0],     // right
@@ -623,7 +667,7 @@ function findSingleFloorPathWithCoords(
   ];
 
   let iterations = 0;
-  const maxIterations = Math.min(gridWidth * gridHeight, 15000); // Increased limit for complex paths
+  const maxIterations = Math.min(gridWidth * gridHeight, 15000);
 
   while (openList.length > 0 && iterations < maxIterations) {
     iterations++;
@@ -640,10 +684,9 @@ function findSingleFloorPathWithCoords(
 
     // If we reached the target
     if (current.x === endX && current.y === endY) {
-      console.log(`Path found in ${iterations} iterations`);
       const rawPath = reconstructPath(current, mapSettings, floor);
       
-      // ENHANCED: Apply path smoothing to reduce unnecessary waypoints
+      // Apply path smoothing to reduce unnecessary waypoints
       return smoothPath(rawPath, grid, gridWidth, gridHeight, mapSettings);
     }
 
@@ -664,12 +707,13 @@ function findSingleFloorPathWithCoords(
         nextY < 0 ||
         nextY >= gridHeight ||
         closedSet.has(nextIndex) ||
+        nextIndex >= grid.length ||
         grid[nextIndex] === 0
       ) {
         continue;
       }
 
-      // ENHANCED: Calculate movement cost with penalties for direction changes
+      // Calculate movement cost with penalties for direction changes
       let movementCost = baseCost;
       
       // Add penalty for changing direction (encourages straighter paths)
@@ -677,7 +721,7 @@ function findSingleFloorPathWithCoords(
         const prevDx = current.x - current.parent.x;
         const prevDy = current.y - current.parent.y;
         
-        if (prevDx !== dx || prevDy !== dy) {
+          if (prevDx !== dx || prevDy !== dy) {
           movementCost += 0.1; // Small penalty for direction change
         }
       }
@@ -706,11 +750,10 @@ function findSingleFloorPathWithCoords(
     }
   }
 
-  console.error(`No path found within building boundaries after ${iterations} iterations`);
   return [];
 }
 
-// ENHANCED: Path smoothing to reduce waypoints and create more natural paths
+// Path smoothing to reduce waypoints and create more natural paths
 function smoothPath(
   path: RoutePoint[],
   grid: Uint8Array,
@@ -753,7 +796,6 @@ function smoothPath(
   // Always keep end point
   smoothedPath.push(path[path.length - 1]);
 
-  console.log(`Path smoothed from ${path.length} to ${smoothedPath.length} points`);
   return smoothedPath;
 }
 
@@ -784,7 +826,8 @@ function isPathClearInGrid(
 
   while (true) {
     // Check if current point is within bounds and walkable
-    if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight || grid[y * gridWidth + x] === 0) {
+    const currentIndex = y * gridWidth + x;
+    if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight || currentIndex >= grid.length || grid[currentIndex] === 0) {
       return false;
     }
 
@@ -806,7 +849,7 @@ function isPathClearInGrid(
   return true;
 }
 
-// Optimized Manhattan distance heuristic with slight diagonal bias
+// Optimized Euclidean distance heuristic
 function heuristic(x1: number, y1: number, x2: number, y2: number): number {
   const dx = Math.abs(x1 - x2);
   const dy = Math.abs(y1 - y2);
@@ -833,18 +876,16 @@ function reconstructPath(node: Node, mapSettings: MapSettings, floor: number): R
   return path.reverse();
 }
 
-// ENHANCED: Configuration functions for buffer settings
+// Configuration functions for buffer settings
 export function setElementBuffer(bufferGrids: number) {
   if (bufferGrids >= 0 && bufferGrids <= 5) {
-    // Update the buffer constant (you might want to make this a parameter instead)
-    console.log(`Element buffer set to ${bufferGrids} grid cells`);
+    // Buffer configuration updated
   }
 }
 
 export function setMinPathWidth(widthGrids: number) {
   if (widthGrids >= 1 && widthGrids <= 10) {
-    // Update the minimum path width (you might want to make this a parameter instead)
-    console.log(`Minimum path width set to ${widthGrids} grid cells`);
+    // Path width configuration updated
   }
 }
 
@@ -859,4 +900,38 @@ export function clearAllCaches() {
   clearPathCache();
   transitionElementsCache.clear();
 }
+
+// Debug function to visualize grid obstacles (useful for debugging)
+export function debugGrid(
+  elements: MapElement[],
+  mapSettings: MapSettings,
+  floor: number,
+  sourceId: string = '',
+  targetId: string = '',
+  bufferGrids: number = 0
+): string {
+  const buildingGridWidth = Math.ceil(mapSettings.building_width / mapSettings.grid_size);
+  const buildingGridHeight = Math.ceil(mapSettings.building_height / mapSettings.grid_size);
+  
+  const gridSize = buildingGridWidth * buildingGridHeight;
+  const grid = new Uint8Array(gridSize);
+  grid.fill(1); // 1 = walkable, 0 = blocked
+  
+  markElementObstacles(grid, elements, buildingGridWidth, buildingGridHeight, mapSettings, sourceId, targetId, floor, bufferGrids);
+  
+  let debugString = `Grid Debug for Floor ${floor} (${buildingGridWidth}x${buildingGridHeight}):\n`;
+  debugString += `Buffer: ${bufferGrids} grids\n\n`;
+  
+  for (let y = 0; y < Math.min(buildingGridHeight, 50); y++) { // Limit to 50 rows for readability
+    let row = '';
+    for (let x = 0; x < Math.min(buildingGridWidth, 100); x++) { // Limit to 100 columns for readability
+      const index = y * buildingGridWidth + x;
+      row += grid[index] === 1 ? '.' : 'X';
+    }
+    debugString += row + '\n';
+  }
+  
+  return debugString;
+}
+
 
