@@ -90,11 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
     setIsAuthenticated(false)
 
-    toast({
-      title: unauthenticated ? "Unauthenticated" : "Logged out!",
-      description: unauthenticated ? "Please Log in Again" : "You have been logged out successfully.",
-      variant: "destructive",
-    })
+    // toast({
+    //   title: unauthenticated ? "Unauthenticated" : "Logged out!",
+    //   description: unauthenticated ? "Please Log in Again" : "You have been logged out successfully.",
+    //   variant: "destructive",
+    // })
 
     // Redirect to login page or home
     setTimeout(() => {
