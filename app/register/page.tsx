@@ -16,19 +16,29 @@ import { Toaster } from "@/components/ui/toaster"
 import Link from "next/link"
 
 export default function LoginPage() {
-  const { login } = useAuth()
+  const { register } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   const [showPassword, setShowPassword] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [name, setName] = useState("")
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError("")
     setIsLoading(true)
 
-    await login(email, password, setError,'login')
+    const data = {  
+      name,
+      email,
+      password : password,
+      password_confirmation : confirmPassword
+    }
+
+    await register(data, setError,'register')
     setIsLoading(false)
   }
 
@@ -47,13 +57,13 @@ export default function LoginPage() {
           <div className="space-y-4">
             <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20 shadow-lg mx-auto">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-slate-700">Welcome back</span>
+              <span className="text-sm font-medium text-slate-700">Register For Free</span>
             </div>
 
             <h1 className="text-3xl font-bold text-slate-900 leading-tight">
-              Sign in to your
+              Register for free
               <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                account
+                and start creating your own project
               </span>
             </h1>
           </div>
@@ -63,18 +73,18 @@ export default function LoginPage() {
           <div className="space-y-6">
             <div className="inline-flex items-center space-x-2 bg-white/80 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20 shadow-lg">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className="text-sm font-medium text-slate-700">Welcome back</span>
-            </div>
+              <span className="text-sm font-medium text-slate-700">Register For Free</span>
+            </div>  
 
             <h1 className="text-5xl font-bold text-slate-900 leading-tight">
-              Sign in to your
+              Register for free
               <span className="block bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                account
+                and start creating your own project
               </span>
             </h1>
 
             <p className="text-xl text-slate-600 leading-relaxed max-w-md">
-              Access your dashboard and manage your projects with ease. Your journey continues here.
+              Access your dashboard and manage your projects with ease. Your journey starts here.
             </p>
           </div>
 
@@ -103,7 +113,7 @@ export default function LoginPage() {
         {/* Right Side - Login Form */}
         <div className="flex items-center justify-center w-full px-4 lg:px-0">
           <Card className="w-full max-w-md bg-transparent border-none md:bg-white/80 md:backdrop-blur-xl md:border-white/20 md:shadow-2xl shadow-blue-500/10">
-            <CardHeader className="space-y-1 pb-8">
+            <CardHeader className="space-y-1 pb-2">
               <div className="flex flex-col items-center justify-center space-y-4">
                 <div className="relative">
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur-lg opacity-30" />
@@ -111,8 +121,8 @@ export default function LoginPage() {
                     <Image
                       src={LogoIcon || "/placeholder.svg"}
                       alt="Logo"
-                      width={60}
-                      height={60}
+                      width={50}
+                      height={50}
                       className="object-contain"
                     />
                   </div>
@@ -121,24 +131,38 @@ export default function LoginPage() {
                   src={LogoText || "/placeholder.svg"}
                   alt="Logo"
                   width={300}
-                  height={40}
+                  height={30}
                   className="object-contain"
                 />
               </div>
 
-              <div className="text-center space-y-2">
-                <h2 className="text-2xl font-bold text-slate-900">Welcome back</h2>
-                <p className="text-slate-600">Please sign in to your account</p>
-              </div>
             </CardHeader>
 
             <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-6">
+              <CardContent className="space-y-3">
                 {error && (
                   <Alert variant="destructive" className="bg-red-50 border-red-200">
                     <AlertDescription className="text-red-800">{error}</AlertDescription>
                   </Alert>
                 )}
+
+                <div className="space-y-3">
+                  <Label htmlFor="name" className="text-slate-700 font-medium">
+                    Name
+                  </Label>
+                  <div className="relative group">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                    <Input
+                      id="name"
+                      type="text"
+                      placeholder="Enter your name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="pl-11 h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                      required
+                    />
+                  </div>
+                </div>
 
                 <div className="space-y-3">
                   <Label htmlFor="email" className="text-slate-700 font-medium">
@@ -184,6 +208,35 @@ export default function LoginPage() {
                   </div>
                   <p className="text-sm text-slate-500">Password must be at least 6 characters long</p>
                 </div>
+
+                <div className="space-y-3">
+                  <Label htmlFor="password" className="text-slate-700 font-medium">
+                    Confirm Password
+                  </Label>
+                  <div className="relative group">
+                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 group-focus-within:text-blue-600 transition-colors" />
+                    <Input
+                      id="confirmPassword"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter your password"
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="pl-11 pr-11 h-12 bg-white/50 border-slate-200 focus:border-blue-500 focus:ring-blue-500/20 transition-all duration-200"
+                      required
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                    </button>
+                  </div>
+                  <p className="text-sm text-slate-500">Password must be at least 6 characters long</p>
+                </div>
+
+
               </CardContent>
 
               <CardFooter className="pt-1 flex flex-col gap-2">
@@ -201,9 +254,8 @@ export default function LoginPage() {
                     "Sign in to your account"
                   )}
                 </Button>
-
                 <div className="text-center space-y-2 block">
-                  <p className="text-sm text-slate-500">Don't have an account? <Link href="/register" className="text-blue-500">Register</Link></p>
+                  <p className="text-sm text-slate-500">Already have an account? <Link href="/login" className="text-blue-500">Login</Link></p>
                 </div>
               </CardFooter>
             </form>

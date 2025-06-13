@@ -273,7 +273,7 @@ export function MapEditor() {
           height: `${(mapSettings.height ) + (mapSettings.building_width * (zoomLevel / 2)) }px`,
           width: `${(mapSettings.width  ) + (mapSettings.building_width * (zoomLevel / 2))}px`,
           transform: `scale(${zoomLevel})`,
-          transformOrigin: "top left",
+          transformOrigin: "center",
           willChange: "transform", // Optimize for animations
         }}
       >

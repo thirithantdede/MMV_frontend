@@ -11,6 +11,7 @@ import LayoutManager from "@/components/layout-manager"
 import LogoText from "@/public/imgs/logo-text.png"
 import Image from "next/image"
 import { Avatar } from "../ui/avatar"
+import Link from "next/link"
 
 
 interface HeaderProps {
@@ -35,7 +36,9 @@ export const Header = memo(function Header({ onOpenSettings, onOpenPublish }: He
     <header className="flex h-14 items-center border-b px-4 lg:px-0">
       <div className="flex items-center">
         {/* <Image src={LogoIcon} alt="Logo" width={40} /> */}
+        <Link href="/explore">
         <Image src={LogoText} alt="Logo" width={320} />
+        </Link>
       </div>
       <div className="ml-auto flex items-center gap-2">
 

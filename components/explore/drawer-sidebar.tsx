@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { useRouter } from "next/navigation"
-import { Home, Search, Star, Info, LogIn, UserPlus, Map, HelpCircle, X, ShoppingBag, LogOut } from "lucide-react"
+import { Home, Search, LogIn, UserPlus, ShoppingBag, LogOut, Presentation } from "lucide-react"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
@@ -83,7 +83,7 @@ export default function DrawerSidebar({ isOpen, onClose }: DrawerSidebarProps) {
 
           <div className="px-2">
             <nav className="space-y-1">
-              <NavItem icon={<Home />} label="Home" onClick={() => handleNavigation("/")} />
+              <NavItem icon={<Presentation />} label="Project" onClick={() => handleNavigation("/")} />
               <NavItem icon={<Search />} label="Explore" onClick={() => handleNavigation("/explore")} />
               {user && (
                 <NavItem
