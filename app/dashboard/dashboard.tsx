@@ -1,15 +1,77 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Building, Users, ShoppingBag, Map } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { UserNav } from "@/components/user-nav"
 import { Progress } from "@/components/ui/progress"
+import { Select, SelectContent, SelectValue, SelectItem, SelectTrigger } from "@/components/ui/select"
+import useQuery from "@/hooks/use-query"
+import { LinerChart } from "./line-chart"
+
+type PopularStore = {
+  name : string,
+  analytics_count : number,
+  target : number
+}
+
+type ChartData = {
+  label : string
+  data : number
+}
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("overview")
+  const [dateRange, setDateRange] = useState("month")
+  const [timeRange, setTimeRange] = useState("month")
+  const [staticData, setStaticData] = useState({
+    total_event : 0,
+    total_visitor : 0,
+    total_active_stores : 0,
+    total_route_searches : 0
+  })
+  const [visitorChartData,setVisitorChartData] = useState<ChartData[]>([]);
+  const [popularStores,setPopularStore] = useState<PopularStore[]>([]);
+
+  const handleSelectChange = (value: string, type: "date" | "time") => {
+    if (type === "date") {
+      setDateRange(value)
+    } else {
+      setTimeRange(value)
+    }
+  }
+
+  const staticQuery = useQuery(`/dashboard/statistics?date_type=${dateRange}`);
+  const popularStoreQuery = useQuery(`/dashboard/popular-stores?date_type=${dateRange}`);
+  const chartDataQuery = useQuery(`/dashboard/visitor-tracks?date_type=${timeRange}`);
+  
+
+  useEffect(()=>{
+    if(chartDataQuery?.data){
+      setVisitorChartData(chartDataQuery.data.data);
+    }
+  },[chartDataQuery?.isFetching])
+
+  useEffect(() => {
+    if (staticQuery?.data) {
+      setStaticData({
+        total_event: staticQuery.data.data.totalEvents,
+        total_visitor: staticQuery.data.data.totalVisitors,
+        total_active_stores: staticQuery.data.data.totalActiveStores,
+        total_route_searches: staticQuery.data.data.totalRouteSearches,
+      });
+    }
+  }, [staticQuery?.isFetching]);
+
+  useEffect(() => {
+    if (popularStoreQuery?.data) {
+      setPopularStore(popularStoreQuery.data.data);
+    }
+
+  }, [popularStoreQuery?.isFetching]);
+
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -28,6 +90,21 @@ export default function Dashboard() {
       <main className="flex-1 space-y-4 p-4 pt-6 sm:p-6 sm:pt-8">
         <div className="flex flex-col sm:flex-row justify-between gap-4">
           <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
+
+          {/* drop down for select ( 1 day, 1 week, 1 month ( default selected 1 month )) */}
+          <div className="flex items-center gap-2">
+            <Select defaultValue={dateRange} onValueChange={(value) => handleSelectChange(value, "date")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a date range" />
+              </SelectTrigger>
+              <SelectContent defaultValue={dateRange}>
+                <SelectItem value="day">1d</SelectItem>
+                <SelectItem value="week">7d</SelectItem>
+                <SelectItem value="month">30d</SelectItem>
+                <SelectItem value="year">All</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
@@ -40,8 +117,7 @@ export default function Dashboard() {
                   <Building className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">12</div>
-                  <p className="text-xs text-muted-foreground">+2 from last month</p>
+                  <div className="text-2xl font-bold">{staticData.total_event}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -50,8 +126,7 @@ export default function Dashboard() {
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">2,350</div>
-                  <p className="text-xs text-muted-foreground">+15.3% from last month</p>
+                  <div className="text-2xl font-bold">{staticData.total_visitor}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -60,8 +135,7 @@ export default function Dashboard() {
                   <ShoppingBag className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">142</div>
-                  <p className="text-xs text-muted-foreground">+6 from last month</p>
+                  <div className="text-2xl font-bold">{staticData.total_active_stores}</div>
                 </CardContent>
               </Card>
               <Card>
@@ -70,62 +144,48 @@ export default function Dashboard() {
                   <Map className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">573</div>
-                  <p className="text-xs text-muted-foreground">+28.1% from last month</p>
+                  <div className="text-2xl font-bold">{staticData.total_route_searches}</div>
                 </CardContent>
               </Card>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-              <Card className="col-span-4">
-                <CardHeader>
-                  <CardTitle>Visitor Analytics</CardTitle>
-                </CardHeader>
-                <CardContent className="pl-2">
-                  <div className="h-[200px] flex items-end gap-2">
-                    {[45, 30, 60, 80, 45, 65, 75, 50, 40, 60, 70, 85].map((height, i) => (
-                      <div key={i} className="relative flex-1">
-                        <div
-                          className="bg-primary/90 rounded-t-sm w-full absolute bottom-0"
-                          style={{ height: `${height}%` }}
-                        ></div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between mt-2 text-xs text-muted-foreground">
-                    <span>Jan</span>
-                    <span>Feb</span>
-                    <span>Mar</span>
-                    <span>Apr</span>
-                    <span>May</span>
-                    <span>Jun</span>
-                    <span>Jul</span>
-                    <span>Aug</span>
-                    <span>Sep</span>
-                    <span>Oct</span>
-                    <span>Nov</span>
-                    <span>Dec</span>
-                  </div>
-                </CardContent>
-              </Card>
               <Card className="col-span-3">
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>Project View Analytics</span>
+
+                    <div className="flex items-center gap-2">
+                    <Select defaultValue={timeRange} onValueChange={(value) => handleSelectChange(value, "time")}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a date range" />
+                      </SelectTrigger>
+                      <SelectContent defaultValue={timeRange} >
+                        <SelectItem value="hour">1 Hour</SelectItem>
+                        <SelectItem value="day">1 Day</SelectItem>
+                        <SelectItem value="week">1 Week</SelectItem>
+                        <SelectItem value="month">1 Month</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  </CardTitle>
+                </CardHeader>
+                  <LinerChart  chartData={visitorChartData} timeRange={timeRange}/>
+              </Card>
+              <Card className="col-span-4">
                 <CardHeader className="pb-2">
                   <CardTitle>Popular Stores</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {[
-                      { name: "Fashion Outlet", visits: 245, progress: 85 },
-                      { name: "Food Court", visits: 189, progress: 65 },
-                      { name: "Electronics Store", visits: 142, progress: 50 },
-                      { name: "Bookstore", visits: 95, progress: 35 },
-                    ].map((store, i) => (
+                  <div className="space-y-3 max-h-96 overflow-y-scroll">
+                    {popularStores.map((store, i) => (
                       <div key={i} className="space-y-1">
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-medium">{store.name}</p>
-                          <p className="text-sm text-muted-foreground">{store.visits} visits</p>
+                          <p className="text-sm font-medium">{store?.name}</p>
+                          <p className="text-sm text-muted-foreground">{store?.analytics_count} visits</p>
                         </div>
-                        <Progress value={store.progress} className="h-2" />
+                        <Progress value={store?.analytics_count} max={store?.target} className="h-2" />
                       </div>
                     ))}
                   </div>
