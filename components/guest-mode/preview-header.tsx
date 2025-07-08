@@ -181,6 +181,19 @@ export const PreviewHeader = memo(function PreviewHeader({
                     </Button>
                   </div>
 
+                  {/* Explore */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium mb-2">Explore</h3>
+                    <Button
+                      variant="outline"
+                      onClick={()=>window.location.href = "/explore"}
+                      className="w-full justify-start gap-2 bg-transparent"
+                    >
+                      Back To Home Page
+                    </Button>
+               
+                  </div>
+
                   {/* Floor Info */}
                   <div className="pt-4 border-t">
                     <div className="text-sm text-gray-600">

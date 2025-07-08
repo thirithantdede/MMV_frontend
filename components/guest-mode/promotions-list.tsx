@@ -99,13 +99,13 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     let closedDays: string[] = []
     if (shopInfo.closed_days) {
       if (Array.isArray(shopInfo.closed_days)) {
-        closedDays = shopInfo.closed_days.map(day => day.toLowerCase())
+        closedDays = shopInfo.closed_days.map(day => typeof day === 'string' ? day.toLowerCase() : '')
       } else if (typeof shopInfo.closed_days === 'string') {
         try {
           // Try to parse as JSON array
           const parsed = JSON.parse(shopInfo.closed_days)
           if (Array.isArray(parsed)) {
-            closedDays = parsed.map(day => day.toLowerCase())
+            closedDays = parsed.map(day => typeof day === 'string' ? day.toLowerCase() : '')
           } else {
             // Single day as string
             closedDays = [shopInfo.closed_days.toLowerCase()]
