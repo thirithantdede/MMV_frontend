@@ -11,6 +11,7 @@ import { Separator } from "@/components/ui/separator"
 import { useMapEditor } from "@/context/map-editor-context"
 import type { MapElement } from "@/types"
 import useQuery from "@/hooks/use-query"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface PromotionsListProps {
   open: boolean
@@ -242,7 +243,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     if (socialLinks.length === 0) return null
 
     return (
-      <div className="flex gap-2">
+      <div className="flex gap-2 flex-wrap">
         {socialLinks.map(({ icon: Icon, url, label }) => (
           <Button
             key={label}
@@ -268,6 +269,8 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
     })
   }, [])
 
+  const isMobile = useIsMobile()
+
   const renderPromotionCard = useCallback((store: MapElement) => {
     const promotionStatus = getPromotionStatus(store.shop_information?.promotions?.end_date)
     const storeStatus = getStoreStatus(store)
@@ -284,10 +287,10 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
         }`}
       >
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-start gap-4">
+          <div className="flex justify-between items-start gap-2">
             <div className="flex-1">
-              <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                {store.name}
+              <CardTitle className="text-lg font-semibold flex items-center gap-2 flex-wrap">
+                <span className="mr-1">{store.name}</span>
                 {!storeStatus.isCurrentlyOpen && (
                   <Badge variant="outline" className="text-xs">
                     <Clock className="h-3 w-3 mr-1" />
@@ -295,13 +298,13 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                   </Badge>
                 )}
               </CardTitle>
-              <div className="flex items-center gap-4 mt-2 flex-wrap">
+              <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <MapPin className="h-3 w-3" />
                   Floor {store.floor}
                 </div>
                 {store.shop_information?.promotions?.end_date && (
-                  <div className="flex items-center gap-1 text-sm">
+                  <div className="flex items-center gap-1 text-sm flex-wrap">
                     <Calendar className="h-3 w-3" />
                     <span
                       className={
@@ -349,9 +352,13 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
           </CardContent>
         )}
 
-        <CardFooter className="pt-0 flex justify-between items-center">
-          {renderSocialMediaLinks(store)}
-          <div className="flex gap-2">
+        <CardFooter className={`pt-0 ${isMobile ? 'flex-col items-stretch gap-2' : 'flex justify-between items-center'}`}>
+          {renderSocialMediaLinks(store) && (
+            <div className={isMobile ? 'mb-2' : ''}>
+              {renderSocialMediaLinks(store)}
+            </div>
+          )}
+          <div className={`flex ${isMobile ? 'flex-col' : ''} gap-2`}>
             <Button
               size="sm"
               variant="outline"
@@ -373,19 +380,19 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
         </CardFooter>
       </Card>
     )
-  }, [getPromotionStatus, getStoreStatus, formatDate, renderSocialMediaLinks, handleViewDetails, handleStoreSelect])
+  }, [getPromotionStatus, getStoreStatus, formatDate, renderSocialMediaLinks, handleViewDetails, handleStoreSelect, isMobile])
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-                <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
+                <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col w-[95vw] max-w-full p-4 sm:p-6">
           <DialogHeader className="pb-4">
-            <DialogTitle className="flex items-center gap-3 text-xl">
+            <DialogTitle className="flex items-center gap-3 text-xl flex-wrap">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Sparkles className="h-5 w-5 text-primary" />
               </div>
-              Promotions
-              <div className="flex gap-2 ml-auto">
+              <span>Promotions</span>
+              <div className="flex gap-2 ml-auto mt-2 sm:mt-0">
                 <Badge variant="secondary">
                   {sortedActivePromotions.length} active
                 </Badge>
@@ -398,9 +405,9 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
             </DialogTitle>
           </DialogHeader>
 
-          <ScrollArea className="flex-1 pr-4">
+          <ScrollArea className="flex-1 pr-0 sm:pr-4">
             {dataFetching?.isLoading ? (
-              <div className="flex flex-col items-center justify-center max-h-[400px] text-center">
+              <div className="flex flex-col items-center justify-center max-h-[400px] text-center p-4">
                 <div className="p-4 bg-muted/30 rounded-full mb-4">
                   <Ticket className="h-12 w-12 text-muted-foreground animate-pulse" />
                 </div>
@@ -434,7 +441,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                 )}
               </div>
             ) : (
-              <div className="flex flex-col items-center justify-center h-[400px] text-center">
+              <div className="flex flex-col items-center justify-center h-[400px] text-center p-4">
                 <div className="p-4 bg-muted/30 rounded-full mb-4">
                   <Ticket className="h-12 w-12 text-muted-foreground" />
                 </div>
@@ -451,16 +458,16 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
       {/* Promotion Details Dialog */}
       {selectedPromotion && (
         <Dialog open={showPromotionDetails} onOpenChange={setShowPromotionDetails}>
-          <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-scroll">
+          <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-scroll w-[95vw] max-w-full p-4 sm:p-6">
             <DialogHeader className="pb-4">
-              <DialogTitle className="text-xl flex items-center gap-2">
-                {selectedPromotion.name}
+              <DialogTitle className="text-xl flex items-center gap-2 flex-wrap">
+                <span className="mr-1">{selectedPromotion.name}</span>
                 {(() => {
                   const promotionStatus = getPromotionStatus(selectedPromotion.shop_information?.promotions?.end_date)
                   const storeStatus = getStoreStatus(selectedPromotion)
                   
                   return (
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       {promotionStatus.isExpired && (
                         <Badge variant="destructive" className="text-xs">
                           <AlertCircle className="h-3 w-3 mr-1" />
@@ -482,7 +489,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
                   )
                 })()}
               </DialogTitle>
-              <div className="flex items-center gap-4 pt-2">
+              <div className="flex items-center gap-2 pt-2 flex-wrap">
                 <Badge variant="outline" className="flex items-center gap-1">
                   <MapPin className="h-3 w-3" />
                   Floor {selectedPromotion.floor}
@@ -501,15 +508,15 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
               </div>
             </DialogHeader>
 
-            <ScrollArea className="max-h-[400px] pr-4">
+            <ScrollArea className="max-h-[400px] pr-0 sm:pr-4">
               <div className="space-y-6">
                 {selectedPromotion.shop_information?.promotions?.detail && (
                   <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 justify-center sm:justify-start">
                       <Sparkles className="h-4 w-4 text-primary" />
                       Promotion Details
                     </h4>
-                    <div className={`p-4 rounded-lg border ${
+                    <div className={`p-3 sm:p-4 rounded-lg border ${
                       getPromotionStatus(selectedPromotion.shop_information?.promotions?.end_date).isExpired
                         ? "bg-red-50 border-red-200"
                         : "bg-gradient-to-r from-primary/5 to-primary/10 border-primary/10"
@@ -523,12 +530,12 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
 
                 {selectedPromotion.shop_information?.opening_hours?.start && (
                   <div>
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <h4 className="font-medium mb-3 flex items-center gap-2 justify-center sm:justify-start">
                       <Clock className="h-4 w-4 text-primary" />
                       Opening Hours
                     </h4>
                     <div className="bg-muted/30 p-3 rounded-lg">
-                      <p className="text-sm">
+                      <p className="text-sm text-center sm:text-left">
                         {selectedPromotion.shop_information.opening_hours.start} -{" "}
                         {selectedPromotion.shop_information.opening_hours.end || "Not specified"}
                       </p>
@@ -560,12 +567,12 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
 
                   return (
                     <div>
-                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <h4 className="font-medium mb-3 flex items-center gap-2 justify-center sm:justify-start">
                         <Clock className="h-4 w-4 text-primary" />
                         Closed Days
                       </h4>
                       <div className="bg-muted/30 p-3 rounded-lg">
-                        <p className="text-sm">
+                        <p className="text-sm text-center sm:text-left">
                           Closed on {closedDays.map(day => 
                             day.charAt(0).toUpperCase() + day.slice(1)
                           ).join(', ')}
@@ -577,8 +584,10 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
 
                 {selectedPromotion.shop_information?.social_media && (
                   <div>
-                    <h4 className="font-medium mb-3">Connect With Us</h4>
-                    {renderSocialMediaLinks(selectedPromotion)}
+                    <h4 className="font-medium mb-3 text-center sm:text-left">Connect With Us</h4>
+                    <div className="flex justify-center sm:justify-start">
+                      {renderSocialMediaLinks(selectedPromotion)}
+                    </div>
                   </div>
                 )}
               </div>
@@ -589,7 +598,7 @@ export function PromotionsList({ open, onOpenChange, onStoreSelect }: Promotions
             <div className="flex justify-end">
               <Button 
                 onClick={() => handleStoreSelect(selectedPromotion)} 
-                className="bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 disabled={getPromotionStatus(selectedPromotion.shop_information?.promotions?.end_date).isExpired}
               >
                 <MapPin className="h-4 w-4 mr-2" />

@@ -14,8 +14,16 @@ import { AnalysisBar } from './analysis-bar';
 
 const Analysis = ({ dateRange, timeRange, handleSelectChange }: { dateRange: string, timeRange: string, handleSelectChange: (value: string, type: "date" | "time") => void }) => {
   const [tableData, setTableData] = useState([]);
+  const [assetsData, setAssetsData] = useState([]);
 
   const tableDataQuery = useQuery(`/dashboard/get-table-analytic?date_type=${dateRange}`);
+  const assetsDataQuery = useQuery(`/dashboard/get-assets-data?date_type=${dateRange}`);
+
+  useEffect(() => {
+    if (assetsDataQuery.data) {
+      setAssetsData(assetsDataQuery.data.data);
+    }
+  }, [assetsDataQuery.isFetching]);
 
   useEffect(() => {
     if (tableDataQuery.data) {
@@ -52,7 +60,7 @@ const Analysis = ({ dateRange, timeRange, handleSelectChange }: { dateRange: str
           </Table>
         </div>
         <div className="col-span-2 row-span-6">
-          <AnalysisBar />
+          <AnalysisBar chartData={assetsData} />
         </div>
        
       </div>

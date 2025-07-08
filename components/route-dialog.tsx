@@ -227,7 +227,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="md:max-w-[500px] sm:max-w-[400px]  max-w-[330px]">
         <DialogHeader>
           <DialogTitle>Find Route</DialogTitle>
         </DialogHeader>
@@ -240,16 +240,16 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
           )}
           <div className="space-y-2">
             <Label>Starting Point</Label>
-            <div className="flex gap-2 mb-2">
+            <div className="grid grid-cols-4 gap-2 mb-2">
               <SearchInput
                 value={sourceSearch}
                 onChange={setSourceSearch}
                 placeholder="Search start..."
                 onClear={() => setSourceSearch("")}
-                className="flex-1"
+                className="col-span-4 md:col-span-2"
               />
               <Select value={sourceTypeFilter} onValueChange={setSourceTypeFilter}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger className=" col-span-2 md:col-span-1">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
@@ -266,7 +266,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                       value={selectedSourceCategory} 
                       onValueChange={setSelectedSourceCategory}
                       >
-                        <SelectTrigger id="store-category" className="w-[120px]">
+                        <SelectTrigger id="store-category" className=" col-span-2 md:col-span-1">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -299,16 +299,16 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
           </div>
           <div className="space-y-2">
             <Label>Destination</Label>
-            <div className="flex gap-2 mb-2">
+             <div className="grid grid-cols-4 gap-2 mb-2">
               <SearchInput
                 value={targetSearch}
                 onChange={setTargetSearch}
                 placeholder="Search destination..."
                 onClear={() => setTargetSearch("")}
-                className="flex-1"
+                 className="col-span-4 md:col-span-2"
               />
               <Select value={targetTypeFilter} onValueChange={setTargetTypeFilter}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger  className=" col-span-2 md:col-span-1">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue />
                 </SelectTrigger>
@@ -325,7 +325,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                       value={selectedTargetCategory} 
                       onValueChange={setSelectedTargetCategory}
                       >
-                        <SelectTrigger id="store-category" className="w-[120px]">
+                        <SelectTrigger id="store-category"  className=" col-span-2 md:col-span-1">
                           <SelectValue placeholder="Select category" />
                         </SelectTrigger>
                         <SelectContent>
@@ -358,7 +358,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} className="mt-4 sm:mt-0">Cancel</Button>
           <Button onClick={handleFindRoute} disabled={!selectedSource || !selectedTarget}>
             Find Route
           </Button>

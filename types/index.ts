@@ -185,6 +185,7 @@ export interface ShopInformation {
   promotions: {
     is_now: boolean
     end_date: string
+    title?: string
     detail: string
   }
 

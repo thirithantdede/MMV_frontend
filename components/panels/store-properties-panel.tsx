@@ -215,7 +215,7 @@ const shopInfo = useMemo(() => {
       website: "",
       store_category_id: 0,
       social_media: {},
-      promotions: { is_now: false, end_date: "", detail: "" },
+      promotions: { is_now: false, title:"", end_date: "", detail: "" },
     }
   );
 }, [element])
@@ -265,6 +265,16 @@ const shopInfo = useMemo(() => {
       onPropertyChange("promotions", {
         ...shopInfo.promotions,
         detail: value,
+      })
+    }, 300),
+    [onPropertyChange, shopInfo.promotions],
+  )
+
+  const handlePromotionTitleChange = useCallback(
+    debounce((value: string) => {
+      onPropertyChange("promotions", {
+        ...shopInfo.promotions,
+        title: value,
       })
     }, 300),
     [onPropertyChange, shopInfo.promotions],
@@ -378,6 +388,16 @@ const shopInfo = useMemo(() => {
 
         {shopInfo.promotions.is_now && (
           <div className="space-y-4">
+            {/* promotion title */}
+            <div className="grid gap-2">
+              <Label htmlFor="promotion-title">Promotion Title</Label>
+              <Input
+                id="promotion-title"
+                type="text"
+                value={shopInfo.promotions.title}
+                onChange={(e) => handlePromotionTitleChange(e.target.value)}
+              />
+            </div>
             <div className="grid gap-2">
               <Label htmlFor="promotion-end-date">Promotion End Date</Label>
               <div className="flex items-center gap-2">
