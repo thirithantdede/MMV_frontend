@@ -21,8 +21,7 @@ const cacheTimestamp = new Map<number, number>();
 const CACHE_DURATION = 5000; // 5 seconds cache
 
 // Buffer distance - will fallback to 0 if no path found
-const ELEMENT_BUFFER_GRIDS = 4; // was 2
-const MIN_PATH_WIDTH_GRIDS = 3;
+const ELEMENT_BUFFER_GRIDS = 1; // was 2
 
 // Helper function to calculate walking time from path
 export function calculateWalkingTimeFromPath(path: RoutePoint[], mapSettings: MapSettings): number {
