@@ -13,7 +13,7 @@ interface ZoomControlsProps {
 export const ZoomControls = memo(function ZoomControls({ showSlider = false }: ZoomControlsProps) {
   const { zoomLevel, setZoomLevel, zoomIn, zoomOut } = useMapEditor()
 
-  const percentage = Math.round(zoomLevel * 100)
+  const percentage = Math.round(zoomLevel * 80)
 
   return (
     <div className="flex items-center gap-2">

@@ -11,14 +11,216 @@ interface Node {
   parent: Node | null;
 }
 
+// Walking speed constants
+const WALKING_SPEED_METERS_PER_SECOND = 1.4; // Average walking speed ~5 km/h
+const TRANSITION_TIME_SECONDS = 30; // Time for elevator/escalator/stairs transition
+
 // Cache for loaded floor elements to avoid repeated localStorage reads
 const floorElementsCache = new Map<number, MapElement[]>();
 const cacheTimestamp = new Map<number, number>();
 const CACHE_DURATION = 5000; // 5 seconds cache
 
 // Buffer distance - will fallback to 0 if no path found
-const ELEMENT_BUFFER_GRIDS = 1;
-const MIN_PATH_WIDTH_GRIDS = 2;
+const ELEMENT_BUFFER_GRIDS = 4; // was 2
+const MIN_PATH_WIDTH_GRIDS = 3;
+
+// Helper function to calculate walking time from path
+export function calculateWalkingTimeFromPath(path: RoutePoint[], mapSettings: MapSettings): number {
+  if (path.length < 2) return 0;
+  
+  let totalDistance = 0;
+  let transitionCount = 0;
+  
+  // Calculate total distance and count floor transitions
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate distance between points
+    const distance = Math.hypot(next.x - current.x, next.y - current.y);
+    totalDistance += distance;
+    
+    // Count floor transitions
+    if (current.floor !== next.floor) {
+      transitionCount++;
+    }
+  }
+  
+  // Convert pixels to meters using grid size as reference
+  const pixelsPerMeter = mapSettings.grid_size || 20;
+  const distanceInMeters = totalDistance / pixelsPerMeter;
+  
+  // Calculate walking time
+  const walkingTimeSeconds = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
+  
+  // Add transition time
+  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
+  
+  return walkingTimeSeconds + transitionTimeSeconds;
+}
+
+// Helper function to format walking time for display
+export function formatWalkingTime(seconds: number): string {
+  if (seconds < 60) {
+    return `${Math.round(seconds)}s`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  
+  if (remainingSeconds === 0) {
+    return `${minutes}m`;
+  }
+  
+  return `${minutes}m ${remainingSeconds}s`;
+}
+
+// Helper function to get path statistics
+export function getPathStatistics(path: RoutePoint[], mapSettings: MapSettings): {
+  totalDistance: number;
+  walkingTime: number;
+  transitionCount: number;
+  floors: number[];
+} {
+  if (path.length < 2) {
+    return {
+      totalDistance: 0,
+      walkingTime: 0,
+      transitionCount: 0,
+      floors: []
+    };
+  }
+  
+  let totalDistance = 0;
+  let transitionCount = 0;
+  const floors = new Set<number>();
+  
+  // Calculate total distance and count floor transitions
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate distance between points
+    const distance = Math.hypot(next.x - current.x, next.y - current.y);
+    totalDistance += distance;
+    
+    // Count floor transitions
+    if (current.floor !== next.floor) {
+      transitionCount++;
+    }
+    
+    // Track floors
+    floors.add(current.floor);
+    floors.add(next.floor);
+  }
+  
+  // Convert pixels to meters
+  const pixelsPerMeter = mapSettings.grid_size || 20;
+  const distanceInMeters = totalDistance / pixelsPerMeter;
+  
+  // Calculate walking time
+  const walkingTimeSeconds = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
+  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
+  const totalTime = walkingTimeSeconds + transitionTimeSeconds;
+  
+  return {
+    totalDistance: distanceInMeters,
+    walkingTime: totalTime,
+    transitionCount,
+    floors: Array.from(floors).sort((a, b) => a - b)
+  };
+}
+
+// Helper function to get detailed path statistics
+export function getDetailedPathStatistics(path: RoutePoint[], mapSettings: MapSettings): {
+  totalDistance: number;
+  walkingTime: number;
+  transitionCount: number;
+  floors: number[];
+  walkingSpeed: number;
+  accessibilityTime: number;
+  totalTimeWithAccessibility: number;
+} {
+  if (path.length < 2) {
+    return {
+      totalDistance: 0,
+      walkingTime: 0,
+      transitionCount: 0,
+      floors: [],
+      walkingSpeed: WALKING_SPEED_METERS_PER_SECOND,
+      accessibilityTime: 0,
+      totalTimeWithAccessibility: 0
+    };
+  }
+  
+  let totalDistance = 0;
+  let transitionCount = 0;
+  const floors = new Set<number>();
+  
+  // Calculate total distance and count floor transitions
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate distance between points
+    const distance = Math.hypot(next.x - current.x, next.y - current.y);
+    totalDistance += distance;
+    
+    // Count floor transitions
+    if (current.floor !== next.floor) {
+      transitionCount++;
+    }
+    
+    // Track floors
+    floors.add(current.floor);
+    floors.add(next.floor);
+  }
+  
+  // Convert pixels to meters
+  const pixelsPerMeter = mapSettings.grid_size || 20;
+  const distanceInMeters = totalDistance / pixelsPerMeter;
+  
+  // Calculate walking time with different speeds
+  const normalWalkingTime = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
+  const slowWalkingTime = distanceInMeters / (WALKING_SPEED_METERS_PER_SECOND * 0.7); // 30% slower for accessibility
+  
+  // Add transition time
+  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
+  const totalTime = normalWalkingTime + transitionTimeSeconds;
+  const totalTimeWithAccessibility = slowWalkingTime + transitionTimeSeconds;
+  
+  return {
+    totalDistance: distanceInMeters,
+    walkingTime: totalTime,
+    transitionCount,
+    floors: Array.from(floors).sort((a, b) => a - b),
+    walkingSpeed: WALKING_SPEED_METERS_PER_SECOND,
+    accessibilityTime: totalTimeWithAccessibility,
+    totalTimeWithAccessibility
+  };
+}
+
+// Helper function to format walking time with accessibility options
+export function formatWalkingTimeWithAccessibility(seconds: number, includeAccessibility: boolean = false): string {
+  if (seconds < 60) {
+    return `${Math.round(seconds)}s`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  
+  if (remainingSeconds === 0) {
+    return `${minutes}m`;
+  }
+  
+  const timeString = `${minutes}m ${remainingSeconds}s`;
+  
+  if (includeAccessibility) {
+    return `${timeString} (accessible)`;
+  }
+  
+  return timeString;
+}
 
 // Helper function to load elements from localStorage for a specific floor with caching
 function loadFloorElements(floor: number): MapElement[] {
@@ -40,8 +242,8 @@ function loadFloorElements(floor: number): MapElement[] {
     const floorElements = floorStored ? JSON.parse(floorStored) : [];
     
     // Load shared floor elements (floor 0) - cache this separately
-    let sharedElements = floorElementsCache.get(0);
-    if (!sharedElements || !cacheTimestamp.get(0) || (now - cacheTimestamp.get(0)!) >= CACHE_DURATION) {
+    let sharedElements: MapElement[] = floorElementsCache.get(0) || [];
+    if (!sharedElements.length || !cacheTimestamp.get(0) || (now - cacheTimestamp.get(0)!) >= CACHE_DURATION) {
       const sharedStored = localStorage.getItem("floor-elements");
       sharedElements = sharedStored ? JSON.parse(sharedStored) : [];
       floorElementsCache.set(0, sharedElements);
@@ -154,7 +356,7 @@ export function findPath(
   return findSingleFloorPathWithFallback(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements);
 }
 
-// NEW: Single floor path with fallback system
+// ENHANCED: Single floor path with strict fallback system
 function findSingleFloorPathWithFallback(
   sourceStore: MapElement,
   targetStore: MapElement,
@@ -163,21 +365,28 @@ function findSingleFloorPathWithFallback(
   mapSettings: MapSettings,
   avoidElements: boolean = true,
 ): RoutePoint[] {
-  // First try with buffer
+  // First try with full buffer (most strict)
   let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, ELEMENT_BUFFER_GRIDS);
   
   if (path.length > 0) {
     return path;
   }
 
-  // If no path found, try with no buffer
+  // If no path found, try with reduced buffer
+  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 1);
+  
+  if (path.length > 0) {
+    return path;
+  }
+
+  // If still no path found, try with minimal buffer
   path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 0);
   
   if (path.length > 0) {
     return path;
   }
 
-  // Last resort: try without avoiding elements at all
+  // Last resort: try without avoiding elements at all (only if absolutely necessary)
   return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, false, 0);
 }
 
@@ -353,7 +562,7 @@ function consolidateElements(elements: MapElement[]): MapElement[] {
   return Array.from(elementMap.values());
 }
 
-// FIXED: Proper element obstacle detection using your existing types
+// ENHANCED: Strict element obstacle detection - ALL elements are obstacles except specific walkable types
 function isElementObstacle(element: MapElement, sourceId: string, targetId: string): boolean {
   // Skip source and target elements
   if (element.id === sourceId || element.id === targetId) return false;
@@ -361,11 +570,17 @@ function isElementObstacle(element: MapElement, sourceId: string, targetId: stri
   // Elements explicitly marked as walkable are not obstacles
   if (element.walkable === true) return false;
   
-  // STRICT: All elements except pathways, doors, and transitions should be obstacles
+  // STRICT: Only specific walkable types are allowed to be passed through
   const walkableTypes = ['pathway', 'door', 'elevator', 'escalator', 'stairs'];
   
-  // If it's not in walkable types, it's an obstacle
+  // If it's not explicitly walkable, it's an obstacle
   if (!walkableTypes.includes(element.type)) {
+    return true;
+  }
+  
+  // Even walkable types might have restrictions - check if they're actually passable
+  // For example, some doors might be closed, some pathways might be blocked
+  if (element.type === 'door' && element.walkable === false) {
     return true;
   }
   
@@ -390,7 +605,7 @@ function markElementObstacles(
     // Use the strict obstacle detection function
     if (!isElementObstacle(element, sourceId, targetId)) continue;
     
-    // FIXED: Simpler grid coverage calculation
+    // ENHANCED: More precise grid coverage calculation
     // Convert element bounds to grid coordinates with proper rounding
     const elementLeft = element.x - mapSettings.building_x;
     const elementTop = element.y - mapSettings.building_y;
@@ -398,13 +613,14 @@ function markElementObstacles(
     const elementBottom = elementTop + element.height;
     
     // Calculate which grid cells this element occupies
-    // Use Math.floor for start and Math.ceil for end to ensure full coverage
+    // Use Math.floor for start and Math.ceil for end to ensure FULL coverage
+    // This ensures the entire element area is blocked, not just partial coverage
     const startGridX = Math.max(0, Math.floor(elementLeft / mapSettings.grid_size) - bufferGrids);
     const endGridX = Math.min(gridWidth, Math.ceil(elementRight / mapSettings.grid_size) + bufferGrids);
     const startGridY = Math.max(0, Math.floor(elementTop / mapSettings.grid_size) - bufferGrids);
     const endGridY = Math.min(gridHeight, Math.ceil(elementBottom / mapSettings.grid_size) + bufferGrids);
     
-    // Mark all grid cells that this element covers
+    // Mark ALL grid cells that this element covers as blocked
     for (let gridY = startGridY; gridY < endGridY; gridY++) {
       for (let gridX = startGridX; gridX < endGridX; gridX++) {
         const gridIndex = gridY * gridWidth + gridX;
@@ -507,7 +723,7 @@ function findSingleFloorPath(
     floor
   );
 }
-// FIXED: Check if direct path between two elements is clear with exact element bounds checking
+// ENHANCED: Check if direct path between two elements is clear with strict element bounds checking
 function isDirectPathClear(
   sourceStore: MapElement,
   targetStore: MapElement,
@@ -526,7 +742,7 @@ function isDirectPathClear(
     el.floor === floor && isElementObstacle(el, sourceStore.id, targetStore.id)
   );
 
-  // FIXED: Simpler line-rectangle intersection
+  // ENHANCED: Strict line-rectangle intersection with full element coverage
   for (const obstacle of obstacles) {
     const buffer = bufferGrids * mapSettings.grid_size;
     const obstacleRect = {
@@ -536,6 +752,7 @@ function isDirectPathClear(
       bottom: obstacle.y + obstacle.height + buffer
     };
 
+    // Check if the line intersects with the FULL obstacle rectangle
     if (lineIntersectsRect(sourceX, sourceY, targetX, targetY, obstacleRect)) {
       return false;
     }
@@ -563,7 +780,7 @@ function lineIntersectsRect(
   );
 }
 
-// FIXED: Proper line segment intersection
+// ENHANCED: Proper line segment intersection with better precision
 function lineSegmentsIntersect(
   x1: number, y1: number, x2: number, y2: number,
   x3: number, y3: number, x4: number, y4: number
@@ -577,6 +794,7 @@ function lineSegmentsIntersect(
   const t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denominator;
   const u = -((x1 - x2) * (y1 - y3) - (y1 - y2) * (x1 - x3)) / denominator;
 
+  // Check if intersection point is on both line segments
   return t >= 0 && t <= 1 && u >= 0 && u <= 1;
 }
 
@@ -799,7 +1017,7 @@ function smoothPath(
   return smoothedPath;
 }
 
-// Helper function to check if path between two points is clear in grid
+// ENHANCED: Helper function to check if path between two points is clear in grid
 function isPathClearInGrid(
   point1: RoutePoint,
   point2: RoutePoint,

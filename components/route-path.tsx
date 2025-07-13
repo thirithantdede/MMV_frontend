@@ -2,14 +2,16 @@
 
 import { memo, useMemo, useEffect, useState, useRef, useCallback } from "react"
 import { ArrowUp, ArrowDown, Navigation, MapPin } from "lucide-react"
-import type { RouteInfo } from "@/types"
+import type { RouteInfo, MapSettings } from "@/types"
+import { getPathStatistics } from "@/utils/pathfinding"
 
 interface RoutePathProps {
   routeInfo: RouteInfo
   currentFloor: number
+  mapSettings?: MapSettings
 }
 
-export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor }: RoutePathProps) {
+export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapSettings }: RoutePathProps) {
   const { sourceStore, targetStore, path } = routeInfo
   const [animationProgress, setAnimationProgress] = useState(0)
   const animationRef = useRef<number | null>(null)
@@ -107,6 +109,19 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor }: Ro
   const totalLength = useMemo(() => {
     return pathSegments.reduce((sum, segment) => sum + segment.length, 0)
   }, [pathSegments])
+
+  // Memoize path statistics using the utility function
+  const pathStats = useMemo(() => {
+    if (!mapSettings || path.length === 0) {
+      return {
+        totalDistance: 0,
+        walkingTime: 0,
+        transitionCount: 0,
+        floors: []
+      };
+    }
+    return getPathStatistics(path, mapSettings);
+  }, [path, mapSettings]);
 
   // Memoize distance markers with reduced calculations
   const distanceMarkers = useMemo(() => {
@@ -228,25 +243,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor }: Ro
   const showTarget = useMemo(() => targetStore?.floor === currentFloor, [targetStore?.floor, currentFloor]);
 
   // Memoize next floor direction calculation
-  const nextFloorDirection = useMemo(() => {
-    if (!isMultiFloorRoute) return null;
-    
-    const allFloors = [...new Set(path.map(p => p.floor))].sort((a, b) => a - b);
-    const currentFloorIndex = allFloors.indexOf(currentFloor);
-    
-    if (currentFloorIndex === -1) return null;
-    
-    if (sourceStore?.floor === currentFloor && targetStore?.floor !== currentFloor) {
-          return targetStore.floor > currentFloor ? 'up' : 'down';
-    }
-    
-    if (currentFloorIndex < allFloors.length - 1) {
-      const nextFloor = allFloors[currentFloorIndex + 1];
-      return nextFloor > currentFloor ? 'up' : 'down';
-    }
-    
-    return null;
-  }, [isMultiFloorRoute, path, currentFloor, sourceStore?.floor, targetStore?.floor]);
+ 
 
   // Early return for empty path
   if (path.length === 0) {
@@ -442,94 +439,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor }: Ro
           );
         })}
 
-      {/* Route information panel */}
-      {(floorPath.length > 0 || isMultiFloorRoute) && (
-        <div className="absolute top-4 right-4 bg-white/90 text-black px-4 py-2 rounded-md shadow-md z-30 text-sm">
-          <div className="font-medium mb-1">Route Information</div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-green-500"></div>
-            <span>Start: {sourceStore?.name} (Floor {sourceStore?.floor})</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-red-500"></div>
-            <span>End: {targetStore?.name} (Floor {targetStore?.floor})</span>
-          </div>
-          {isMultiFloorRoute && (
-            <div className="text-xs mt-1 text-blue-600">
-              Multi-floor route: {[...new Set(path.map(p => p.floor))].sort((a, b) => a - b).map(f => `Floor ${f}`).join(" → ")}
-            </div>
-          )}
-          {currentFloorTransitions.length > 0 && (
-            <div className="text-xs mt-1 text-yellow-600">
-              Use transition elements to change floors
-            </div>
-          )}
-          {floorPath.length === 0 && isMultiFloorRoute && (
-            <div className="text-xs mt-1 text-gray-600">
-              No path on current floor - use transitions to navigate
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Enhanced floor navigation indicator for multi-floor routes */}
-      {isMultiFloorRoute && nextFloorDirection && (
-        <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-3 rounded-full shadow-lg z-30 flex items-center gap-3">
-          {nextFloorDirection === 'up' && (
-            <div className="flex items-center gap-2">
-              <ArrowUp className="h-5 w-5 animate-bounce" />
-              <div className="text-center">
-                <div className="text-sm font-medium">Go Up</div>
-                <div className="text-xs opacity-90">
-                  {sourceStore?.floor === currentFloor 
-                    ? `To Floor ${targetStore?.floor}` 
-                    : `Continue to next floor`}
-                </div>
-              </div>
-            </div>
-          )}
-          {nextFloorDirection === 'down' && (
-            <div className="flex items-center gap-2">
-              <ArrowDown className="h-5 w-5 animate-bounce" />
-              <div className="text-center">
-                <div className="text-sm font-medium">Go Down</div>
-                <div className="text-xs opacity-90">
-                  {sourceStore?.floor === currentFloor 
-                    ? `To Floor ${targetStore?.floor}` 
-                    : `Continue to next floor`}
-                </div>
-              </div>
-            </div>
-          )}
-          {!nextFloorDirection && targetStore?.floor === currentFloor && (
-            <div className="flex items-center gap-2">
-              <Navigation className="h-5 w-5" />
-              <div className="text-center">
-                <div className="text-sm font-medium">Final Floor</div>
-                <div className="text-xs opacity-90">Follow path to destination</div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Current floor status for multi-floor routes */}
-      {isMultiFloorRoute && (
-        <div className="absolute top-20 left-4 bg-white/90 text-black px-3 py-2 rounded-md shadow-md z-30 text-sm">
-          <div className="font-medium">Current Floor: {currentFloor}</div>
-          <div className="text-xs text-gray-600">
-            {sourceStore?.floor === currentFloor && "Starting floor"}
-            {targetStore?.floor === currentFloor && "Destination floor"}
-            {sourceStore?.floor !== currentFloor && targetStore?.floor !== currentFloor && "Transit floor"}
-          </div>
-          {floorPath.length > 0 && (
-            <div className="text-xs text-green-600 mt-1">
-              Path available on this floor
-            </div>
-          )}
-        </div>
-      )}
-
+     
       <style jsx>{`
         @keyframes dash {
           to {

@@ -11,6 +11,7 @@ import { LazyRouteDialog, LazyElementDetails } from "@/components/guest-mode/laz
 import { EventsPanel } from "@/components/events/events-panel"
 import { PromotionsList } from "@/components/guest-mode/promotions-list"
 import type { MapElement, RouteInfo } from "@/types"
+import FloatInfo from "./guest-mode/float-info"
 
 export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPreview: () => void,isGuestView?:boolean }) {
   const { elements, mapSettings, currentFloor, totalFloors,setCurrentFloor } = useMapEditor()
@@ -251,6 +252,7 @@ export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPrevi
     ],
   )
 
+
   return (
     <div className="relative h-screen w-full overflow-hidden bg-gray-100">
       {/* Header with search - now memoized */}
@@ -313,6 +315,9 @@ export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPrevi
         onOpenChange={setShowPromotionsDialog}
         onStoreSelect={handleStoreSelect}
       />
+
+
+      <FloatInfo routeInfo={routeInfo} currentFloor={currentFloor} />
 
       {/* Notification for routes that span multiple floors */}
       <FloorRouteNotification path={routeInfo.path} currentFloor={currentFloor} show={hasRouteOnOtherFloors} />

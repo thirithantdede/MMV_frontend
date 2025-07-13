@@ -66,7 +66,7 @@ export const PreviewMapContent = memo(function PreviewMapContent({
 
         {/* Route path visualization - moved before elements so it appears underneath */}
         {showRoute && (
-          <RoutePath routeInfo={routeInfo} currentFloor={currentFloor} />
+          <RoutePath routeInfo={routeInfo} currentFloor={currentFloor} mapSettings={mapSettings} />
         )}
 
         {/* Map elements - with click handler for guest mode */}
