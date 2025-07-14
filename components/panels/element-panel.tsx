@@ -55,7 +55,7 @@ const DraggableElement = memo(function DraggableElement({ item, icon }: Draggabl
 const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   {
     type: "store",
-    name: "Retail Store",
+    name: "Retail Store ( 120 x 80 )",
     icon: <ShoppingBag className="h-4 w-4" />,
     color: "#f1f5f9",
     defaultWidth: 120,
@@ -63,7 +63,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "office",
-    name: "Office",
+    name: "Office ( 120 x 80 )",
     icon: <University className="h-4 w-4" />,
     color: "#f1f5f9",
     defaultWidth: 120,
@@ -71,7 +71,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "restaurant",
-    name: "Restaurant",
+    name: "Restaurant ( 100 x 100 )",
     icon: <Utensils className="h-4 w-4" />,
     color: "#fee2e2",
     defaultWidth: 100,
@@ -79,7 +79,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "cafe",
-    name: "Cafe",
+    name: "Cafe ( 120 x 120 )",
     icon: <Coffee className="h-4 w-4" />,
     color: "#e0f2fe",
     defaultWidth: 120,
@@ -87,7 +87,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "store",
-    name: "Anchor Store",
+    name: "Anchor Store ( 200 x 150 )",
     icon: <Store className="h-4 w-4" />,
     color: "#f0fdf4",
     defaultWidth: 200,
@@ -95,7 +95,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "anchor-store",
-    name: "Food Court Stall",
+    name: "Food Court Stall ( 120 x 120 )",
     icon: <Utensils className="h-4 w-4" />,
     color: "#ffedd5",
     defaultWidth: 120,
@@ -103,7 +103,7 @@ const storeElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "kisok",
-    name: "Kiosk",
+    name: "Kiosk ( 100 x 100 )",
     icon: <ShoppingBag className="h-4 w-4" />,
     color: "#dbeafe",
     defaultWidth: 100,
@@ -155,7 +155,7 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "info",
-    name: "Information Desk",
+    name: "Information Desk ( 80 x 80 )",
     icon: <Info className="h-4 w-4" />,
     color: "#e0f2fe",
     defaultWidth: 80,
@@ -163,7 +163,7 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "atm",
-    name: "ATM",
+    name: "ATM ( 60 x 60 )",
     icon: <CreditCard className="h-4 w-4" />,
     color: "#f1f5f9",
     defaultWidth: 60,
@@ -171,7 +171,7 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   },
   {
     type: "security",
-    name: "Security Office",
+    name: "Security Office ( 80 x 80 )",
     icon: <ShieldAlert className="h-4 w-4" />,
     color: "#fee2e2",
     defaultWidth: 80,
@@ -183,10 +183,10 @@ const facilityElements: Array<DraggableItem & { icon: React.ReactNode }> = [
 const marketingElements: Array<DraggableItem & { icon: React.ReactNode }> = [
   {
     type: "event",
-    name: "Event Space",
+    name: "Event Space ( 200 x 150 )",
     icon: <CalendarDays className="h-4 w-4" />,
     color: "#ddd6fe",
-    defaultWidth: 180,
+    defaultWidth: 200,
     defaultHeight: 150,
   },
 ]

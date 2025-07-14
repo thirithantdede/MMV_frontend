@@ -333,6 +333,7 @@ export function findPath(
   fElements: MapElement[],
   mapSettings: MapSettings,
   avoidElements: boolean = true,
+  algorithm: string = "a-star",
 ): RoutePoint[] {
   // Check cache first for multi-floor paths (they're more expensive)
   if (sourceStore.floor !== targetStore.floor) {

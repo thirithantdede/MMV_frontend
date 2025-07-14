@@ -16,6 +16,7 @@ import useQuery from "@/hooks/use-query"
 import type { MapElement } from "@/types"
 import { storeCategories } from "./panels/store-properties-panel"
 import useMutate from "@/hooks/use-mutate"
+import { algorithmOptions } from "@/utils/global"
 
 interface RouteDialogProps {
   open: boolean
@@ -30,6 +31,7 @@ interface QueryError {
   data: any
 }
 
+
 export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGuestMode = false }: RouteDialogProps) {
   const [sourceSearch, setSourceSearch] = useState("")
   const [targetSearch, setTargetSearch] = useState("")
@@ -37,6 +39,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
   const [selectedTarget, setSelectedTarget] = useState<MapElement | null>(null)
   const [selectedSourceCategory, setSelectedSourceCategory] = useState<string>("all")
   const [selectedTargetCategory, setSelectedTargetCategory] = useState<string>("all")
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("a-star")
   const [error, setError] = useState<string | null>(null)
   const { mapSettings, project, floors, currentFloor,floorElements} = useMapEditor()
   
@@ -152,7 +155,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
       setError("Source and destination cannot be the same")
       return
     }
-    const path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
+    const path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode, selectedAlgorithm)
     onRouteSelect(selectedSource, selectedTarget, path)
     onOpenChange(false)
     syncRoute('sync-routes',{
@@ -172,6 +175,10 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
     setError(null)
     if (selectedSource?.id === element.id) setSelectedSource(null)
   }, [selectedSource])
+
+  const handleAlgorithmChange = useCallback((value: string) => {
+    setSelectedAlgorithm(value)
+  }, [])
 
   const renderSelectedElement = (element: MapElement | null) => element && (
     <div className="flex items-center gap-1 bg-primary/10 px-2 py-1 rounded text-sm mb-2">
@@ -231,7 +238,25 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
         <DialogHeader>
           <DialogTitle>Find Route</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4 py-4">
+
+       
+       <div className="space-y-2">
+       <Label>Path Finding Algorithm</Label>
+        <Select value={selectedAlgorithm} onValueChange={handleAlgorithmChange}> 
+            <SelectTrigger>
+              <SelectValue placeholder="Select algorithm" />
+            </SelectTrigger>
+            <SelectContent>
+              {algorithmOptions.map((option) => (
+                <SelectItem key={option.value} value={option.value}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+       </div>
+
+        <div className="space-y-4">
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
