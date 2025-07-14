@@ -11,9 +11,6 @@ interface Node {
   parent: Node | null;
 }
 
-// Walking speed constants
-const WALKING_SPEED_METERS_PER_SECOND = 1.4; // Average walking speed ~5 km/h
-const TRANSITION_TIME_SECONDS = 30; // Time for elevator/escalator/stairs transition
 
 // Cache for loaded floor elements to avoid repeated localStorage reads
 const floorElementsCache = new Map<number, MapElement[]>();
@@ -23,203 +20,7 @@ const CACHE_DURATION = 5000; // 5 seconds cache
 // Buffer distance - will fallback to 0 if no path found
 const ELEMENT_BUFFER_GRIDS = 1; // was 2
 
-// Helper function to calculate walking time from path
-export function calculateWalkingTimeFromPath(path: RoutePoint[], mapSettings: MapSettings): number {
-  if (path.length < 2) return 0;
-  
-  let totalDistance = 0;
-  let transitionCount = 0;
-  
-  // Calculate total distance and count floor transitions
-  for (let i = 0; i < path.length - 1; i++) {
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Calculate distance between points
-    const distance = Math.hypot(next.x - current.x, next.y - current.y);
-    totalDistance += distance;
-    
-    // Count floor transitions
-    if (current.floor !== next.floor) {
-      transitionCount++;
-    }
-  }
-  
-  // Convert pixels to meters using grid size as reference
-  const pixelsPerMeter = mapSettings.grid_size || 20;
-  const distanceInMeters = totalDistance / pixelsPerMeter;
-  
-  // Calculate walking time
-  const walkingTimeSeconds = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
-  
-  // Add transition time
-  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
-  
-  return walkingTimeSeconds + transitionTimeSeconds;
-}
-
-// Helper function to format walking time for display
-export function formatWalkingTime(seconds: number): string {
-  if (seconds < 60) {
-    return `${Math.round(seconds)}s`;
-  }
-  
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.round(seconds % 60);
-  
-  if (remainingSeconds === 0) {
-    return `${minutes}m`;
-  }
-  
-  return `${minutes}m ${remainingSeconds}s`;
-}
-
 // Helper function to get path statistics
-export function getPathStatistics(path: RoutePoint[], mapSettings: MapSettings): {
-  totalDistance: number;
-  walkingTime: number;
-  transitionCount: number;
-  floors: number[];
-} {
-  if (path.length < 2) {
-    return {
-      totalDistance: 0,
-      walkingTime: 0,
-      transitionCount: 0,
-      floors: []
-    };
-  }
-  
-  let totalDistance = 0;
-  let transitionCount = 0;
-  const floors = new Set<number>();
-  
-  // Calculate total distance and count floor transitions
-  for (let i = 0; i < path.length - 1; i++) {
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Calculate distance between points
-    const distance = Math.hypot(next.x - current.x, next.y - current.y);
-    totalDistance += distance;
-    
-    // Count floor transitions
-    if (current.floor !== next.floor) {
-      transitionCount++;
-    }
-    
-    // Track floors
-    floors.add(current.floor);
-    floors.add(next.floor);
-  }
-  
-  // Convert pixels to meters
-  const pixelsPerMeter = mapSettings.grid_size || 20;
-  const distanceInMeters = totalDistance / pixelsPerMeter;
-  
-  // Calculate walking time
-  const walkingTimeSeconds = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
-  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
-  const totalTime = walkingTimeSeconds + transitionTimeSeconds;
-  
-  return {
-    totalDistance: distanceInMeters,
-    walkingTime: totalTime,
-    transitionCount,
-    floors: Array.from(floors).sort((a, b) => a - b)
-  };
-}
-
-// Helper function to get detailed path statistics
-export function getDetailedPathStatistics(path: RoutePoint[], mapSettings: MapSettings): {
-  totalDistance: number;
-  walkingTime: number;
-  transitionCount: number;
-  floors: number[];
-  walkingSpeed: number;
-  accessibilityTime: number;
-  totalTimeWithAccessibility: number;
-} {
-  if (path.length < 2) {
-    return {
-      totalDistance: 0,
-      walkingTime: 0,
-      transitionCount: 0,
-      floors: [],
-      walkingSpeed: WALKING_SPEED_METERS_PER_SECOND,
-      accessibilityTime: 0,
-      totalTimeWithAccessibility: 0
-    };
-  }
-  
-  let totalDistance = 0;
-  let transitionCount = 0;
-  const floors = new Set<number>();
-  
-  // Calculate total distance and count floor transitions
-  for (let i = 0; i < path.length - 1; i++) {
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Calculate distance between points
-    const distance = Math.hypot(next.x - current.x, next.y - current.y);
-    totalDistance += distance;
-    
-    // Count floor transitions
-    if (current.floor !== next.floor) {
-      transitionCount++;
-    }
-    
-    // Track floors
-    floors.add(current.floor);
-    floors.add(next.floor);
-  }
-  
-  // Convert pixels to meters
-  const pixelsPerMeter = mapSettings.grid_size || 20;
-  const distanceInMeters = totalDistance / pixelsPerMeter;
-  
-  // Calculate walking time with different speeds
-  const normalWalkingTime = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
-  const slowWalkingTime = distanceInMeters / (WALKING_SPEED_METERS_PER_SECOND * 0.7); // 30% slower for accessibility
-  
-  // Add transition time
-  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
-  const totalTime = normalWalkingTime + transitionTimeSeconds;
-  const totalTimeWithAccessibility = slowWalkingTime + transitionTimeSeconds;
-  
-  return {
-    totalDistance: distanceInMeters,
-    walkingTime: totalTime,
-    transitionCount,
-    floors: Array.from(floors).sort((a, b) => a - b),
-    walkingSpeed: WALKING_SPEED_METERS_PER_SECOND,
-    accessibilityTime: totalTimeWithAccessibility,
-    totalTimeWithAccessibility
-  };
-}
-
-// Helper function to format walking time with accessibility options
-export function formatWalkingTimeWithAccessibility(seconds: number, includeAccessibility: boolean = false): string {
-  if (seconds < 60) {
-    return `${Math.round(seconds)}s`;
-  }
-  
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = Math.round(seconds % 60);
-  
-  if (remainingSeconds === 0) {
-    return `${minutes}m`;
-  }
-  
-  const timeString = `${minutes}m ${remainingSeconds}s`;
-  
-  if (includeAccessibility) {
-    return `${timeString} (accessible)`;
-  }
-  
-  return timeString;
-}
 
 // Helper function to load elements from localStorage for a specific floor with caching
 function loadFloorElements(floor: number): MapElement[] {
@@ -326,7 +127,7 @@ function getPathCacheKey(source: MapElement, target: MapElement): string {
   return `${source.id}-${target.id}-${source.floor}-${target.floor}`;
 }
 
-export function findPath(
+export function ospfFindPath(
   sourceStore: MapElement,
   targetStore: MapElement,
   allElements: MapElement[],

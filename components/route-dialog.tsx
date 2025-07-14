@@ -17,6 +17,7 @@ import type { MapElement } from "@/types"
 import { storeCategories } from "./panels/store-properties-panel"
 import useMutate from "@/hooks/use-mutate"
 import { algorithmOptions } from "@/utils/global"
+import { ospfFindPath } from "@/utils/ospf_pathfinding"
 
 interface RouteDialogProps {
   open: boolean
@@ -155,7 +156,13 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
       setError("Source and destination cannot be the same")
       return
     }
-    const path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode, selectedAlgorithm)
+
+    let path: any[] = []
+    if (selectedAlgorithm === "ospf") {
+      path = ospfFindPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
+    } else {
+      path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
+    }
     onRouteSelect(selectedSource, selectedTarget, path)
     onOpenChange(false)
     syncRoute('sync-routes',{
