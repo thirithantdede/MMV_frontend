@@ -169,7 +169,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
       from_element_id: selectedSource.id,
       to_element_id: selectedTarget.id,
     })
-  }, [selectedSource, selectedTarget, elements, mapSettings, isGuestMode, onRouteSelect, onOpenChange])
+  }, [selectedSource, selectedTarget, elements, mapSettings, isGuestMode, onRouteSelect, onOpenChange,selectedAlgorithm])
 
   const handleSelectSource = useCallback((element: MapElement) => {
     setSelectedSource(element)
@@ -287,7 +287,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {Object.values(floors)?.map(floor => (
+                  {floors && Object.values(floors).map(floor => (
                     <SelectItem key={`source-floor-${floor.id}`} value={floor.level.toString()}>
                       Floor {floor.level}
                     </SelectItem>
@@ -346,7 +346,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
-                  {Object.values(floors)?.map(floor => (
+                  {floors && Object.values(floors).map(floor => (
                     <SelectItem key={`target-floor-${floor.id}`} value={floor.level.toString()}>
                       Floor {floor.level}
                     </SelectItem>
