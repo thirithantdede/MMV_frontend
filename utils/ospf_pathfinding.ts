@@ -343,6 +343,27 @@ function findThirdNearestTransition(
   return transitionsWithDistances[2].element;
 }
 
+// Find farthest transition element to create the longest possible paths
+function findFarthestTransition(
+  sourceElement: MapElement,
+  transitionElements: MapElement[]
+): MapElement | null {
+  if (transitionElements.length === 0) return null;
+  if (transitionElements.length === 1) return transitionElements[0];
+
+  // Calculate distances for all transitions
+  const transitionsWithDistances = transitionElements.map(element => ({
+    element,
+    distanceSquared: calculateDistanceSquared(sourceElement, element)
+  }));
+
+  // Sort by distance (descending) to get farthest first
+  transitionsWithDistances.sort((a, b) => b.distanceSquared - a.distanceSquared);
+
+  // Return the farthest (index 0)
+  return transitionsWithDistances[0].element;
+}
+
 // Smart transition selector that chooses longer paths
 // This function intentionally selects non-optimal transitions to create longer,
 // more complex paths instead of the shortest possible route
@@ -361,14 +382,17 @@ function findSmartTransition(
   // Randomly choose between different strategies to create varied longer paths
   const strategy = Math.random();
   
-  if (strategy < 0.4 && transitionElements.length >= 2) {
-    // 40% chance to use second nearest (creates longer paths)
+  if (strategy < 0.5 && transitionElements.length >= 2) {
+    // 50% chance to use farthest transition (creates longest possible paths)
+    return findFarthestTransition(sourceElement, transitionElements);
+  } else if (strategy < 0.7 && transitionElements.length >= 2) {
+    // 20% chance to use second nearest (creates longer paths)
     return findSecondNearestTransition(sourceElement, transitionElements);
-  } else if (strategy < 0.6 && transitionElements.length >= 3) {
-    // 20% chance to use third nearest (creates even longer paths)
+  } else if (strategy < 0.85 && transitionElements.length >= 3) {
+    // 15% chance to use third nearest (creates even longer paths)
     return findThirdNearestTransition(sourceElement, transitionElements);
   } else {
-    // 40% chance to use nearest (fallback to ensure path exists)
+    // 15% chance to use nearest (fallback to ensure path exists)
     return findNearestTransition(sourceElement, transitionElements);
   }
 }
