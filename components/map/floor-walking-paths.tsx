@@ -15,14 +15,17 @@ export const FloorWalkingPaths = memo(function FloorWalkingPaths({
   const { building_width, building_height, building_x, building_y, grid_size,show_grid } = mapSettings
 
 
+
   // Generate grid of walkable floor tiles
   const floorTiles = useMemo(() => {
     const tiles = []
     const cols = Math.floor(building_width / grid_size)
     const rows = Math.floor(building_height / grid_size)
+    console.log(cols,rows)
 
     for (let row = 0; row < rows; row++) {
       for (let col = 0; col < cols; col++) {
+        
         const x = building_x + col * grid_size
         const y = building_y + row * grid_size
 

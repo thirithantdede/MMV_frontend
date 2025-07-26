@@ -83,11 +83,21 @@ export function MapEditor() {
           // Adjust for zoom level
           const rawX = (clientOffset.x - mapRect.left) / zoomLevel
           const rawY = (clientOffset.y - mapRect.top) / zoomLevel
-          const x = Math.round(rawX / mapSettings.grid_size) * mapSettings.grid_size
-          const y = Math.round(rawY / mapSettings.grid_size) * mapSettings.grid_size
+          
+          // Calculate position relative to building origin
+          const relativeX = rawX - mapSettings.building_x
+          const relativeY = rawY - mapSettings.building_y
+          
+          // Snap to grid relative to building position
+          const snappedRelativeX = Math.round(relativeX / mapSettings.grid_size) * mapSettings.grid_size
+          const snappedRelativeY = Math.round(relativeY / mapSettings.grid_size) * mapSettings.grid_size
+          
+          // Convert back to absolute coordinates
+          const x = mapSettings.building_x + snappedRelativeX
+          const y = mapSettings.building_y + snappedRelativeY
 
-          const width = item.defaultHeight || 100
-          const height = item.defaultWidth || 100
+          const width = item.defaultHeight * mapSettings.grid_size || 100
+          const height = item.defaultWidth * mapSettings.grid_size|| 100
           const rotation = item.rotation || 0
 
           // Special case for doors - they must be on the building border
@@ -114,11 +124,22 @@ export function MapEditor() {
           // Adjust for zoom level
           const rawX = (clientOffset.x - mapRect.left) / zoomLevel
           const rawY = (clientOffset.y - mapRect.top) / zoomLevel
-          const x = Math.round(rawX / mapSettings.grid_size) * mapSettings.grid_size
-          const y = Math.round(rawY / mapSettings.grid_size) * mapSettings.grid_size
+          
+          // Calculate position relative to building origin
+          const relativeX = rawX - mapSettings.building_x
+          const relativeY = rawY - mapSettings.building_y
+          
+          // Snap to grid relative to building position
+          const snappedRelativeX = Math.round(relativeX / mapSettings.grid_size) * mapSettings.grid_size
+          const snappedRelativeY = Math.round(relativeY / mapSettings.grid_size) * mapSettings.grid_size
+          
+          // Convert back to absolute coordinates
+          const x = mapSettings.building_x + snappedRelativeX
+          const y = mapSettings.building_y + snappedRelativeY
 
-          const width = item.defaultWidth || 100
-          const height = item.defaultHeight || 100
+
+          const width = item.defaultWidth * mapSettings.grid_size || 100
+          const height = item.defaultHeight * mapSettings.grid_size || 100
           const rotation = item.rotation || 0
 
           // Special case for doors - they must be on the building border

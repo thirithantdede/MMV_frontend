@@ -6,6 +6,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { importLayoutFromJson } from "@/utils/localStorage-utils"
 import { Download, Check, AlertCircle } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import useMutate from "@/hooks/use-mutate"
 
 export function LayoutImport() {
   const [layoutName, setLayoutName] = useState("")
@@ -14,6 +15,8 @@ export function LayoutImport() {
   const [isImporting, setisImporting] = useState(false)
   // input ref
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const [cleanTheElement, { isLoading, isError, error }] = useMutate({ callback: undefined });
 
   const handleImport = () => {
     setisImporting(true)
@@ -26,6 +29,7 @@ export function LayoutImport() {
       if (!file) {
         throw new Error("No file selected")
       }
+      cleanTheElement('/clean-elements');
       // First save the current state as a layout
       const saveSuccess = importLayoutFromJson(file)
 

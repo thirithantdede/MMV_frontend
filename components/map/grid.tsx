@@ -13,15 +13,15 @@ export const Grid = memo(function Grid({ mapSettings }: GridProps) {
 
   const clipPath = useMemo(() => {
     if (!mapSettings.show_grid) return "" // Return empty string if grid is not shown
-    const { building_x, building_y, building_width, building_height } = mapSettings
+    const { building_x, building_y, building_width, building_height, grid_size } = mapSettings
     return `polygon(
       0% 0%, 100% 0%, 100% 100%, 0% 100%,
       0% 0%, 
-      ${building_x}px ${building_y}px, 
-      ${building_x}px ${building_y + building_height}px, 
-      ${building_x + building_width}px ${building_y + building_height}px, 
-      ${building_x + building_width}px ${building_y}px, 
-      ${building_x}px ${building_y}px, 
+      ${building_x * grid_size}px ${building_y * grid_size}px, 
+      ${building_x * grid_size}px ${building_y + building_height * grid_size}px, 
+      ${building_x + building_width * grid_size}px ${building_y + building_height * grid_size}px, 
+      ${building_x + building_width * grid_size}px ${building_y * grid_size}px, 
+      ${building_x * grid_size}px ${building_y * grid_size}px, 
       0% 0%
     )`
   }, [mapSettings])

@@ -188,6 +188,8 @@ const isOnBuildingBorder = useCallback(
     (e: React.MouseEvent, element: MapElement | null) => {
       if (!isDragging || !element || !mapRef.current) return;
 
+      const { building_x, building_y, building_width, building_height } = mapSettings;
+
       // Cancel any existing animation frame
       if (rafRef.current) {
         cancelAnimationFrame(rafRef.current);
@@ -197,17 +199,28 @@ const isOnBuildingBorder = useCallback(
         const mapRect = mapRef.current?.getBoundingClientRect();
         if (!mapRect) return;
 
-        // Calculate new position with grid snapping
+        // Calculate new position with grid snapping relative to building position
         const rawX = (e.clientX - mapRect.left - dragOffset.x) / zoomLevel;
         const rawY = (e.clientY - mapRect.top - dragOffset.y) / zoomLevel;
         
-        const x = Math.round(rawX / gridSize) * gridSize;
-        const y = Math.round(rawY / gridSize) * gridSize;
+        // Calculate position relative to building origin
+        const relativeX = rawX - building_x;
+        const relativeY = rawY - building_y;
+        
+        // Snap to grid relative to building position
+        const snappedRelativeX = Math.round(relativeX / gridSize) * gridSize;
+        const snappedRelativeY = Math.round(relativeY / gridSize) * gridSize;
+        
+        // Convert back to absolute coordinates
+        const x = building_x + snappedRelativeX;
+        const y = building_y + snappedRelativeY;
         
         const rotation = element.rotation || 0;
 
         // Validation based on element type
         let isValidPosition = false;
+
+        console.log(x,y,element);
 
         if (element.type === "door") {
           // Doors must be on building border
@@ -233,7 +246,7 @@ const isOnBuildingBorder = useCallback(
         }
       });
     },
-    [isDragging, dragOffset, gridSize, onElementUpdate, zoomLevel, isWithinBuilding, isOnBuildingBorder, isOverlapping]
+    [isDragging, dragOffset, gridSize, onElementUpdate, zoomLevel, isWithinBuilding, isOnBuildingBorder, isOverlapping, mapSettings]
   );
 
   const handleMouseUp = useCallback(() => {
