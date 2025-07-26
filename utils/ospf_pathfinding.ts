@@ -1,12 +1,4 @@
-// OSPF-inspired pathfinding algorithm
-// This algorithm is designed to be slower and produce different paths than A*
-// Key differences:
-// 1. Uses only cardinal directions (no diagonal movement)
-// 2. Uses Manhattan distance instead of Euclidean
-// 3. Heavy penalties for direction changes
-// 4. No heuristic function (pure distance-based)
-// 5. Different fallback strategy
-// 6. Slower processing with full sorting every iteration
+// pathfinding.ts
 import type { MapElement, MapSettings, RoutePoint, ElementType } from "@/types";
 import { accept, storeTypes } from "./global";
 
@@ -19,6 +11,9 @@ interface Node {
   parent: Node | null;
 }
 
+// Walking speed constants
+const WALKING_SPEED_METERS_PER_SECOND = 1.4; // Average walking speed ~5 km/h
+const TRANSITION_TIME_SECONDS = 30; // Time for elevator/escalator/stairs transition
 
 // Cache for loaded floor elements to avoid repeated localStorage reads
 const floorElementsCache = new Map<number, MapElement[]>();
@@ -26,9 +21,208 @@ const cacheTimestamp = new Map<number, number>();
 const CACHE_DURATION = 5000; // 5 seconds cache
 
 // Buffer distance - will fallback to 0 if no path found
-const ELEMENT_BUFFER_GRIDS = 0; // OSPF: Use smaller buffer for more aggressive pathfinding
+const ELEMENT_BUFFER_GRIDS = 1; // was 2
+
+// Configuration for pathfinding behavior
+let USE_LONGER_PATHS = true; // Set to true to intentionally create longer paths
+
+// Helper function to calculate walking time from path
+export function calculateWalkingTimeFromPath(path: RoutePoint[], mapSettings: MapSettings): number {
+  if (path.length < 2) return 0;
+  
+  let totalDistance = 0;
+  let transitionCount = 0;
+  
+  // Calculate total distance and count floor transitions
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate distance between points
+    const distance = Math.hypot(next.x - current.x, next.y - current.y);
+    totalDistance += distance;
+    
+    // Count floor transitions
+    if (current.floor !== next.floor) {
+      transitionCount++;
+    }
+  }
+  
+  // Convert pixels to meters using grid size as reference
+  const pixelsPerMeter = mapSettings.grid_size || 20;
+  const distanceInMeters = totalDistance / pixelsPerMeter;
+  
+  // Calculate walking time
+  const walkingTimeSeconds = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
+  
+  // Add transition time
+  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
+  
+  return walkingTimeSeconds + transitionTimeSeconds;
+}
+
+// Helper function to format walking time for display
+export function formatWalkingTime(seconds: number): string {
+  if (seconds < 60) {
+    return `${Math.round(seconds)}s`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  
+  if (remainingSeconds === 0) {
+    return `${minutes}m`;
+  }
+  
+  return `${minutes}m ${remainingSeconds}s`;
+}
 
 // Helper function to get path statistics
+export function getPathStatistics(path: RoutePoint[], mapSettings: MapSettings): {
+  totalDistance: number;
+  walkingTime: number;
+  transitionCount: number;
+  floors: number[];
+} {
+  if (path.length < 2) {
+    return {
+      totalDistance: 0,
+      walkingTime: 0,
+      transitionCount: 0,
+      floors: []
+    };
+  }
+  
+  let totalDistance = 0;
+  let transitionCount = 0;
+  const floors = new Set<number>();
+  
+  // Calculate total distance and count floor transitions
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate distance between points
+    const distance = Math.hypot(next.x - current.x, next.y - current.y);
+    totalDistance += distance;
+    
+    // Count floor transitions
+    if (current.floor !== next.floor) {
+      transitionCount++;
+    }
+    
+    // Track floors
+    floors.add(current.floor);
+    floors.add(next.floor);
+  }
+  
+  // Convert pixels to meters
+  const pixelsPerMeter = mapSettings.grid_size || 20;
+  const distanceInMeters = totalDistance / pixelsPerMeter;
+  
+  // Calculate walking time
+  const walkingTimeSeconds = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
+  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
+  const totalTime = walkingTimeSeconds + transitionTimeSeconds;
+  
+  return {
+    totalDistance: distanceInMeters,
+    walkingTime: totalTime,
+    transitionCount,
+    floors: Array.from(floors).sort((a, b) => a - b)
+  };
+}
+
+// Helper function to get detailed path statistics
+export function getDetailedPathStatistics(path: RoutePoint[], mapSettings: MapSettings): {
+  totalDistance: number;
+  walkingTime: number;
+  transitionCount: number;
+  floors: number[];
+  walkingSpeed: number;
+  accessibilityTime: number;
+  totalTimeWithAccessibility: number;
+} {
+  if (path.length < 2) {
+    return {
+      totalDistance: 0,
+      walkingTime: 0,
+      transitionCount: 0,
+      floors: [],
+      walkingSpeed: WALKING_SPEED_METERS_PER_SECOND,
+      accessibilityTime: 0,
+      totalTimeWithAccessibility: 0
+    };
+  }
+  
+  let totalDistance = 0;
+  let transitionCount = 0;
+  const floors = new Set<number>();
+  
+  // Calculate total distance and count floor transitions
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate distance between points
+    const distance = Math.hypot(next.x - current.x, next.y - current.y);
+    totalDistance += distance;
+    
+    // Count floor transitions
+    if (current.floor !== next.floor) {
+      transitionCount++;
+    }
+    
+    // Track floors
+    floors.add(current.floor);
+    floors.add(next.floor);
+  }
+  
+  // Convert pixels to meters
+  const pixelsPerMeter = mapSettings.grid_size || 20;
+  const distanceInMeters = totalDistance / pixelsPerMeter;
+  
+  // Calculate walking time with different speeds
+  const normalWalkingTime = distanceInMeters / WALKING_SPEED_METERS_PER_SECOND;
+  const slowWalkingTime = distanceInMeters / (WALKING_SPEED_METERS_PER_SECOND * 0.7); // 30% slower for accessibility
+  
+  // Add transition time
+  const transitionTimeSeconds = transitionCount * TRANSITION_TIME_SECONDS;
+  const totalTime = normalWalkingTime + transitionTimeSeconds;
+  const totalTimeWithAccessibility = slowWalkingTime + transitionTimeSeconds;
+  
+  return {
+    totalDistance: distanceInMeters,
+    walkingTime: totalTime,
+    transitionCount,
+    floors: Array.from(floors).sort((a, b) => a - b),
+    walkingSpeed: WALKING_SPEED_METERS_PER_SECOND,
+    accessibilityTime: totalTimeWithAccessibility,
+    totalTimeWithAccessibility
+  };
+}
+
+// Helper function to format walking time with accessibility options
+export function formatWalkingTimeWithAccessibility(seconds: number, includeAccessibility: boolean = false): string {
+  if (seconds < 60) {
+    return `${Math.round(seconds)}s`;
+  }
+  
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = Math.round(seconds % 60);
+  
+  if (remainingSeconds === 0) {
+    return `${minutes}m`;
+  }
+  
+  const timeString = `${minutes}m ${remainingSeconds}s`;
+  
+  if (includeAccessibility) {
+    return `${timeString} (accessible)`;
+  }
+  
+  return timeString;
+}
 
 // Helper function to load elements from localStorage for a specific floor with caching
 function loadFloorElements(floor: number): MapElement[] {
@@ -106,50 +300,98 @@ function calculateDistance(element1: MapElement, element2: MapElement): number {
   return Math.sqrt(calculateDistanceSquared(element1, element2));
 }
 
-// OSPF: Find transition element that is NOT the nearest (for longer paths)
+// Find second nearest transition element to create longer paths
+function findSecondNearestTransition(
+  sourceElement: MapElement,
+  transitionElements: MapElement[]
+): MapElement | null {
+  if (transitionElements.length === 0) return null;
+  if (transitionElements.length === 1) return transitionElements[0];
+
+  // Calculate distances for all transitions
+  const transitionsWithDistances = transitionElements.map(element => ({
+    element,
+    distanceSquared: calculateDistanceSquared(sourceElement, element)
+  }));
+
+  // Sort by distance (ascending)
+  transitionsWithDistances.sort((a, b) => a.distanceSquared - b.distanceSquared);
+
+  // Return the second nearest (index 1)
+  return transitionsWithDistances[1].element;
+}
+
+// Find third nearest transition element for even more complex paths
+function findThirdNearestTransition(
+  sourceElement: MapElement,
+  transitionElements: MapElement[]
+): MapElement | null {
+  if (transitionElements.length === 0) return null;
+  if (transitionElements.length === 1) return transitionElements[0];
+  if (transitionElements.length === 2) return transitionElements[1];
+
+  // Calculate distances for all transitions
+  const transitionsWithDistances = transitionElements.map(element => ({
+    element,
+    distanceSquared: calculateDistanceSquared(sourceElement, element)
+  }));
+
+  // Sort by distance (ascending)
+  transitionsWithDistances.sort((a, b) => a.distanceSquared - b.distanceSquared);
+
+  // Return the third nearest (index 2)
+  return transitionsWithDistances[2].element;
+}
+
+// Smart transition selector that chooses longer paths
+// This function intentionally selects non-optimal transitions to create longer,
+// more complex paths instead of the shortest possible route
+function findSmartTransition(
+  sourceElement: MapElement,
+  transitionElements: MapElement[]
+): MapElement | null {
+  if (transitionElements.length === 0) return null;
+  if (transitionElements.length === 1) return transitionElements[0];
+
+  // If longer paths are disabled, always use nearest
+  if (!USE_LONGER_PATHS) {
+    return findNearestTransition(sourceElement, transitionElements);
+  }
+
+  // Randomly choose between different strategies to create varied longer paths
+  const strategy = Math.random();
+  
+  if (strategy < 0.4 && transitionElements.length >= 2) {
+    // 40% chance to use second nearest (creates longer paths)
+    return findSecondNearestTransition(sourceElement, transitionElements);
+  } else if (strategy < 0.6 && transitionElements.length >= 3) {
+    // 20% chance to use third nearest (creates even longer paths)
+    return findThirdNearestTransition(sourceElement, transitionElements);
+  } else {
+    // 40% chance to use nearest (fallback to ensure path exists)
+    return findNearestTransition(sourceElement, transitionElements);
+  }
+}
+
+// Keep original function for fallback cases
 function findNearestTransition(
   sourceElement: MapElement,
   transitionElements: MapElement[]
 ): MapElement | null {
   if (transitionElements.length === 0) return null;
-  if (transitionElements.length === 1) return transitionElements[0];
 
-  // OSPF: Sort transitions by distance and prefer farther ones
-  const sortedTransitions = transitionElements
-    .map(element => ({
-      element,
-      distance: calculateDistanceSquared(sourceElement, element)
-    }))
-    .sort((a, b) => b.distance - a.distance); // Sort by distance descending (farthest first)
-
-  // OSPF: Choose a transition that is not the nearest
-  // If we have 2+ transitions, prefer the 2nd farthest (avoid the very farthest and nearest)
-  const preferredIndex = Math.min(1, sortedTransitions.length - 1);
-  
-  return sortedTransitions[preferredIndex].element;
-}
-
-// OSPF: Find the farthest transition element (for maximum path length)
-function findFarthestTransition(
-  sourceElement: MapElement,
-  transitionElements: MapElement[]
-): MapElement | null {
-  if (transitionElements.length === 0) return null;
-  if (transitionElements.length === 1) return transitionElements[0];
-
-  // OSPF: Find the transition that is farthest from the source
-  let farthest = transitionElements[0];
-  let maxDistanceSquared = calculateDistanceSquared(sourceElement, farthest);
+  let nearest = transitionElements[0];
+  let minDistanceSquared = calculateDistanceSquared(sourceElement, nearest);
 
   for (let i = 1; i < transitionElements.length; i++) {
     const distanceSquared = calculateDistanceSquared(sourceElement, transitionElements[i]);
-    if (distanceSquared > maxDistanceSquared) {
-      maxDistanceSquared = distanceSquared;
-      farthest = transitionElements[i];
+    if (distanceSquared < minDistanceSquared) {
+      minDistanceSquared = distanceSquared;
+      nearest = transitionElements[i];
     }
   }
 
-  return farthest;
+  return nearest;
 }
 
 // Path cache for expensive multi-floor calculations
@@ -160,7 +402,7 @@ function getPathCacheKey(source: MapElement, target: MapElement): string {
   return `${source.id}-${target.id}-${source.floor}-${target.floor}`;
 }
 
-export function ospfFindPath(
+export function findPath(
   sourceStore: MapElement,
   targetStore: MapElement,
   allElements: MapElement[],
@@ -168,9 +410,6 @@ export function ospfFindPath(
   mapSettings: MapSettings,
   avoidElements: boolean = true,
 ): RoutePoint[] {
-  // OSPF: Add small artificial delay to simulate slower processing
-  const startTime = Date.now();
-  
   // Check cache first for multi-floor paths (they're more expensive)
   if (sourceStore.floor !== targetStore.floor) {
     const cacheKey = getPathCacheKey(sourceStore, targetStore);
@@ -189,26 +428,10 @@ export function ospfFindPath(
   }
 
   // Single floor paths with fallback system
-  const result = findSingleFloorPathWithFallback(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements);
-  
-  // OSPF: Ensure minimum processing time to demonstrate slower algorithm
-  const processingTime = Date.now() - startTime;
-  const minProcessingTime = 50; // Minimum 50ms to show it's slower
-  
-  if (processingTime < minProcessingTime) {
-    // Add small delay to make OSPF appear slower
-    const delay = minProcessingTime - processingTime;
-    // Note: In a real implementation, you might use setTimeout, but for sync function we'll just add computation
-    let dummy = 0;
-    for (let i = 0; i < delay * 1000; i++) {
-      dummy += Math.random();
-    }
-  }
-  
-  return result;
+  return findSingleFloorPathWithFallback(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements);
 }
 
-// OSPF: Different fallback system that prioritizes different strategies
+// ENHANCED: Single floor path with strict fallback system
 function findSingleFloorPathWithFallback(
   sourceStore: MapElement,
   targetStore: MapElement,
@@ -217,28 +440,28 @@ function findSingleFloorPathWithFallback(
   mapSettings: MapSettings,
   avoidElements: boolean = true,
 ): RoutePoint[] {
-  // OSPF: Start with minimal buffer (more aggressive pathfinding)
-  let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 0);
+  // First try with full buffer (most strict)
+  let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, ELEMENT_BUFFER_GRIDS);
   
   if (path.length > 0) {
     return path;
   }
 
-  // OSPF: Try with small buffer
+  // If no path found, try with reduced buffer
   path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 1);
   
   if (path.length > 0) {
     return path;
   }
 
-  // OSPF: Try with full buffer
-  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, ELEMENT_BUFFER_GRIDS);
+  // If still no path found, try with minimal buffer
+  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 0);
   
   if (path.length > 0) {
     return path;
   }
 
-  // OSPF: Last resort - try without avoiding elements
+  // Last resort: try without avoiding elements at all (only if absolutely necessary)
   return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, false, 0);
 }
 
@@ -265,10 +488,8 @@ function findMultiFloorPath(
     return [];
   }
   
-  // OSPF: Find a transition that is NOT the nearest for longer paths
-  // Use farthest transition for maximum path length
-  const selectedSourceTransition = findFarthestTransition(sourceStore, sourceFloorTransitions);
-  if (!selectedSourceTransition) {
+  const nearestSourceTransition = findSmartTransition(sourceStore, sourceFloorTransitions);
+  if (!nearestSourceTransition) {
     return [];
   }
   
@@ -287,7 +508,7 @@ function findMultiFloorPath(
   // Get path from source to transition on source floor with fallback
   const sourceToTransitionPath = findSingleFloorPathWithFallback(
     sourceStore,
-    selectedSourceTransition,
+    nearestSourceTransition,
     allSourceFloorElements,
     [], // Don't pass fElements again since we already included them
     mapSettings,
@@ -302,8 +523,8 @@ function findMultiFloorPath(
       floor: sourceFloor
     });
     path.push({
-      x: selectedSourceTransition.x + selectedSourceTransition.width / 2,
-      y: selectedSourceTransition.y + selectedSourceTransition.height / 2,
+      x: nearestSourceTransition.x + nearestSourceTransition.width / 2,
+      y: nearestSourceTransition.y + nearestSourceTransition.height / 2,
       floor: sourceFloor
     });
   } else {
@@ -312,7 +533,7 @@ function findMultiFloorPath(
   
   // Step 2: Create transition points for intermediate floors
   let currentFloor = sourceFloor;
-  let currentTransition = selectedSourceTransition;
+  let currentTransition = nearestSourceTransition;
   
   while (currentFloor !== targetFloor) {
     const nextFloor = currentFloor + floorDirection;
@@ -324,7 +545,7 @@ function findMultiFloorPath(
       return path; // Return partial path
     }
     
-    // OSPF: Prefer non-matching transitions for longer paths
+    // Better transition matching
     const correspondingTransition = nextFloorTransitions.find(t => 
       t.type === currentTransition.type &&
       Math.abs(t.x - currentTransition.x) < 100 && // Increased tolerance
@@ -332,8 +553,8 @@ function findMultiFloorPath(
     );
     
     if (!correspondingTransition) {
-      // OSPF: Use the farthest transition as fallback for longer paths
-      const fallbackTransition = findFarthestTransition(currentTransition, nextFloorTransitions);
+      // Use smart transition selector to create longer paths
+      const fallbackTransition = findSmartTransition(currentTransition, nextFloorTransitions);
       if (fallbackTransition) {
         path.push({
           x: fallbackTransition.x + fallbackTransition.width / 2,
@@ -345,36 +566,13 @@ function findMultiFloorPath(
         return path;
       }
     } else {
-      // OSPF: Sometimes use non-matching transition for longer paths
-      const shouldUseNonMatching = Math.random() < 0.3; // 30% chance to use non-matching
-      
-      if (shouldUseNonMatching) {
-        const nonMatchingTransition = findFarthestTransition(currentTransition, nextFloorTransitions);
-        if (nonMatchingTransition) {
-          path.push({
-            x: nonMatchingTransition.x + nonMatchingTransition.width / 2,
-            y: nonMatchingTransition.y + nonMatchingTransition.height / 2,
-            floor: nextFloor
-          });
-          currentTransition = nonMatchingTransition;
-        } else {
-          // Fallback to corresponding transition
-          path.push({
-            x: correspondingTransition.x + correspondingTransition.width / 2,
-            y: correspondingTransition.y + correspondingTransition.height / 2,
-            floor: nextFloor
-          });
-          currentTransition = correspondingTransition;
-        }
-      } else {
-        // Add transition point on the next floor
-        path.push({
-          x: correspondingTransition.x + correspondingTransition.width / 2,
-          y: correspondingTransition.y + correspondingTransition.height / 2,
-          floor: nextFloor
-        });
-        currentTransition = correspondingTransition;
-      }
+      // Add transition point on the next floor
+      path.push({
+        x: correspondingTransition.x + correspondingTransition.width / 2,
+        y: correspondingTransition.y + correspondingTransition.height / 2,
+        floor: nextFloor
+      });
+      currentTransition = correspondingTransition;
     }
     
     currentFloor = nextFloor;
@@ -718,7 +916,7 @@ function ensureAccessiblePosition(
   return null;
 }
 
-// OSPF-inspired pathfinding that intentionally finds longer paths
+// A* pathfinding with improved movement costs and path smoothing
 function findSingleFloorPathWithCoords(
   startX: number,
   startY: number,
@@ -730,10 +928,11 @@ function findSingleFloorPathWithCoords(
   mapSettings: MapSettings,
   floor: number
 ): RoutePoint[] {
-  // OSPF: Use approach that prefers longer paths
+  // Optimized A* with binary heap for open list
   const openList: Node[] = [];
   const closedSet = new Set<number>();
   
+  // Use array indexing instead of string keys for better performance
   const getIndex = (x: number, y: number) => y * gridWidth + x;
   
   const startNode: Node = {
@@ -741,60 +940,54 @@ function findSingleFloorPathWithCoords(
     y: startY,
     f: 0,
     g: 0,
-    h: 0,
+    h: heuristic(startX, startY, endX, endY),
     parent: null,
   };
-  startNode.f = startNode.g;
+  startNode.f = startNode.g + startNode.h;
   
   openList.push(startNode);
 
-  // OSPF: Use all 8 directions but with higher costs for direct paths
+  // Improved movement directions with better cost calculation
   const directions = [
     [0, 1, 1.0],     // down
     [1, 0, 1.0],     // right
     [0, -1, 1.0],    // up
     [-1, 0, 1.0],    // left
-    [1, 1, 1.8],     // diagonal down-right
-    [1, -1, 1.8],    // diagonal up-right
-    [-1, 1, 1.8],    // diagonal down-left
-    [-1, -1, 1.8],   // diagonal up-left
+    [1, 1, 1.4],     // diagonal down-right
+    [1, -1, 1.4],    // diagonal up-right
+    [-1, 1, 1.4],    // diagonal down-left
+    [-1, -1, 1.4],   // diagonal up-left
   ];
 
   let iterations = 0;
-  const maxIterations = Math.min(gridWidth * gridHeight, 35000);
+  const maxIterations = Math.min(gridWidth * gridHeight, 15000);
 
   while (openList.length > 0 && iterations < maxIterations) {
     iterations++;
     
-    // OSPF: Sort by g-cost but prefer longer paths
-    openList.sort((a, b) => {
-      // Prefer nodes that are further from the target (longer paths)
-      const aDistanceToTarget = Math.abs(a.x - endX) + Math.abs(a.y - endY);
-      const bDistanceToTarget = Math.abs(b.x - endX) + Math.abs(b.y - endY);
-      
-      if (Math.abs(a.g - b.g) < 5) { // If costs are similar
-        return bDistanceToTarget - aDistanceToTarget; // Prefer longer paths
+    // Find node with lowest f score
+    let currentIndex = 0;
+    for (let i = 1; i < openList.length; i++) {
+      if (openList[i].f < openList[currentIndex].f) {
+        currentIndex = i;
       }
-      return a.g - b.g; // Otherwise prefer lower cost
-    });
+    }
     
-    const current = openList.shift()!;
+    const current = openList[currentIndex];
 
     // If we reached the target
     if (current.x === endX && current.y === endY) {
       const rawPath = reconstructPath(current, mapSettings, floor);
       
-        // OSPF: Apply minimal smoothing to preserve longer path
-  const smoothedPath = smoothPathOSPF(rawPath, grid, gridWidth, gridHeight, mapSettings);
-  
-  // OSPF: Add extra waypoints to make path even longer
-  return addExtraWaypoints(smoothedPath, mapSettings, floor);
+      // Apply path smoothing to reduce unnecessary waypoints
+      return smoothPath(rawPath, grid, gridWidth, gridHeight, mapSettings);
     }
 
-    // Add to closed set
+    // Remove current from open list and add to closed
+    openList.splice(currentIndex, 1);
     closedSet.add(getIndex(current.x, current.y));
 
-    // Check neighbors with OSPF logic that prefers longer routes
+    // Check all neighbors
     for (const [dx, dy, baseCost] of directions) {
       const nextX = current.x + dx;
       const nextY = current.y + dy;
@@ -813,39 +1006,23 @@ function findSingleFloorPathWithCoords(
         continue;
       }
 
-      // OSPF: Calculate distance-based costs that encourage longer paths
-      const distanceFromStart = Math.abs(nextX - startX) + Math.abs(nextY - startY);
-      const distanceToTarget = Math.abs(nextX - endX) + Math.abs(nextY - endY);
-      
-      // OSPF: Prefer paths that go away from target initially
+      // Calculate movement cost with penalties for direction changes
       let movementCost = baseCost;
       
-      // Add bonus for moving away from target (encourages longer paths)
-      if (distanceToTarget > Math.abs(current.x - endX) + Math.abs(current.y - endY)) {
-        movementCost -= 0.5; // Bonus for moving away from target
-      }
-      
-      // Add penalty for moving directly toward target
-      if (distanceToTarget < Math.abs(current.x - endX) + Math.abs(current.y - endY)) {
-        movementCost += 0.3; // Penalty for moving toward target
-      }
-      
-      // OSPF: Heavy penalty for direction changes (encourages zigzag paths)
+      // Add penalty for changing direction (encourages straighter paths)
       if (current.parent) {
         const prevDx = current.x - current.parent.x;
         const prevDy = current.y - current.parent.y;
         
-        if (prevDx !== dx || prevDy !== dy) {
-          movementCost += 0.8; // Heavy penalty for turns
+          if (prevDx !== dx || prevDy !== dy) {
+          movementCost += 0.1; // Small penalty for direction change
         }
       }
 
-      // OSPF: Add distance penalty that increases with distance from start
-      movementCost += distanceFromStart * 0.02;
-
       // Calculate costs
       const g = current.g + movementCost;
-      const f = g;
+      const h = heuristic(nextX, nextY, endX, endY);
+      const f = g + h;
 
       // Check if this path to neighbor is better
       const existingNodeIndex = openList.findIndex((node) => node.x === nextX && node.y === nextY);
@@ -855,7 +1032,7 @@ function findSingleFloorPathWithCoords(
           y: nextY,
           f,
           g,
-          h: 0,
+          h,
           parent: current,
         });
       } else if (g < openList[existingNodeIndex].g) {
@@ -904,63 +1081,6 @@ function smoothPath(
     // Add the farthest reachable point
     if (farthestReachable < path.length - 1) {
       smoothedPath.push(path[farthestReachable]);
-    }
-    
-    currentIndex = farthestReachable;
-  }
-
-  // Always keep end point
-  smoothedPath.push(path[path.length - 1]);
-
-  return smoothedPath;
-}
-
-// OSPF-specific path smoothing that preserves longer paths
-function smoothPathOSPF(
-  path: RoutePoint[],
-  grid: Uint8Array,
-  gridWidth: number,
-  gridHeight: number,
-  mapSettings: MapSettings
-): RoutePoint[] {
-  if (path.length <= 2) return path;
-
-  // OSPF: Keep more waypoints to preserve longer path structure
-  const smoothedPath: RoutePoint[] = [path[0]]; // Always keep start point
-  let currentIndex = 0;
-
-  while (currentIndex < path.length - 1) {
-    let farthestReachable = currentIndex + 1;
-
-    // OSPF: Only look ahead 2-3 steps to preserve more waypoints
-    const maxLookAhead = Math.min(3, path.length - currentIndex - 1);
-    
-    for (let i = currentIndex + 2; i <= currentIndex + maxLookAhead; i++) {
-      if (isPathClearInGrid(
-        path[currentIndex], 
-        path[i], 
-        grid, 
-        gridWidth, 
-        gridHeight, 
-        mapSettings
-      )) {
-        farthestReachable = i;
-      } else {
-        break; // Stop at first unreachable point
-      }
-    }
-
-    // OSPF: Add intermediate points to make path longer
-    if (farthestReachable > currentIndex + 1) {
-      // Add some intermediate points to preserve path length
-      for (let j = currentIndex + 1; j <= farthestReachable; j += 2) {
-        if (j < path.length) {
-          smoothedPath.push(path[j]);
-        }
-      }
-    } else {
-      // Add the next point
-      smoothedPath.push(path[currentIndex + 1]);
     }
     
     currentIndex = farthestReachable;
@@ -1022,18 +1142,13 @@ function isPathClearInGrid(
   return true;
 }
 
-// OSPF-inspired heuristic with additional considerations
+// Optimized Euclidean distance heuristic
 function heuristic(x1: number, y1: number, x2: number, y2: number): number {
   const dx = Math.abs(x1 - x2);
   const dy = Math.abs(y1 - y2);
   
-  // OSPF: Use Manhattan distance as base (like OSPF's hop count)
-  const manhattanDistance = dx + dy;
-  
-  // OSPF: Add small penalty for diagonal preference (encourages grid-like paths)
-  const diagonalPenalty = Math.min(dx, dy) * 0.1;
-  
-  return manhattanDistance + diagonalPenalty;
+  // Use Euclidean distance for better pathfinding results
+  return Math.sqrt(dx * dx + dy * dy);
 }
 
 // Reconstruct path from end node, converting back to absolute coordinates
@@ -1065,6 +1180,16 @@ export function setMinPathWidth(widthGrids: number) {
   if (widthGrids >= 1 && widthGrids <= 10) {
     // Path width configuration updated
   }
+}
+
+// Configuration function for pathfinding behavior
+export function setUseLongerPaths(useLongerPaths: boolean) {
+  USE_LONGER_PATHS = useLongerPaths;
+}
+
+// Get current pathfinding behavior setting
+export function getUseLongerPaths(): boolean {
+  return USE_LONGER_PATHS;
 }
 
 // Clear path cache when elements change
@@ -1112,46 +1237,4 @@ export function debugGrid(
   return debugString;
 }
 
-// OSPF: Function to add extra waypoints to make paths longer
-function addExtraWaypoints(
-  path: RoutePoint[],
-  mapSettings: MapSettings,
-  floor: number
-): RoutePoint[] {
-  if (path.length < 3) return path;
 
-  const extendedPath: RoutePoint[] = [path[0]];
-  
-  for (let i = 0; i < path.length - 1; i++) {
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Add the current point
-    extendedPath.push(current);
-    
-    // OSPF: Add intermediate points to make path longer
-    const distance = Math.hypot(next.x - current.x, next.y - current.y);
-    
-    if (distance > 50) { // If points are far apart
-      // Add 1-2 intermediate points
-      const numIntermediates = Math.min(2, Math.floor(distance / 30));
-      
-      for (let j = 1; j <= numIntermediates; j++) {
-        const ratio = j / (numIntermediates + 1);
-        const intermediateX = current.x + (next.x - current.x) * ratio;
-        const intermediateY = current.y + (next.y - current.y) * ratio;
-        
-        extendedPath.push({
-          x: intermediateX,
-          y: intermediateY,
-          floor: floor
-        });
-      }
-    }
-  }
-  
-  // Add the final point
-  extendedPath.push(path[path.length - 1]);
-  
-  return extendedPath;
-}

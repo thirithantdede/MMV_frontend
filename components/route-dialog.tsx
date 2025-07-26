@@ -17,7 +17,7 @@ import type { MapElement } from "@/types"
 import { storeCategories } from "./panels/store-properties-panel"
 import useMutate from "@/hooks/use-mutate"
 import { algorithmOptions } from "@/utils/global"
-import { ospfFindPath } from "@/utils/ospf_pathfinding"
+import { findPath as ospfFindPath } from "@/utils/ospf_pathfinding"
 
 interface RouteDialogProps {
   open: boolean
