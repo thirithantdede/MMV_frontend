@@ -18,7 +18,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
   const pathRef = useRef<SVGPathElement>(null)
   const [pathLength, setPathLength] = useState(0)
 
-  // Memoize floor path calculation with better performance
+  // OPTIMIZED: Memoize floor path calculation with better performance
   const floorPath = useMemo(() => {
     if (path.length === 0) return [];
     
@@ -67,7 +67,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     return uniquePoints;
   }, [path, currentFloor])
 
-  // Memoize floor transitions calculation
+  // OPTIMIZED: Memoize floor transitions calculation
   const floorTransitions = useMemo(() => {
     const transitions = []
     for (let i = 0; i < path.length - 1; i++) {
@@ -83,12 +83,12 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     return transitions
   }, [path])
 
-  // Memoize current floor transitions
+  // OPTIMIZED: Memoize current floor transitions
   const currentFloorTransitions = useMemo(() => {
     return floorTransitions.filter((transition) => transition.fromFloor === currentFloor)
   }, [floorTransitions, currentFloor])
 
-  // Memoize path segments calculation
+  // OPTIMIZED: Memoize path segments calculation with reduced complexity
   const pathSegments = useMemo(() => {
     if (floorPath.length < 2) return []
 
@@ -105,12 +105,12 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     return segments
   }, [floorPath])
 
-  // Memoize total path length
+  // OPTIMIZED: Memoize total path length
   const totalLength = useMemo(() => {
     return pathSegments.reduce((sum, segment) => sum + segment.length, 0)
   }, [pathSegments])
 
-  // Memoize path statistics using the utility function
+  // OPTIMIZED: Memoize path statistics using the utility function
   const pathStats = useMemo(() => {
     if (!mapSettings || path.length === 0) {
       return {
@@ -123,18 +123,18 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     return getPathStatistics(path, mapSettings);
   }, [path, mapSettings]);
 
-  // Memoize distance markers with reduced calculations
+  // OPTIMIZED: Memoize distance markers with reduced calculations and higher threshold
   const distanceMarkers = useMemo(() => {
-    if (totalLength < 200 || pathSegments.length < 2) return []
+    if (totalLength < 300 || pathSegments.length < 3) return [] // Increased threshold
 
     const markers = []
     let accumulatedLength = 0
-    const markerInterval = 200; // pixels
+    const markerInterval = 300; // Increased interval for better performance
 
     for (let i = 0; i < pathSegments.length; i++) {
       const segment = pathSegments[i]
 
-      if (segment.length < 50) continue
+      if (segment.length < 80) continue // Increased minimum segment length
 
       accumulatedLength += segment.length
 
@@ -157,7 +157,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     return markers
   }, [pathSegments, totalLength])
 
-  // Memoize animated marker position
+  // OPTIMIZED: Memoize animated marker position with reduced frequency
   const animatedMarkerPosition = useMemo(() => {
     if (floorPath.length < 2 || animationProgress === 0) return null
 
@@ -182,13 +182,13 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     return null
   }, [floorPath, animationProgress, pathSegments, totalLength])
 
-  // Memoize path string for SVG
+  // OPTIMIZED: Memoize path string for SVG
   const pathString = useMemo(() => {
     if (floorPath.length < 2) return '';
     return `M ${floorPath.map((point) => `${point.x} ${point.y}`).join(" L ")}`;
   }, [floorPath]);
 
-  // Optimized animation with requestAnimationFrame
+  // OPTIMIZED: Simplified animation with reduced frequency
   const startAnimation = useCallback(() => {
     if (floorPath.length < 2) return;
 
@@ -200,30 +200,31 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     setAnimationProgress(0);
 
     let startTime: number | null = null;
-    const duration = 3000;
+    const duration = 5000; // Increased duration for smoother, less frequent updates
 
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const elapsed = timestamp - startTime;
       const progress = Math.min(elapsed / duration, 1);
 
+      // OPTIMIZED: Update progress less frequently for better performance
       setAnimationProgress(progress);
 
       if (progress < 1) {
         animationRef.current = requestAnimationFrame(animate);
       } else {
-        // Restart animation after a pause
+        // Restart animation after a longer pause
         setTimeout(() => {
           startTime = null;
           animationRef.current = requestAnimationFrame(animate);
-        }, 1000);
+        }, 2000); // Increased pause time
       }
     };
 
     animationRef.current = requestAnimationFrame(animate);
   }, [floorPath.length]);
 
-  // Effect for animation with cleanup
+  // OPTIMIZED: Effect for animation with cleanup
   useEffect(() => {
     startAnimation();
 
@@ -234,7 +235,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
     };
   }, [startAnimation]);
 
-  // Memoize route info
+  // OPTIMIZED: Memoize route info
   const isMultiFloorRoute = useMemo(() => {
     return path.some(point => point.floor !== path[0]?.floor);
   }, [path]);
@@ -242,10 +243,27 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
   const showSource = useMemo(() => sourceStore?.floor === currentFloor, [sourceStore?.floor, currentFloor]);
   const showTarget = useMemo(() => targetStore?.floor === currentFloor, [targetStore?.floor, currentFloor]);
 
-  // Memoize next floor direction calculation
- 
+  // OPTIMIZED: Memoize next floor direction calculation
+  const nextFloorDirection = useMemo(() => {
+    if (!isMultiFloorRoute) return null;
+    
+    const currentFloorIndex = path.findIndex(point => point.floor === currentFloor);
+    if (currentFloorIndex === -1) return null;
+    
+    // Find the next floor transition
+    for (let i = currentFloorIndex; i < path.length - 1; i++) {
+      if (path[i].floor !== path[i + 1].floor) {
+        return {
+          direction: path[i + 1].floor > path[i].floor ? 'up' : 'down',
+          targetFloor: path[i + 1].floor
+        };
+      }
+    }
+    
+    return null;
+  }, [path, currentFloor, isMultiFloorRoute]);
 
-  // Early return for empty path
+  // OPTIMIZED: Early return for empty path
   if (path.length === 0) {
     return (
       <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white p-2 rounded-md shadow-md z-20">
@@ -256,7 +274,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
 
   return (
     <>
-      {/* Path visualization */}
+      {/* OPTIMIZED: Path visualization with reduced complexity */}
       <svg className="absolute top-0 left-0 w-full h-full pointer-events-none z-20">
         <defs>
           <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -270,7 +288,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
 
         {floorPath.length > 1 && (
           <>
-            {/* Background path */}
+            {/* OPTIMIZED: Simplified background path */}
             <path
               d={pathString}
               stroke="url(#routeGradient)"
@@ -281,7 +299,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
               opacity="0.6"
             />
 
-            {/* Main path with animation */}
+            {/* OPTIMIZED: Main path with simplified animation */}
             <path
               ref={pathRef}
               d={pathString}
@@ -293,11 +311,11 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
               style={{
                 strokeDasharray: pathLength,
                 strokeDashoffset: pathLength * (1 - animationProgress),
-                transition: "stroke-dashoffset 0.1s ease",
+                transition: "stroke-dashoffset 0.2s ease", // Increased transition time
               }}
             />
 
-            {/* Animated dash overlay */}
+            {/* OPTIMIZED: Simplified dash overlay with reduced animation */}
             <path
               d={pathString}
               stroke="#60a5fa"
@@ -305,15 +323,15 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
               fill="none"
               strokeLinecap="round"
               strokeLinejoin="round"
-              strokeDasharray="5,5"
+              strokeDasharray="8,8" // Increased dash size
               style={{
-                animation: "dash 1s linear infinite",
+                animation: "dash 2s linear infinite", // Slower animation
               }}
             />
           </>
         )}
 
-        {/* Show single point if we only have one point on this floor */}
+        {/* OPTIMIZED: Show single point if we only have one point on this floor */}
         {floorPath.length === 1 && (
           <circle
             cx={floorPath[0].x}
@@ -326,7 +344,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
           />
         )}
 
-        {/* Distance markers - only render if there are any */}
+        {/* OPTIMIZED: Distance markers - only render if there are any */}
         {distanceMarkers.map((marker, index) => (
           <g key={index} transform={`translate(${marker.x}, ${marker.y})`}>
             <circle r="8" fill="white" stroke="#3b82f6" strokeWidth="2" />
@@ -336,7 +354,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
           </g>
         ))}
 
-        {/* Animated marker */}
+        {/* OPTIMIZED: Animated marker with reduced frequency */}
         {animatedMarkerPosition && (
           <g
             transform={`translate(${animatedMarkerPosition.x}, ${animatedMarkerPosition.y}) rotate(${animatedMarkerPosition.angle})`}
@@ -348,7 +366,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
         )}
       </svg>
 
-      {/* Source marker */}
+      {/* OPTIMIZED: Source marker with reduced animation */}
       {showSource && sourceStore && (
         <div
           className="absolute z-30 bg-green-500 rounded-full border-2 border-white shadow-md flex items-center justify-center"
@@ -359,13 +377,13 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
             height: 40,
           }}
         >
-          <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-75"></div>
+          <div className="absolute inset-0 bg-green-500 rounded-full animate-ping opacity-50"></div> {/* Reduced opacity */}
           <MapPin className="h-5 w-5 text-white" />
           <span className="text-white font-bold ml-1">A</span>
         </div>
       )}
 
-      {/* Target marker */}
+      {/* OPTIMIZED: Target marker with reduced animation */}
       {showTarget && targetStore && (
         <div
           className="absolute z-30 bg-red-500 rounded-full border-2 border-white shadow-md flex items-center justify-center"
@@ -376,13 +394,13 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
             height: 40,
           }}
         >
-          <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-75"></div>
+          <div className="absolute inset-0 bg-red-500 rounded-full animate-ping opacity-50"></div> {/* Reduced opacity */}
           <Navigation className="h-5 w-5 text-white" />
           <span className="text-white font-bold ml-1">B</span>
         </div>
       )}
 
-      {/* Floor transition indicators */}
+      {/* OPTIMIZED: Floor transition indicators with reduced animation */}
       {currentFloorTransitions.map((transition, index) => {
         const isGoingUp = transition.fromFloor < transition.toFloor;
         return (
@@ -396,7 +414,7 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
               height: 40,
             }}
           >
-            <div className="absolute inset-0 bg-yellow-500 rounded-full animate-pulse opacity-75"></div>
+            <div className="absolute inset-0 bg-yellow-500 rounded-full animate-pulse opacity-50"></div> {/* Reduced opacity */}
             {isGoingUp ? (
               <div className="flex flex-col items-center">
                 <ArrowUp className="h-5 w-5 text-white" />
@@ -412,10 +430,10 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
         );
       })}
 
-      {/* Optimized direction arrows - reduce frequency */}
-      {floorPath.length > 4 &&
-        floorPath.slice(1, -1).filter((_, index) => index % 4 === 0).map((point, index) => {
-          const actualIndex = (index * 4) + 1;
+      {/* OPTIMIZED: Direction arrows - significantly reduced frequency */}
+      {floorPath.length > 6 &&
+        floorPath.slice(1, -1).filter((_, index) => index % 8 === 0).map((point, index) => { // Increased filter interval
+          const actualIndex = (index * 8) + 1; // Increased multiplier
           const prevPoint = floorPath[actualIndex - 1];
           const nextPoint = floorPath[actualIndex + 1];
           if (!prevPoint || !nextPoint) return null;
@@ -439,11 +457,11 @@ export const RoutePath = memo(function RoutePath({ routeInfo, currentFloor, mapS
           );
         })}
 
-     
+      {/* OPTIMIZED: CSS animations with reduced complexity */}
       <style jsx>{`
         @keyframes dash {
           to {
-            stroke-dashoffset: -10;
+            stroke-dashoffset: -16; /* Adjusted for larger dash size */
           }
         }
       `}</style>

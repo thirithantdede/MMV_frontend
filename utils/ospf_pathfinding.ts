@@ -970,7 +970,7 @@ function ensureAccessiblePosition(
   return null;
 }
 
-// A* pathfinding with improved movement costs and path smoothing
+// ENHANCED: A* pathfinding with improved movement costs and path smoothing
 function findSingleFloorPathWithCoords(
   startX: number,
   startY: number,
@@ -1001,16 +1001,17 @@ function findSingleFloorPathWithCoords(
   
   openList.push(startNode);
 
-  // Improved movement directions with better cost calculation
+  // ENHANCED: Improved movement directions with better cost calculation
+  // Prioritize straight movements to reduce zigzagging
   const directions = [
     [0, 1, 1.0],     // down
     [1, 0, 1.0],     // right
     [0, -1, 1.0],    // up
     [-1, 0, 1.0],    // left
-    [1, 1, 1.4],     // diagonal down-right
-    [1, -1, 1.4],    // diagonal up-right
-    [-1, 1, 1.4],    // diagonal down-left
-    [-1, -1, 1.4],   // diagonal up-left
+    [1, 1, 1.414],   // diagonal down-right (√2)
+    [1, -1, 1.414],  // diagonal up-right (√2)
+    [-1, 1, 1.414],  // diagonal down-left (√2)
+    [-1, -1, 1.414], // diagonal up-left (√2)
   ];
 
   let iterations = 0;
@@ -1038,7 +1039,7 @@ function findSingleFloorPathWithCoords(
     if (current.x === endX && current.y === endY) {
       const rawPath = reconstructPath(current, mapSettings, floor);
       
-      // Apply path smoothing to reduce unnecessary waypoints
+      // Apply enhanced path smoothing to reduce unnecessary waypoints
       return smoothPath(rawPath, grid, gridWidth, gridHeight, mapSettings);
     }
 
@@ -1065,7 +1066,7 @@ function findSingleFloorPathWithCoords(
         continue;
       }
 
-      // Calculate movement cost with penalties for direction changes
+      // ENHANCED: Calculate movement cost with better penalties for direction changes
       let movementCost = baseCost;
       
       // Add penalty for changing direction (encourages straighter paths)
@@ -1073,9 +1074,22 @@ function findSingleFloorPathWithCoords(
         const prevDx = current.x - current.parent.x;
         const prevDy = current.y - current.parent.y;
         
-          if (prevDx !== dx || prevDy !== dy) {
-          movementCost += 0.1; // Small penalty for direction change
+        // ENHANCED: Stronger penalty for direction changes to reduce zigzagging
+        if (prevDx !== dx || prevDy !== dy) {
+          // Penalty based on how much the direction changes
+          const angleChange = Math.abs(Math.atan2(dy, dx) - Math.atan2(prevDy, prevDx));
+          movementCost += angleChange * 0.5; // Proportional penalty
         }
+      }
+
+      // ENHANCED: Add penalty for moving away from the goal direction
+      const toGoalDx = endX - nextX;
+      const toGoalDy = endY - nextY;
+      const goalAngle = Math.atan2(toGoalDy, toGoalDx);
+      const moveAngle = Math.atan2(dy, dx);
+      const angleDiff = Math.abs(goalAngle - moveAngle);
+      if (angleDiff > Math.PI / 2) { // Moving away from goal
+        movementCost += 0.3;
       }
 
       // Calculate costs
@@ -1105,7 +1119,7 @@ function findSingleFloorPathWithCoords(
   return [];
 }
 
-// Path smoothing to reduce waypoints and create more natural paths
+// ENHANCED: Improved path smoothing to eliminate overlooping and create smoother routes
 function smoothPath(
   path: RoutePoint[],
   grid: Uint8Array,
@@ -1115,17 +1129,23 @@ function smoothPath(
 ): RoutePoint[] {
   if (path.length <= 2) return path;
 
-  const smoothedPath: RoutePoint[] = [path[0]]; // Always keep start point
+  // Step 1: Remove redundant consecutive points (same coordinates)
+  const deduplicatedPath = removeRedundantPoints(path);
+  
+  if (deduplicatedPath.length <= 2) return deduplicatedPath;
+
+  // Step 2: Apply line-of-sight smoothing to reduce waypoints
+  const smoothedPath: RoutePoint[] = [deduplicatedPath[0]]; // Always keep start point
   let currentIndex = 0;
 
-  while (currentIndex < path.length - 1) {
+  while (currentIndex < deduplicatedPath.length - 1) {
     let farthestReachable = currentIndex + 1;
 
     // Find the farthest point we can reach directly from current point
-    for (let i = currentIndex + 2; i < path.length; i++) {
+    for (let i = currentIndex + 2; i < deduplicatedPath.length; i++) {
       if (isPathClearInGrid(
-        path[currentIndex], 
-        path[i], 
+        deduplicatedPath[currentIndex], 
+        deduplicatedPath[i], 
         grid, 
         gridWidth, 
         gridHeight, 
@@ -1137,17 +1157,124 @@ function smoothPath(
       }
     }
 
-    // Add the farthest reachable point
-    if (farthestReachable < path.length - 1) {
-      smoothedPath.push(path[farthestReachable]);
+    // Add the farthest reachable point (but not if it's the last point)
+    if (farthestReachable < deduplicatedPath.length - 1) {
+      smoothedPath.push(deduplicatedPath[farthestReachable]);
     }
     
     currentIndex = farthestReachable;
   }
 
   // Always keep end point
-  smoothedPath.push(path[path.length - 1]);
+  smoothedPath.push(deduplicatedPath[deduplicatedPath.length - 1]);
 
+  // Step 3: Apply additional smoothing to remove sharp turns
+  const sharpTurnSmoothed = smoothSharpTurns(smoothedPath, grid, gridWidth, gridHeight, mapSettings);
+  
+  // Step 4: Final optimization to ensure minimal waypoints
+  return optimizeFinalPath(sharpTurnSmoothed, grid, gridWidth, gridHeight, mapSettings);
+}
+
+// NEW: Final path optimization to ensure minimal waypoints
+function optimizeFinalPath(
+  path: RoutePoint[],
+  grid: Uint8Array,
+  gridWidth: number,
+  gridHeight: number,
+  mapSettings: MapSettings
+): RoutePoint[] {
+  if (path.length <= 2) return path;
+  
+  const optimizedPath: RoutePoint[] = [path[0]];
+  
+  for (let i = 1; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Check if we can skip this point by going directly from previous to next
+    const prev = optimizedPath[optimizedPath.length - 1];
+    
+    // Only skip if the direct path is clear and the point doesn't add significant value
+    if (isPathClearInGrid(prev, next, grid, gridWidth, gridHeight, mapSettings)) {
+      const distDirect = Math.hypot(next.x - prev.x, next.y - prev.y);
+      const distViaCurrent = Math.hypot(current.x - prev.x, current.y - prev.y) + 
+                           Math.hypot(next.x - current.x, next.y - current.y);
+      
+      // Skip if the direct path is not significantly longer
+      if (distDirect < distViaCurrent * 1.2) {
+        continue; // Skip this point
+      }
+    }
+    
+    optimizedPath.push(current);
+  }
+  
+  optimizedPath.push(path[path.length - 1]);
+  return optimizedPath;
+}
+
+// NEW: Remove redundant consecutive points with same coordinates
+function removeRedundantPoints(path: RoutePoint[]): RoutePoint[] {
+  if (path.length <= 1) return path;
+  
+  const result: RoutePoint[] = [path[0]];
+  
+  for (let i = 1; i < path.length; i++) {
+    const current = path[i];
+    const previous = result[result.length - 1];
+    
+    // Check if current point is different from previous point
+    const isDifferent = 
+      Math.abs(current.x - previous.x) > 0.1 || 
+      Math.abs(current.y - previous.y) > 0.1 || 
+      current.floor !== previous.floor;
+    
+    if (isDifferent) {
+      result.push(current);
+    }
+  }
+  
+  return result;
+}
+
+// NEW: Smooth sharp turns to create more natural paths
+function smoothSharpTurns(
+  path: RoutePoint[],
+  grid: Uint8Array,
+  gridWidth: number,
+  gridHeight: number,
+  mapSettings: MapSettings
+): RoutePoint[] {
+  if (path.length <= 3) return path;
+  
+  const smoothedPath: RoutePoint[] = [path[0]];
+  
+  for (let i = 1; i < path.length - 1; i++) {
+    const prev = path[i - 1];
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate angles to detect sharp turns
+    const angle1 = Math.atan2(current.y - prev.y, current.x - prev.x);
+    const angle2 = Math.atan2(next.y - current.y, next.x - current.x);
+    const angleDiff = Math.abs(angle1 - angle2);
+    
+    // If turn is too sharp (more than 45 degrees), try to smooth it
+    if (angleDiff > Math.PI / 4) { // 45 degrees
+      // Check if we can skip this point by going directly from prev to next
+      if (isPathClearInGrid(prev, next, grid, gridWidth, gridHeight, mapSettings)) {
+        // Skip this point - don't add it to smoothed path
+        continue;
+      }
+    }
+    
+    // Keep the point if it's not a sharp turn or if we can't skip it
+    smoothedPath.push(current);
+  }
+  
+  // Always keep the last point
+  smoothedPath.push(path[path.length - 1]);
+  
   return smoothedPath;
 }
 
@@ -1210,14 +1337,15 @@ function heuristic(x1: number, y1: number, x2: number, y2: number): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// Reconstruct path from end node, converting back to absolute coordinates
+// ENHANCED: Reconstruct path from end node with intelligent waypoint filtering
 function reconstructPath(node: Node, mapSettings: MapSettings, floor: number): RoutePoint[] {
-  const path: RoutePoint[] = [];
+  const rawPath: RoutePoint[] = [];
   let current: Node | null = node;
 
+  // Build the raw path from end to start
   while (current) {
     // Convert building-relative coordinates back to absolute coordinates
-    path.push({
+    rawPath.push({
       x: current.x * mapSettings.grid_size + mapSettings.building_x,
       y: current.y * mapSettings.grid_size + mapSettings.building_y,
       floor,
@@ -1225,7 +1353,59 @@ function reconstructPath(node: Node, mapSettings: MapSettings, floor: number): R
     current = current.parent;
   }
 
-  return path.reverse();
+  // Reverse to get start to end order
+  const reversedPath = rawPath.reverse();
+  
+  // ENHANCED: Apply intelligent waypoint filtering to reduce redundant points
+  return filterWaypoints(reversedPath);
+}
+
+// NEW: Intelligent waypoint filtering to reduce redundant points
+function filterWaypoints(path: RoutePoint[]): RoutePoint[] {
+  if (path.length <= 2) return path;
+  
+  const filteredPath: RoutePoint[] = [path[0]]; // Always keep start point
+  
+  for (let i = 1; i < path.length - 1; i++) {
+    const prev = filteredPath[filteredPath.length - 1];
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Calculate distances
+    const distToPrev = Math.hypot(current.x - prev.x, current.y - prev.y);
+    const distToNext = Math.hypot(next.x - current.x, next.y - current.y);
+    const distPrevToNext = Math.hypot(next.x - prev.x, next.y - prev.y);
+    
+    // Check if this point is necessary
+    // If the direct distance from prev to next is very close to the sum of individual distances,
+    // this point might be redundant
+    const distanceThreshold = 5; // 5 pixels tolerance
+    
+    if (distToPrev < distanceThreshold || distToNext < distanceThreshold) {
+      // Point is too close to neighbors, skip it
+      continue;
+    }
+    
+    // Check if this point creates a significant change in direction
+    if (filteredPath.length > 0) {
+      const angle1 = Math.atan2(current.y - prev.y, current.x - prev.x);
+      const angle2 = Math.atan2(next.y - current.y, next.x - current.x);
+      const angleDiff = Math.abs(angle1 - angle2);
+      
+      // If the angle change is very small, this point might be redundant
+      if (angleDiff < Math.PI / 12) { // Less than 15 degrees
+        continue;
+      }
+    }
+    
+    // Keep this point
+    filteredPath.push(current);
+  }
+  
+  // Always keep end point
+  filteredPath.push(path[path.length - 1]);
+  
+  return filteredPath;
 }
 
 // Configuration functions for buffer settings
