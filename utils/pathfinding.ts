@@ -1,4 +1,7 @@
 // pathfinding.ts
+// ENHANCED: Modified to ensure transition elements (elevator, escalator, stairs) are avoided
+// during pathfinding instead of being passed through. This prevents paths from crossing
+// through transition elements and creates more realistic routing.
 import type { MapElement, MapSettings, RoutePoint, ElementType } from "@/types";
 import { accept, storeTypes } from "./global";
 
@@ -318,6 +321,45 @@ function findNearestTransition(
   return nearest;
 }
 
+// Helper function to find alternative transition elements when the nearest one is blocked
+function findAlternativeTransition(
+  sourceElement: MapElement,
+  transitionElements: MapElement[],
+  allElements: MapElement[],
+  mapSettings: MapSettings,
+  avoidElements: boolean
+): MapElement | null {
+  if (transitionElements.length <= 1) return null;
+  
+  // Sort transitions by distance to source
+  const transitionsWithDistances = transitionElements.map(element => ({
+    element,
+    distance: calculateDistance(sourceElement, element)
+  })).sort((a, b) => a.distance - b.distance);
+  
+  // Try each transition element until we find one that has a valid path
+  for (let i = 1; i < transitionsWithDistances.length; i++) {
+    const transition = transitionsWithDistances[i].element;
+    
+    // Check if there's a path to this transition
+    const path = findSingleFloorPathWithFallback(
+      sourceElement,
+      transition,
+      allElements,
+      [],
+      mapSettings,
+      avoidElements,
+      []
+    );
+    
+    if (path.length > 0) {
+      return transition;
+    }
+  }
+  
+  return null;
+}
+
 // Path cache for expensive multi-floor calculations
 const pathCache = new Map<string, { path: RoutePoint[], timestamp: number }>();
 const PATH_CACHE_DURATION = 10000; // 10 seconds
@@ -334,6 +376,11 @@ export function findPath(
   mapSettings: MapSettings,
   avoidElements: boolean = true,
 ): RoutePoint[] {
+  // Safety check for valid inputs
+  if (!sourceStore || !targetStore || !mapSettings) {
+    return [];
+  }
+
   // Check cache first for multi-floor paths (they're more expensive)
   if (sourceStore.floor !== targetStore.floor) {
     const cacheKey = getPathCacheKey(sourceStore, targetStore);
@@ -352,7 +399,7 @@ export function findPath(
   }
 
   // Single floor paths with fallback system
-  return findSingleFloorPathWithFallback(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements);
+  return findSingleFloorPathWithFallback(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, []);
 }
 
 // ENHANCED: Single floor path with strict fallback system
@@ -363,30 +410,37 @@ function findSingleFloorPathWithFallback(
   fElements: MapElement[],
   mapSettings: MapSettings,
   avoidElements: boolean = true,
+  allowedTransitionIds: string[] = []
 ): RoutePoint[] {
+  // Safety check for valid inputs
+  if (!sourceStore || !targetStore || !mapSettings) {
+    return [];
+  }
+
   // First try with full buffer (most strict)
-  let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, ELEMENT_BUFFER_GRIDS);
+  let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, ELEMENT_BUFFER_GRIDS, allowedTransitionIds);
   
   if (path.length > 0) {
     return path;
   }
 
   // If no path found, try with reduced buffer
-  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 1);
+  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 1, allowedTransitionIds);
   
   if (path.length > 0) {
     return path;
   }
 
   // If still no path found, try with minimal buffer
-  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 0);
+  path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, 0, allowedTransitionIds);
   
   if (path.length > 0) {
     return path;
   }
 
   // Last resort: try without avoiding elements at all (only if absolutely necessary)
-  return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, false, 0);
+  // BUT: Never allow transition elements to be passed through, even in last resort
+  return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, false, 0, []);
 }
 
 function findMultiFloorPath(
@@ -417,6 +471,9 @@ function findMultiFloorPath(
     return [];
   }
   
+  // Initialize current transition for multi-floor routing
+  let currentTransition = nearestSourceTransition;
+  
   // Get ALL elements for source floor - FIXED: Properly consolidate all elements
   const sourceFloorElementsFromStorage = loadFloorElements(sourceFloor);
   const sourceFloorElementsFromAll = allElements.filter(el => el.floor === sourceFloor);
@@ -430,34 +487,48 @@ function findMultiFloorPath(
   ]);
   
   // Get path from source to transition on source floor with fallback
+  // IMPORTANT: Do NOT allow transition elements to be passed through - treat them as obstacles
   const sourceToTransitionPath = findSingleFloorPathWithFallback(
     sourceStore,
     nearestSourceTransition,
     allSourceFloorElements,
     [], // Don't pass fElements again since we already included them
     mapSettings,
-    avoidElements
+    avoidElements,
+    [] // NO transition elements allowed - they must be avoided
   );
   
   if (sourceToTransitionPath.length === 0) {
-    // Add direct connection as last resort
-    path.push({
-      x: sourceStore.x + sourceStore.width / 2,
-      y: sourceStore.y + sourceStore.height / 2,
-      floor: sourceFloor
-    });
-    path.push({
-      x: nearestSourceTransition.x + nearestSourceTransition.width / 2,
-      y: nearestSourceTransition.y + nearestSourceTransition.height / 2,
-      floor: sourceFloor
-    });
+    // If no path found to transition element, try to find an alternative transition
+    // Try to find an alternative transition element
+    const alternativeTransition = findAlternativeTransition(sourceStore, sourceFloorTransitions, allSourceFloorElements, mapSettings, avoidElements);
+    
+    if (alternativeTransition) {
+      const alternativePath = findSingleFloorPathWithFallback(
+        sourceStore,
+        alternativeTransition,
+        allSourceFloorElements,
+        [],
+        mapSettings,
+        avoidElements,
+        []
+      );
+      
+      if (alternativePath.length > 0) {
+        path.push(...alternativePath);
+        currentTransition = alternativeTransition;
+      } else {
+        return []; // No alternative path found
+      }
+    } else {
+      return []; // No alternative transition found
+    }
   } else {
     path.push(...sourceToTransitionPath);
   }
   
   // Step 2: Create transition points for intermediate floors
   let currentFloor = sourceFloor;
-  let currentTransition = nearestSourceTransition;
   
   while (currentFloor !== targetFloor) {
     const nextFloor = currentFloor + floorDirection;
@@ -524,25 +595,24 @@ function findMultiFloorPath(
   ) || currentTransition;
   
   // Get path from transition to target on target floor with fallback
+  // IMPORTANT: Do NOT allow transition elements to be passed through - treat them as obstacles
   const transitionToTargetPath = findSingleFloorPathWithFallback(
     targetFloorTransition,
     targetStore,
     allTargetFloorElements,
     [], // Don't pass fElements again since we already included them
     mapSettings,
-    avoidElements
+    avoidElements,
+    [] // NO transition elements allowed - they must be avoided
   );
   
   if (transitionToTargetPath.length > 0) {
     // Remove the first point to avoid duplication with the last transition point
     path.push(...transitionToTargetPath.slice(1));
   } else {
-    // If no path found, add direct connection to target
-    path.push({
-      x: targetStore.x + targetStore.width / 2,
-      y: targetStore.y + targetStore.height / 2,
-      floor: targetFloor
-    });
+    // If no path found from transition to target, return empty path
+    // We should not create direct connections through obstacles
+    return []; // Return empty path instead of creating invalid direct connection
   }
   
   return path;
@@ -562,15 +632,25 @@ function consolidateElements(elements: MapElement[]): MapElement[] {
 }
 
 // ENHANCED: Strict element obstacle detection - ALL elements are obstacles except specific walkable types
-function isElementObstacle(element: MapElement, sourceId: string, targetId: string): boolean {
+function isElementObstacle(element: MapElement, sourceId: string, targetId: string, allowedTransitionIds: string[] = []): boolean {
   // Skip source and target elements
   if (element.id === sourceId || element.id === targetId) return false;
+  
+  // Skip transition elements that are explicitly allowed (for multi-floor routing)
+  if (allowedTransitionIds.includes(element.id)) return false;
   
   // Elements explicitly marked as walkable are not obstacles
   if (element.walkable === true) return false;
   
+  // STRICT: Transition elements (elevator, escalator, stairs) are ALWAYS obstacles
+  // They should never be passed through, only used as connection points
+  const transitionTypes: ElementType[] = ["elevator", "escalator", "stairs"];
+  if (transitionTypes.includes(element.type as ElementType)) {
+    return true; // Always treat transition elements as obstacles
+  }
+  
   // STRICT: Only specific walkable types are allowed to be passed through
-  const walkableTypes = ['pathway', 'door', 'elevator', 'escalator', 'stairs'];
+  const walkableTypes = ['pathway', 'door'];
   
   // If it's not explicitly walkable, it's an obstacle
   if (!walkableTypes.includes(element.type)) {
@@ -595,14 +675,15 @@ function markElementObstacles(
   sourceId: string,
   targetId: string,
   floor: number,
-  bufferGrids: number = 0
+  bufferGrids: number = 0,
+  allowedTransitionIds: string[] = []
 ) {
   for (const element of elements) {
     // Only process elements on current floor
     if (element.floor !== floor) continue;
     
     // Use the strict obstacle detection function
-    if (!isElementObstacle(element, sourceId, targetId)) continue;
+    if (!isElementObstacle(element, sourceId, targetId, allowedTransitionIds)) continue;
     
     // ENHANCED: More precise grid coverage calculation
     // Convert element bounds to grid coordinates with proper rounding
@@ -640,6 +721,7 @@ function findSingleFloorPath(
   mapSettings: MapSettings,
   avoidElements: boolean = true,
   bufferGrids: number = 0,
+  allowedTransitionIds: string[] = []
 ): RoutePoint[] {
   const floor = sourceStore.floor !== 0 ? sourceStore.floor : targetStore.floor;
 
@@ -661,7 +743,9 @@ function findSingleFloorPath(
   const targetY = targetStore.y + targetStore.height / 2;
 
   // Quick direct path check first
-  if (!avoidElements || isDirectPathClear(sourceStore, targetStore, consolidatedElements, mapSettings, floor, bufferGrids)) {
+  // IMPORTANT: Even when avoidElements is false, we must still avoid transition elements
+  const shouldAvoidTransitions = true; // Always avoid transition elements
+  if (!avoidElements || isDirectPathClear(sourceStore, targetStore, consolidatedElements, mapSettings, floor, bufferGrids, shouldAvoidTransitions ? [] : allowedTransitionIds)) {
     return [
       { x: sourceX, y: sourceY, floor },
       { x: targetX, y: targetY, floor }
@@ -698,8 +782,16 @@ function findSingleFloorPath(
   grid.fill(1); // 1 = walkable, 0 = blocked
 
   // Mark obstacles
+  // IMPORTANT: Even when avoidElements is false, we must still mark transition elements as obstacles
   if (avoidElements) {
-    markElementObstacles(grid, consolidatedElements, buildingGridWidth, buildingGridHeight, mapSettings, sourceStore.id, targetStore.id, floor, bufferGrids);
+    markElementObstacles(grid, consolidatedElements, buildingGridWidth, buildingGridHeight, mapSettings, sourceStore.id, targetStore.id, floor, bufferGrids, allowedTransitionIds);
+  } else {
+    // Even when not avoiding other elements, still mark transition elements as obstacles
+    const transitionElements = consolidatedElements.filter(el => {
+      const transitionTypes: ElementType[] = ["elevator", "escalator", "stairs"];
+      return transitionTypes.includes(el.type as ElementType);
+    });
+    markElementObstacles(grid, transitionElements, buildingGridWidth, buildingGridHeight, mapSettings, sourceStore.id, targetStore.id, floor, bufferGrids, []);
   }
 
   // Ensure start and end positions are accessible
@@ -729,7 +821,8 @@ function isDirectPathClear(
   consolidatedElements: MapElement[],
   mapSettings: MapSettings,
   floor: number,
-  bufferGrids: number = 0
+  bufferGrids: number = 0,
+  allowedTransitionIds: string[] = []
 ): boolean {
   const sourceX = sourceStore.x + sourceStore.width / 2;
   const sourceY = sourceStore.y + sourceStore.height / 2;
@@ -738,7 +831,7 @@ function isDirectPathClear(
 
   // Get all obstacles on this floor
   const obstacles = consolidatedElements.filter(el => 
-    el.floor === floor && isElementObstacle(el, sourceStore.id, targetStore.id)
+    el.floor === floor && isElementObstacle(el, sourceStore.id, targetStore.id, allowedTransitionIds)
   );
 
   // ENHANCED: Strict line-rectangle intersection with full element coverage
@@ -888,6 +981,11 @@ function findSingleFloorPathWithCoords(
 
   while (openList.length > 0 && iterations < maxIterations) {
     iterations++;
+    
+    // Safety check to prevent infinite loops
+    if (iterations > maxIterations) {
+      break;
+    }
     
     // Find node with lowest f score
     let currentIndex = 0;
@@ -1118,6 +1216,11 @@ export function clearAllCaches() {
   transitionElementsCache.clear();
 }
 
+// Clear caches when elements are updated (call this when elements change)
+export function clearCachesOnElementUpdate() {
+  clearAllCaches();
+}
+
 // Debug function to visualize grid obstacles (useful for debugging)
 export function debugGrid(
   elements: MapElement[],
@@ -1125,7 +1228,8 @@ export function debugGrid(
   floor: number,
   sourceId: string = '',
   targetId: string = '',
-  bufferGrids: number = 0
+  bufferGrids: number = 0,
+  allowedTransitionIds: string[] = []
 ): string {
   const buildingGridWidth = Math.ceil(mapSettings.building_width / mapSettings.grid_size);
   const buildingGridHeight = Math.ceil(mapSettings.building_height / mapSettings.grid_size);
@@ -1134,7 +1238,7 @@ export function debugGrid(
   const grid = new Uint8Array(gridSize);
   grid.fill(1); // 1 = walkable, 0 = blocked
   
-  markElementObstacles(grid, elements, buildingGridWidth, buildingGridHeight, mapSettings, sourceId, targetId, floor, bufferGrids);
+  markElementObstacles(grid, elements, buildingGridWidth, buildingGridHeight, mapSettings, sourceId, targetId, floor, bufferGrids, allowedTransitionIds);
   
   let debugString = `Grid Debug for Floor ${floor} (${buildingGridWidth}x${buildingGridHeight}):\n`;
   debugString += `Buffer: ${bufferGrids} grids\n\n`;
@@ -1149,6 +1253,57 @@ export function debugGrid(
   }
   
   return debugString;
+}
+
+// Test function to verify transition element avoidance
+export function testTransitionElementAvoidance(
+  sourceStore: MapElement,
+  targetStore: MapElement,
+  allElements: MapElement[],
+  fElements: MapElement[],
+  mapSettings: MapSettings
+): { path: RoutePoint[], avoidsTransitions: boolean, transitionElementsInPath: string[] } {
+  const path = findPath(sourceStore, targetStore, allElements, fElements, mapSettings, true);
+  
+  // Get all transition elements on the source floor
+  const sourceFloorTransitions = findTransitionElements(sourceStore.floor);
+  const transitionIds = sourceFloorTransitions.map(t => t.id);
+  
+  // Check if path passes through any transition elements
+  const transitionElementsInPath: string[] = [];
+  let avoidsTransitions = true;
+  
+  for (let i = 0; i < path.length - 1; i++) {
+    const current = path[i];
+    const next = path[i + 1];
+    
+    // Check if this path segment intersects with any transition element
+    for (const transition of sourceFloorTransitions) {
+      if (transition.floor === current.floor) {
+        const transitionCenter = {
+          x: transition.x + transition.width / 2,
+          y: transition.y + transition.height / 2
+        };
+        
+        // Simple distance check - if path passes very close to transition center, consider it intersecting
+        const distanceToTransition = Math.hypot(
+          current.x - transitionCenter.x,
+          current.y - transitionCenter.y
+        );
+        
+        if (distanceToTransition < Math.max(transition.width, transition.height) / 2) {
+          transitionElementsInPath.push(transition.id);
+          avoidsTransitions = false;
+        }
+      }
+    }
+  }
+  
+  return {
+    path,
+    avoidsTransitions,
+    transitionElementsInPath
+  };
 }
 
 

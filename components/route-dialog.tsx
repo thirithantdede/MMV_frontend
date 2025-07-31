@@ -158,7 +158,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
     }
 
     let path: any[] = []
-    if (selectedAlgorithm === "ospf") {
+    if (selectedAlgorithm == "ospf") {
       path = ospfFindPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
     } else {
       path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
