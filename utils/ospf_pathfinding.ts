@@ -1,7 +1,14 @@
 // ospf_pathfinding.ts
-// ENHANCED: Modified to ensure transition elements (elevator, escalator, stairs) are avoided
-// during pathfinding instead of being passed through. This prevents paths from crossing
-// through transition elements and creates more realistic routing.
+// OSPF LOGIC: This version creates longer but optimized paths by:
+// 1. Choosing the LONGEST distance transition elements instead of nearest
+// 2. Using alternative transitions that are further away when primary is blocked
+// 3. Applying moderate path smoothing to create longer but cleaner routes
+// 4. Additional optimization to remove redundant waypoints for better performance
+// 5. This makes OSPF paths take more time than regular pathfinding.ts while maintaining good performance
+// SIMPLIFIED: Transition elements (elevator, escalator, stairs) are ALWAYS treated as obstacles
+// This ensures paths never pass through transition elements, making the system much simpler.
+// SINGLE-AXIS MOVEMENT CONSTRAINT: Only one axis (X or Y) changes per step
+// This ensures paths follow grid alignment and avoid diagonal movement for better performance
 import type { MapElement, MapSettings, RoutePoint, ElementType } from "@/types";
 import { accept, storeTypes } from "./global";
 
@@ -25,9 +32,6 @@ const CACHE_DURATION = 5000; // 5 seconds cache
 
 // Buffer distance - will fallback to 0 if no path found
 const ELEMENT_BUFFER_GRIDS = 1; // was 2
-
-// Configuration for pathfinding behavior
-let USE_LONGER_PATHS = true; // Set to true to intentionally create longer paths
 
 // Helper function to calculate walking time from path
 export function calculateWalkingTimeFromPath(path: RoutePoint[], mapSettings: MapSettings): number {
@@ -303,122 +307,64 @@ function calculateDistance(element1: MapElement, element2: MapElement): number {
   return Math.sqrt(calculateDistanceSquared(element1, element2));
 }
 
-// Find second nearest transition element to create longer paths
-function findSecondNearestTransition(
-  sourceElement: MapElement,
-  transitionElements: MapElement[]
-): MapElement | null {
-  if (transitionElements.length === 0) return null;
-  if (transitionElements.length === 1) return transitionElements[0];
-
-  // Calculate distances for all transitions
-  const transitionsWithDistances = transitionElements.map(element => ({
-    element,
-    distanceSquared: calculateDistanceSquared(sourceElement, element)
-  }));
-
-  // Sort by distance (ascending)
-  transitionsWithDistances.sort((a, b) => a.distanceSquared - b.distanceSquared);
-
-  // Return the second nearest (index 1)
-  return transitionsWithDistances[1].element;
-}
-
-// Find third nearest transition element for even more complex paths
-function findThirdNearestTransition(
-  sourceElement: MapElement,
-  transitionElements: MapElement[]
-): MapElement | null {
-  if (transitionElements.length === 0) return null;
-  if (transitionElements.length === 1) return transitionElements[0];
-  if (transitionElements.length === 2) return transitionElements[1];
-
-  // Calculate distances for all transitions
-  const transitionsWithDistances = transitionElements.map(element => ({
-    element,
-    distanceSquared: calculateDistanceSquared(sourceElement, element)
-  }));
-
-  // Sort by distance (ascending)
-  transitionsWithDistances.sort((a, b) => a.distanceSquared - b.distanceSquared);
-
-  // Return the third nearest (index 2)
-  return transitionsWithDistances[2].element;
-}
-
-// Find farthest transition element to create the longest possible paths
-function findFarthestTransition(
-  sourceElement: MapElement,
-  transitionElements: MapElement[]
-): MapElement | null {
-  if (transitionElements.length === 0) return null;
-  if (transitionElements.length === 1) return transitionElements[0];
-
-  // Calculate distances for all transitions
-  const transitionsWithDistances = transitionElements.map(element => ({
-    element,
-    distanceSquared: calculateDistanceSquared(sourceElement, element)
-  }));
-
-  // Sort by distance (descending) to get farthest first
-  transitionsWithDistances.sort((a, b) => b.distanceSquared - a.distanceSquared);
-
-  // Return the farthest (index 0)
-  return transitionsWithDistances[0].element;
-}
-
-// Smart transition selector that chooses longer paths
-// This function intentionally selects non-optimal transitions to create longer,
-// more complex paths instead of the shortest possible route
-function findSmartTransition(
-  sourceElement: MapElement,
-  transitionElements: MapElement[]
-): MapElement | null {
-  if (transitionElements.length === 0) return null;
-  if (transitionElements.length === 1) return transitionElements[0];
-
-  // If longer paths are disabled, always use nearest
-  if (!USE_LONGER_PATHS) {
-    return findNearestTransition(sourceElement, transitionElements);
-  }
-
-  // Randomly choose between different strategies to create varied longer paths
-  const strategy = Math.random();
-  
-  if (strategy < 0.5 && transitionElements.length >= 2) {
-    // 50% chance to use farthest transition (creates longest possible paths)
-    return findFarthestTransition(sourceElement, transitionElements);
-  } else if (strategy < 0.7 && transitionElements.length >= 2) {
-    // 20% chance to use second nearest (creates longer paths)
-    return findSecondNearestTransition(sourceElement, transitionElements);
-  } else if (strategy < 0.85 && transitionElements.length >= 3) {
-    // 15% chance to use third nearest (creates even longer paths)
-    return findThirdNearestTransition(sourceElement, transitionElements);
-  } else {
-    // 15% chance to use nearest (fallback to ensure path exists)
-    return findNearestTransition(sourceElement, transitionElements);
-  }
-}
-
-// Keep original function for fallback cases
-function findNearestTransition(
+// Optimized longest transition finder (OSPF logic - intentionally takes longer paths)
+function findLongestTransition(
   sourceElement: MapElement,
   transitionElements: MapElement[]
 ): MapElement | null {
   if (transitionElements.length === 0) return null;
 
-  let nearest = transitionElements[0];
-  let minDistanceSquared = calculateDistanceSquared(sourceElement, nearest);
+  let longest = transitionElements[0];
+  let maxDistanceSquared = calculateDistanceSquared(sourceElement, longest);
 
   for (let i = 1; i < transitionElements.length; i++) {
     const distanceSquared = calculateDistanceSquared(sourceElement, transitionElements[i]);
-    if (distanceSquared < minDistanceSquared) {
-      minDistanceSquared = distanceSquared;
-      nearest = transitionElements[i];
+    if (distanceSquared > maxDistanceSquared) {
+      maxDistanceSquared = distanceSquared;
+      longest = transitionElements[i];
     }
   }
 
-  return nearest;
+  return longest;
+}
+
+// Helper function to find alternative transition elements when the longest one is blocked (OSPF logic)
+function findAlternativeTransition(
+  sourceElement: MapElement,
+  transitionElements: MapElement[],
+  allElements: MapElement[],
+  mapSettings: MapSettings,
+  avoidElements: boolean
+): MapElement | null {
+  if (transitionElements.length <= 1) return null;
+  
+  // Sort transitions by distance to source (longest first for OSPF)
+  const transitionsWithDistances = transitionElements.map(element => ({
+    element,
+    distance: calculateDistance(sourceElement, element)
+  })).sort((a, b) => b.distance - a.distance); // Reverse sort for longest first
+  
+  // Try each transition element until we find one that has a valid path
+  for (let i = 1; i < transitionsWithDistances.length; i++) {
+    const transition = transitionsWithDistances[i].element;
+    
+    // Check if there's a path to this transition
+    const path = findSingleFloorPathWithFallback(
+      sourceElement,
+      transition,
+      allElements,
+      [],
+      mapSettings,
+      avoidElements,
+      []
+    );
+    
+    if (path.length > 0) {
+      return transition;
+    }
+  }
+  
+  return null;
 }
 
 // Path cache for expensive multi-floor calculations
@@ -478,8 +424,13 @@ function findSingleFloorPathWithFallback(
     return [];
   }
 
+  // ENHANCED: Use larger buffer for multi-floor pathfinding to ensure transition elements are fully avoided
+  const multiFloorBuffer = sourceStore.floor !== targetStore.floor ? 1 : 3;
+  
   // First try with full buffer (most strict)
-  let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, ELEMENT_BUFFER_GRIDS, allowedTransitionIds);
+  let path = findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, avoidElements, multiFloorBuffer, allowedTransitionIds);
+
+  console.log(`path${sourceStore.id}`, path);
   
   if (path.length > 0) {
     return path;
@@ -500,7 +451,8 @@ function findSingleFloorPathWithFallback(
   }
 
   // Last resort: try without avoiding elements at all (only if absolutely necessary)
-  return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, false, 0, allowedTransitionIds);
+  // BUT: Never allow transition elements to be passed through, even in last resort
+  return findSingleFloorPath(sourceStore, targetStore, allElements, fElements, mapSettings, false, 0, []);
 }
 
 function findMultiFloorPath(
@@ -526,12 +478,15 @@ function findMultiFloorPath(
     return [];
   }
   
-  const nearestSourceTransition = findSmartTransition(sourceStore, sourceFloorTransitions);
-  if (!nearestSourceTransition) {
+  const longestSourceTransition = findLongestTransition(sourceStore, sourceFloorTransitions);
+  if (!longestSourceTransition) {
     return [];
   }
   
-  // Get ALL elements for source floor - FIXED: Properly consolidate all elements
+  // Initialize current transition for multi-floor routing
+  let currentTransition = longestSourceTransition;
+  
+  // Get ALL elements for source floor
   const sourceFloorElementsFromStorage = loadFloorElements(sourceFloor);
   const sourceFloorElementsFromAll = allElements.filter(el => el.floor === sourceFloor);
   const sourceFloorElementsFromF = fElements.filter(el => el.floor === sourceFloor);
@@ -543,35 +498,54 @@ function findMultiFloorPath(
     ...sourceFloorElementsFromF
   ]);
   
-  // Get path from source to transition on source floor with fallback
-  // IMPORTANT: Do NOT allow transition elements to be passed through - treat them as obstacles
+  // SIMPLE: Find path from source to transition - transition elements are obstacles
   const sourceToTransitionPath = findSingleFloorPathWithFallback(
     sourceStore,
-    nearestSourceTransition,
+    longestSourceTransition,
     allSourceFloorElements,
-    [], // Don't pass fElements again since we already included them
+    [],
     mapSettings,
     avoidElements,
-    [] // NO transition elements allowed - they must be avoided
+    [] // No transition elements allowed - they are obstacles
   );
   
   if (sourceToTransitionPath.length === 0) {
     // If no path found to transition element, try to find an alternative transition
-    // or return empty path - we should not create direct connections through obstacles
-    return []; // Return empty path instead of creating invalid direct connection
+    const alternativeTransition = findAlternativeTransition(sourceStore, sourceFloorTransitions, allSourceFloorElements, mapSettings, avoidElements);
+    
+    if (alternativeTransition) {
+      const alternativePath = findSingleFloorPathWithFallback(
+        sourceStore,
+        alternativeTransition,
+        allSourceFloorElements,
+        [],
+        mapSettings,
+        avoidElements,
+        [] // No transition elements allowed - they are obstacles
+      );
+      
+      if (alternativePath.length > 0) {
+        path.push(...alternativePath);
+        currentTransition = alternativeTransition;
+      } else {
+        return []; // No alternative path found
+      }
+    } else {
+      return []; // No alternative transition found
+    }
   } else {
     path.push(...sourceToTransitionPath);
   }
   
   // Step 2: Create transition points for intermediate floors
   let currentFloor = sourceFloor;
-  let currentTransition = nearestSourceTransition;
   
   while (currentFloor !== targetFloor) {
     const nextFloor = currentFloor + floorDirection;
     
     // Find corresponding transition element on the next floor
     const nextFloorTransitions = findTransitionElements(nextFloor);
+
     
     if (nextFloorTransitions.length === 0) {
       return path; // Return partial path
@@ -585,8 +559,8 @@ function findMultiFloorPath(
     );
     
     if (!correspondingTransition) {
-      // Use smart transition selector to create longer paths
-      const fallbackTransition = findSmartTransition(currentTransition, nextFloorTransitions);
+      // Use the longest transition as fallback (OSPF logic)
+      const fallbackTransition = findLongestTransition(currentTransition, nextFloorTransitions);
       if (fallbackTransition) {
         path.push({
           x: fallbackTransition.x + fallbackTransition.width / 2,
@@ -621,6 +595,7 @@ function findMultiFloorPath(
     ...targetFloorElementsFromAll,
     ...targetFloorElementsFromF
   ]);
+
   
   const targetFloorTransitions = findTransitionElements(targetFloor);
   
@@ -631,24 +606,23 @@ function findMultiFloorPath(
     Math.abs(t.y - currentTransition.y) < 100
   ) || currentTransition;
   
-  // Get path from transition to target on target floor with fallback
-  // IMPORTANT: Do NOT allow transition elements to be passed through - treat them as obstacles
+  // SIMPLE: Find path from transition to target - transition elements are obstacles
   const transitionToTargetPath = findSingleFloorPathWithFallback(
     targetFloorTransition,
     targetStore,
     allTargetFloorElements,
-    [], // Don't pass fElements again since we already included them
+    [],
     mapSettings,
     avoidElements,
-    [] // NO transition elements allowed - they must be avoided
+    [] // No transition elements allowed - they are obstacles
   );
   
+  console.log(`transitionToTargetPath`, transitionToTargetPath);
   if (transitionToTargetPath.length > 0) {
     // Remove the first point to avoid duplication with the last transition point
     path.push(...transitionToTargetPath.slice(1));
   } else {
     // If no path found from transition to target, return empty path
-    // We should not create direct connections through obstacles
     return []; // Return empty path instead of creating invalid direct connection
   }
   
@@ -668,25 +642,20 @@ function consolidateElements(elements: MapElement[]): MapElement[] {
   return Array.from(elementMap.values());
 }
 
-// ENHANCED: Strict element obstacle detection - ALL elements are obstacles except specific walkable types
+// SIMPLIFIED: Always treat transition elements as obstacles - no exceptions
 function isElementObstacle(element: MapElement, sourceId: string, targetId: string, allowedTransitionIds: string[] = []): boolean {
   // Skip source and target elements
   if (element.id === sourceId || element.id === targetId) return false;
   
-  // Skip transition elements that are explicitly allowed (for multi-floor routing)
-  if (allowedTransitionIds.includes(element.id)) return false;
-  
   // Elements explicitly marked as walkable are not obstacles
-  if (element.walkable === true) return false;
   
-  // STRICT: Transition elements (elevator, escalator, stairs) are ALWAYS obstacles
-  // They should never be passed through, only used as connection points
+  // SIMPLE: Transition elements (elevator, escalator, stairs) are ALWAYS obstacles
   const transitionTypes: ElementType[] = ["elevator", "escalator", "stairs"];
   if (transitionTypes.includes(element.type as ElementType)) {
     return true; // Always treat transition elements as obstacles
   }
   
-  // STRICT: Only specific walkable types are allowed to be passed through
+  // Only specific walkable types are allowed to be passed through
   const walkableTypes = ['pathway', 'door'];
   
   // If it's not explicitly walkable, it's an obstacle
@@ -695,7 +664,6 @@ function isElementObstacle(element: MapElement, sourceId: string, targetId: stri
   }
   
   // Even walkable types might have restrictions - check if they're actually passable
-  // For example, some doors might be closed, some pathways might be blocked
   if (element.type === 'door' && element.walkable === false) {
     return true;
   }
@@ -717,12 +685,14 @@ function markElementObstacles(
 ) {
   for (const element of elements) {
     // Only process elements on current floor
-    if (element.floor !== floor) continue;
+    if (element.floor !== floor && element.id == targetId) {
+      continue
+    };
     
-    // Use the strict obstacle detection function
+    // Use the simplified obstacle detection function
     if (!isElementObstacle(element, sourceId, targetId, allowedTransitionIds)) continue;
     
-    // ENHANCED: More precise grid coverage calculation
+    // SIMPLE: More precise grid coverage calculation
     // Convert element bounds to grid coordinates with proper rounding
     const elementLeft = element.x - mapSettings.building_x;
     const elementTop = element.y - mapSettings.building_y;
@@ -731,11 +701,12 @@ function markElementObstacles(
     
     // Calculate which grid cells this element occupies
     // Use Math.floor for start and Math.ceil for end to ensure FULL coverage
-    // This ensures the entire element area is blocked, not just partial coverage
     const startGridX = Math.max(0, Math.floor(elementLeft / mapSettings.grid_size) - bufferGrids);
     const endGridX = Math.min(gridWidth, Math.ceil(elementRight / mapSettings.grid_size) + bufferGrids);
     const startGridY = Math.max(0, Math.floor(elementTop / mapSettings.grid_size) - bufferGrids);
     const endGridY = Math.min(gridHeight, Math.ceil(elementBottom / mapSettings.grid_size) + bufferGrids);
+    
+    // SIMPLE: All elements get the same buffer treatment - no special handling for transitions
     
     // Mark ALL grid cells that this element covers as blocked
     for (let gridY = startGridY; gridY < endGridY; gridY++) {
@@ -773,6 +744,7 @@ function findSingleFloorPath(
     ...floorElementsFromF
   ]);
 
+
   // FIXED: Better coordinate conversion
   const sourceX = sourceStore.x + sourceStore.width / 2;
   const sourceY = sourceStore.y + sourceStore.height / 2;
@@ -780,9 +752,8 @@ function findSingleFloorPath(
   const targetY = targetStore.y + targetStore.height / 2;
 
   // Quick direct path check first
-  // IMPORTANT: Even when avoidElements is false, we must still avoid transition elements
-  const shouldAvoidTransitions = true; // Always avoid transition elements
-  if (!avoidElements || isDirectPathClear(sourceStore, targetStore, consolidatedElements, mapSettings, floor, bufferGrids, shouldAvoidTransitions ? [] : allowedTransitionIds)) {
+  // SIMPLE: Use the allowedTransitionIds parameter (but it will always be empty for transitions)
+  if (!avoidElements || isDirectPathClear(sourceStore, targetStore, consolidatedElements, mapSettings, floor, bufferGrids, allowedTransitionIds)) {
     return [
       { x: sourceX, y: sourceY, floor },
       { x: targetX, y: targetY, floor }
@@ -819,7 +790,7 @@ function findSingleFloorPath(
   grid.fill(1); // 1 = walkable, 0 = blocked
 
   // Mark obstacles
-  // IMPORTANT: Even when avoidElements is false, we must still mark transition elements as obstacles
+  // SIMPLE: Always mark transition elements as obstacles
   if (avoidElements) {
     markElementObstacles(grid, consolidatedElements, buildingGridWidth, buildingGridHeight, mapSettings, sourceStore.id, targetStore.id, floor, bufferGrids, allowedTransitionIds);
   } else {
@@ -970,7 +941,7 @@ function ensureAccessiblePosition(
   return null;
 }
 
-// ENHANCED: A* pathfinding with improved movement costs and path smoothing
+// A* pathfinding with improved movement costs and path smoothing
 function findSingleFloorPathWithCoords(
   startX: number,
   startY: number,
@@ -1001,17 +972,13 @@ function findSingleFloorPathWithCoords(
   
   openList.push(startNode);
 
-  // ENHANCED: Improved movement directions with better cost calculation
-  // Prioritize straight movements to reduce zigzagging
+  // SINGLE-AXIS MOVEMENT: Only one axis (X or Y) changes per step
+  // This ensures paths follow grid alignment and avoid diagonal movement
   const directions = [
-    [0, 1, 1.0],     // down
-    [1, 0, 1.0],     // right
-    [0, -1, 1.0],    // up
-    [-1, 0, 1.0],    // left
-    [1, 1, 1.414],   // diagonal down-right (√2)
-    [1, -1, 1.414],  // diagonal up-right (√2)
-    [-1, 1, 1.414],  // diagonal down-left (√2)
-    [-1, -1, 1.414], // diagonal up-left (√2)
+    [0, 1, 1.0],     // down (Y only)
+    [1, 0, 1.0],     // right (X only)
+    [0, -1, 1.0],    // up (Y only)
+    [-1, 0, 1.0],    // left (X only)
   ];
 
   let iterations = 0;
@@ -1039,8 +1006,19 @@ function findSingleFloorPathWithCoords(
     if (current.x === endX && current.y === endY) {
       const rawPath = reconstructPath(current, mapSettings, floor);
       
-      // Apply enhanced path smoothing to reduce unnecessary waypoints
-      return smoothPath(rawPath, grid, gridWidth, gridHeight, mapSettings);
+      // OSPF: Apply optimized path smoothing to create longer but cleaner paths
+      const smoothedPath = smoothPath(rawPath, grid, gridWidth, gridHeight, mapSettings);
+      
+      // Additional optimization: Remove redundant waypoints for very long paths
+      const optimizedPath = optimizePathForOSPF(smoothedPath);
+      
+      // Final validation: Ensure the path respects single-axis movement constraint
+      if (!validateSingleAxisMovement(optimizedPath)) {
+        // If validation fails, ensure single-axis movement by adding intermediate points
+        return ensureSingleAxisMovement(optimizedPath);
+      }
+      
+      return optimizedPath;
     }
 
     // Remove current from open list and add to closed
@@ -1066,30 +1044,20 @@ function findSingleFloorPathWithCoords(
         continue;
       }
 
-      // ENHANCED: Calculate movement cost with better penalties for direction changes
+      // Calculate movement cost with penalties for direction changes
       let movementCost = baseCost;
+      
+      // OSPF: Add moderate penalty to encourage longer paths but not excessive
+      movementCost += 0.03; // Moderate penalty for OSPF to make paths longer
       
       // Add penalty for changing direction (encourages straighter paths)
       if (current.parent) {
         const prevDx = current.x - current.parent.x;
         const prevDy = current.y - current.parent.y;
         
-        // ENHANCED: Stronger penalty for direction changes to reduce zigzagging
-        if (prevDx !== dx || prevDy !== dy) {
-          // Penalty based on how much the direction changes
-          const angleChange = Math.abs(Math.atan2(dy, dx) - Math.atan2(prevDy, prevDx));
-          movementCost += angleChange * 0.5; // Proportional penalty
+          if (prevDx !== dx || prevDy !== dy) {
+          movementCost += 0.1; // Small penalty for direction change
         }
-      }
-
-      // ENHANCED: Add penalty for moving away from the goal direction
-      const toGoalDx = endX - nextX;
-      const toGoalDy = endY - nextY;
-      const goalAngle = Math.atan2(toGoalDy, toGoalDx);
-      const moveAngle = Math.atan2(dy, dx);
-      const angleDiff = Math.abs(goalAngle - moveAngle);
-      if (angleDiff > Math.PI / 2) { // Moving away from goal
-        movementCost += 0.3;
       }
 
       // Calculate costs
@@ -1119,7 +1087,96 @@ function findSingleFloorPathWithCoords(
   return [];
 }
 
-// ENHANCED: Improved path smoothing to eliminate overlooping and create smoother routes
+// Helper function to validate single-axis movement constraint
+function validateSingleAxisMovement(path: RoutePoint[]): boolean {
+  for (let i = 1; i < path.length; i++) {
+    const prev = path[i - 1];
+    const current = path[i];
+    const dx = current.x - prev.x;
+    const dy = current.y - prev.y;
+    
+    // Check if only one axis changes (single-axis movement)
+    const isSingleAxis = (dx !== 0) !== (dy !== 0);
+    if (!isSingleAxis) {
+      return false;
+    }
+  }
+  return true;
+}
+
+// Helper function to ensure path follows single-axis movement by adding intermediate points
+function ensureSingleAxisMovement(path: RoutePoint[]): RoutePoint[] {
+  if (path.length <= 2) return path;
+  
+  const correctedPath: RoutePoint[] = [path[0]];
+  
+  for (let i = 1; i < path.length; i++) {
+    const prev = correctedPath[correctedPath.length - 1];
+    const current = path[i];
+    const dx = current.x - prev.x;
+    const dy = current.y - prev.y;
+    
+    // If both axes change, add intermediate point
+    if (dx !== 0 && dy !== 0) {
+      // Add intermediate point that changes only one axis
+      const intermediate = {
+        x: prev.x + dx,
+        y: prev.y,
+        floor: prev.floor
+      };
+      correctedPath.push(intermediate);
+    }
+    
+    correctedPath.push(current);
+  }
+  
+  return correctedPath;
+}
+
+// OSPF: Additional path optimization to remove redundant waypoints
+// RESPECTS SINGLE-AXIS MOVEMENT: Only one axis (X or Y) changes per step
+function optimizePathForOSPF(path: RoutePoint[]): RoutePoint[] {
+  if (path.length <= 3) return path;
+  
+  const optimized = [path[0]]; // Always keep first point
+  const minDistance = 80; // Minimum distance between waypoints
+  
+  for (let i = 1; i < path.length - 1; i++) {
+    const current = path[i];
+    const prev = optimized[optimized.length - 1];
+    const next = path[i + 1];
+    
+    // Calculate distances
+    const distToPrev = Math.hypot(current.x - prev.x, current.y - prev.y);
+    const distToNext = Math.hypot(next.x - current.x, next.y - current.y);
+    
+    // Check if this point represents a direction change (single-axis movement constraint)
+    const prevToCurrent = { dx: current.x - prev.x, dy: current.y - prev.y };
+    const currentToNext = { dx: next.x - current.x, dy: next.y - current.y };
+    
+    // Single-axis movement check: only one axis should change per step
+    const prevIsSingleAxis = (prevToCurrent.dx !== 0) !== (prevToCurrent.dy !== 0);
+    const currentIsSingleAxis = (currentToNext.dx !== 0) !== (currentToNext.dy !== 0);
+    
+    // Keep point if it's far enough from previous, significant direction change, or maintains single-axis movement
+    if (distToPrev > minDistance || 
+        Math.abs(distToPrev + distToNext - Math.hypot(next.x - prev.x, next.y - prev.y)) > 20 ||
+        !prevIsSingleAxis || !currentIsSingleAxis) {
+      optimized.push(current);
+    }
+  }
+  
+  // Always keep last point
+  optimized.push(path[path.length - 1]);
+  
+  // Ensure the optimized path follows single-axis movement
+  const finalPath = ensureSingleAxisMovement(optimized);
+  
+  return finalPath;
+}
+
+// OSPF Path smoothing - optimized to create longer but cleaner paths
+// RESPECTS SINGLE-AXIS MOVEMENT: Only one axis (X or Y) changes per step
 function smoothPath(
   path: RoutePoint[],
   grid: Uint8Array,
@@ -1129,153 +1186,69 @@ function smoothPath(
 ): RoutePoint[] {
   if (path.length <= 2) return path;
 
-  // Step 1: Remove redundant consecutive points (same coordinates)
-  const deduplicatedPath = removeRedundantPoints(path);
-  
-  if (deduplicatedPath.length <= 2) return deduplicatedPath;
-
-  // Step 2: Apply line-of-sight smoothing to reduce waypoints
-  const smoothedPath: RoutePoint[] = [deduplicatedPath[0]]; // Always keep start point
+  const smoothedPath: RoutePoint[] = [path[0]]; // Always keep start point
   let currentIndex = 0;
 
-  while (currentIndex < deduplicatedPath.length - 1) {
+  while (currentIndex < path.length - 1) {
     let farthestReachable = currentIndex + 1;
 
-    // Find the farthest point we can reach directly from current point
-    for (let i = currentIndex + 2; i < deduplicatedPath.length; i++) {
-      if (isPathClearInGrid(
-        deduplicatedPath[currentIndex], 
-        deduplicatedPath[i], 
+    // OSPF: Use moderate smoothing to create longer but cleaner paths
+    for (let i = currentIndex + 2; i < path.length; i++) {
+      // Check if the direct path maintains single-axis movement constraint
+      const currentPoint = path[currentIndex];
+      const targetPoint = path[i];
+      const dx = targetPoint.x - currentPoint.x;
+      const dy = targetPoint.y - currentPoint.y;
+      
+      // Single-axis movement check: only one axis should change
+      const isSingleAxisMovement = (dx !== 0) !== (dy !== 0);
+      
+      if (isSingleAxisMovement && isPathClearInGrid(
+        path[currentIndex], 
+        path[i], 
         grid, 
         gridWidth, 
         gridHeight, 
         mapSettings
       )) {
-        farthestReachable = i;
+        // OSPF: Use moderate threshold - longer than regular pathfinding but cleaner than current
+        const directDistance = Math.hypot(path[i].x - path[currentIndex].x, path[i].y - path[currentIndex].y);
+        const pathDistance = calculatePathDistance(path.slice(currentIndex, i + 1));
+        
+        // Moderate threshold - creates longer paths but avoids excessive waypoints
+        if (directDistance < pathDistance * 0.85) { // Moderate threshold for OSPF
+          farthestReachable = i;
+        } else {
+          break; // Keep reasonable number of waypoints
+        }
       } else {
-        break; // Stop at first unreachable point
+        break; // Stop at first unreachable point or non-single-axis movement
       }
     }
 
-    // Add the farthest reachable point (but not if it's the last point)
-    if (farthestReachable < deduplicatedPath.length - 1) {
-      smoothedPath.push(deduplicatedPath[farthestReachable]);
+    // Add the farthest reachable point
+    if (farthestReachable < path.length - 1) {
+      smoothedPath.push(path[farthestReachable]);
     }
     
     currentIndex = farthestReachable;
   }
 
   // Always keep end point
-  smoothedPath.push(deduplicatedPath[deduplicatedPath.length - 1]);
-
-  // Step 3: Apply additional smoothing to remove sharp turns
-  const sharpTurnSmoothed = smoothSharpTurns(smoothedPath, grid, gridWidth, gridHeight, mapSettings);
-  
-  // Step 4: Final optimization to ensure minimal waypoints
-  return optimizeFinalPath(sharpTurnSmoothed, grid, gridWidth, gridHeight, mapSettings);
-}
-
-// NEW: Final path optimization to ensure minimal waypoints
-function optimizeFinalPath(
-  path: RoutePoint[],
-  grid: Uint8Array,
-  gridWidth: number,
-  gridHeight: number,
-  mapSettings: MapSettings
-): RoutePoint[] {
-  if (path.length <= 2) return path;
-  
-  const optimizedPath: RoutePoint[] = [path[0]];
-  
-  for (let i = 1; i < path.length - 1; i++) {
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Check if we can skip this point by going directly from previous to next
-    const prev = optimizedPath[optimizedPath.length - 1];
-    
-    // Only skip if the direct path is clear and the point doesn't add significant value
-    if (isPathClearInGrid(prev, next, grid, gridWidth, gridHeight, mapSettings)) {
-      const distDirect = Math.hypot(next.x - prev.x, next.y - prev.y);
-      const distViaCurrent = Math.hypot(current.x - prev.x, current.y - prev.y) + 
-                           Math.hypot(next.x - current.x, next.y - current.y);
-      
-      // Skip if the direct path is not significantly longer
-      if (distDirect < distViaCurrent * 1.2) {
-        continue; // Skip this point
-      }
-    }
-    
-    optimizedPath.push(current);
-  }
-  
-  optimizedPath.push(path[path.length - 1]);
-  return optimizedPath;
-}
-
-// NEW: Remove redundant consecutive points with same coordinates
-function removeRedundantPoints(path: RoutePoint[]): RoutePoint[] {
-  if (path.length <= 1) return path;
-  
-  const result: RoutePoint[] = [path[0]];
-  
-  for (let i = 1; i < path.length; i++) {
-    const current = path[i];
-    const previous = result[result.length - 1];
-    
-    // Check if current point is different from previous point
-    const isDifferent = 
-      Math.abs(current.x - previous.x) > 0.1 || 
-      Math.abs(current.y - previous.y) > 0.1 || 
-      current.floor !== previous.floor;
-    
-    if (isDifferent) {
-      result.push(current);
-    }
-  }
-  
-  return result;
-}
-
-// NEW: Smooth sharp turns to create more natural paths
-function smoothSharpTurns(
-  path: RoutePoint[],
-  grid: Uint8Array,
-  gridWidth: number,
-  gridHeight: number,
-  mapSettings: MapSettings
-): RoutePoint[] {
-  if (path.length <= 3) return path;
-  
-  const smoothedPath: RoutePoint[] = [path[0]];
-  
-  for (let i = 1; i < path.length - 1; i++) {
-    const prev = path[i - 1];
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Calculate angles to detect sharp turns
-    const angle1 = Math.atan2(current.y - prev.y, current.x - prev.x);
-    const angle2 = Math.atan2(next.y - current.y, next.x - current.x);
-    const angleDiff = Math.abs(angle1 - angle2);
-    
-    // If turn is too sharp (more than 45 degrees), try to smooth it
-    if (angleDiff > Math.PI / 4) { // 45 degrees
-      // Check if we can skip this point by going directly from prev to next
-      if (isPathClearInGrid(prev, next, grid, gridWidth, gridHeight, mapSettings)) {
-        // Skip this point - don't add it to smoothed path
-        continue;
-      }
-    }
-    
-    // Keep the point if it's not a sharp turn or if we can't skip it
-    smoothedPath.push(current);
-  }
-  
-  // Always keep the last point
   smoothedPath.push(path[path.length - 1]);
-  
+
   return smoothedPath;
+}
+
+// Helper function to calculate total distance along a path segment
+function calculatePathDistance(pathSegment: RoutePoint[]): number {
+  let totalDistance = 0;
+  for (let i = 0; i < pathSegment.length - 1; i++) {
+    const current = pathSegment[i];
+    const next = pathSegment[i + 1];
+    totalDistance += Math.hypot(next.x - current.x, next.y - current.y);
+  }
+  return totalDistance;
 }
 
 // ENHANCED: Helper function to check if path between two points is clear in grid
@@ -1310,6 +1283,22 @@ function isPathClearInGrid(
       return false;
     }
 
+    // ENHANCED: Add extra safety check for adjacent cells to ensure we don't get too close to obstacles
+    // Check surrounding cells to ensure we maintain a safe distance
+    for (let dx = -1; dx <= 1; dx++) {
+      for (let dy = -1; dy <= 1; dy++) {
+        const checkX = x + dx;
+        const checkY = y + dy;
+        if (checkX >= 0 && checkX < gridWidth && checkY >= 0 && checkY < gridHeight) {
+          const checkIndex = checkY * gridWidth + checkX;
+          if (checkIndex >= 0 && checkIndex < grid.length && grid[checkIndex] === 0) {
+            // If we're too close to an obstacle, consider the path blocked
+            return false;
+          }
+        }
+      }
+    }
+
     // Check if we've reached the end point
     if (x === x2 && y === y2) break;
 
@@ -1337,15 +1326,14 @@ function heuristic(x1: number, y1: number, x2: number, y2: number): number {
   return Math.sqrt(dx * dx + dy * dy);
 }
 
-// ENHANCED: Reconstruct path from end node with intelligent waypoint filtering
+// Reconstruct path from end node, converting back to absolute coordinates
 function reconstructPath(node: Node, mapSettings: MapSettings, floor: number): RoutePoint[] {
-  const rawPath: RoutePoint[] = [];
+  const path: RoutePoint[] = [];
   let current: Node | null = node;
 
-  // Build the raw path from end to start
   while (current) {
     // Convert building-relative coordinates back to absolute coordinates
-    rawPath.push({
+    path.push({
       x: current.x * mapSettings.grid_size + mapSettings.building_x,
       y: current.y * mapSettings.grid_size + mapSettings.building_y,
       floor,
@@ -1353,59 +1341,7 @@ function reconstructPath(node: Node, mapSettings: MapSettings, floor: number): R
     current = current.parent;
   }
 
-  // Reverse to get start to end order
-  const reversedPath = rawPath.reverse();
-  
-  // ENHANCED: Apply intelligent waypoint filtering to reduce redundant points
-  return filterWaypoints(reversedPath);
-}
-
-// NEW: Intelligent waypoint filtering to reduce redundant points
-function filterWaypoints(path: RoutePoint[]): RoutePoint[] {
-  if (path.length <= 2) return path;
-  
-  const filteredPath: RoutePoint[] = [path[0]]; // Always keep start point
-  
-  for (let i = 1; i < path.length - 1; i++) {
-    const prev = filteredPath[filteredPath.length - 1];
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Calculate distances
-    const distToPrev = Math.hypot(current.x - prev.x, current.y - prev.y);
-    const distToNext = Math.hypot(next.x - current.x, next.y - current.y);
-    const distPrevToNext = Math.hypot(next.x - prev.x, next.y - prev.y);
-    
-    // Check if this point is necessary
-    // If the direct distance from prev to next is very close to the sum of individual distances,
-    // this point might be redundant
-    const distanceThreshold = 5; // 5 pixels tolerance
-    
-    if (distToPrev < distanceThreshold || distToNext < distanceThreshold) {
-      // Point is too close to neighbors, skip it
-      continue;
-    }
-    
-    // Check if this point creates a significant change in direction
-    if (filteredPath.length > 0) {
-      const angle1 = Math.atan2(current.y - prev.y, current.x - prev.x);
-      const angle2 = Math.atan2(next.y - current.y, next.x - current.x);
-      const angleDiff = Math.abs(angle1 - angle2);
-      
-      // If the angle change is very small, this point might be redundant
-      if (angleDiff < Math.PI / 12) { // Less than 15 degrees
-        continue;
-      }
-    }
-    
-    // Keep this point
-    filteredPath.push(current);
-  }
-  
-  // Always keep end point
-  filteredPath.push(path[path.length - 1]);
-  
-  return filteredPath;
+  return path.reverse();
 }
 
 // Configuration functions for buffer settings
@@ -1419,16 +1355,6 @@ export function setMinPathWidth(widthGrids: number) {
   if (widthGrids >= 1 && widthGrids <= 10) {
     // Path width configuration updated
   }
-}
-
-// Configuration function for pathfinding behavior
-export function setUseLongerPaths(useLongerPaths: boolean) {
-  USE_LONGER_PATHS = useLongerPaths;
-}
-
-// Get current pathfinding behavior setting
-export function getUseLongerPaths(): boolean {
-  return USE_LONGER_PATHS;
 }
 
 // Clear path cache when elements change
@@ -1455,7 +1381,8 @@ export function debugGrid(
   floor: number,
   sourceId: string = '',
   targetId: string = '',
-  bufferGrids: number = 0
+  bufferGrids: number = 0,
+  allowedTransitionIds: string[] = []
 ): string {
   const buildingGridWidth = Math.ceil(mapSettings.building_width / mapSettings.grid_size);
   const buildingGridHeight = Math.ceil(mapSettings.building_height / mapSettings.grid_size);
@@ -1464,7 +1391,7 @@ export function debugGrid(
   const grid = new Uint8Array(gridSize);
   grid.fill(1); // 1 = walkable, 0 = blocked
   
-  markElementObstacles(grid, elements, buildingGridWidth, buildingGridHeight, mapSettings, sourceId, targetId, floor, bufferGrids);
+  markElementObstacles(grid, elements, buildingGridWidth, buildingGridHeight, mapSettings, sourceId, targetId, floor, bufferGrids, allowedTransitionIds);
   
   let debugString = `Grid Debug for Floor ${floor} (${buildingGridWidth}x${buildingGridHeight}):\n`;
   debugString += `Buffer: ${bufferGrids} grids\n\n`;
@@ -1480,56 +1407,3 @@ export function debugGrid(
   
   return debugString;
 }
-
-// Test function to verify transition element avoidance in OSPF pathfinding
-export function testOSPFTransitionElementAvoidance(
-  sourceStore: MapElement,
-  targetStore: MapElement,
-  allElements: MapElement[],
-  fElements: MapElement[],
-  mapSettings: MapSettings
-): { path: RoutePoint[], avoidsTransitions: boolean, transitionElementsInPath: string[] } {
-  const path = findPath(sourceStore, targetStore, allElements, fElements, mapSettings, true);
-  
-  // Get all transition elements on the source floor
-  const sourceFloorTransitions = findTransitionElements(sourceStore.floor);
-  const transitionIds = sourceFloorTransitions.map(t => t.id);
-  
-  // Check if path passes through any transition elements
-  const transitionElementsInPath: string[] = [];
-  let avoidsTransitions = true;
-  
-  for (let i = 0; i < path.length - 1; i++) {
-    const current = path[i];
-    const next = path[i + 1];
-    
-    // Check if this path segment intersects with any transition element
-    for (const transition of sourceFloorTransitions) {
-      if (transition.floor === current.floor) {
-        const transitionCenter = {
-          x: transition.x + transition.width / 2,
-          y: transition.y + transition.height / 2
-        };
-        
-        // Simple distance check - if path passes very close to transition center, consider it intersecting
-        const distanceToTransition = Math.hypot(
-          current.x - transitionCenter.x,
-          current.y - transitionCenter.y
-        );
-        
-        if (distanceToTransition < Math.max(transition.width, transition.height) / 2) {
-          transitionElementsInPath.push(transition.id);
-          avoidsTransitions = false;
-        }
-      }
-    }
-  }
-  
-  return {
-    path,
-    avoidsTransitions,
-    transitionElementsInPath
-  };
-}
-
-
