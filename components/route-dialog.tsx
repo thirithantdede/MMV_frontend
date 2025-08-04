@@ -23,7 +23,7 @@ interface RouteDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   elements: MapElement[]
-  onRouteSelect: (source: MapElement | null, target: MapElement | null, path: any[]) => void
+  onRouteSelect: (source: MapElement | null, target: MapElement | null, path: any[], algorithm?: string) => void
   isGuestMode?: boolean
 }
 
@@ -163,7 +163,7 @@ export function RouteDialog({ open, onOpenChange, elements, onRouteSelect, isGue
     } else {
       path = findPath(selectedSource, selectedTarget, elements,floorElements, mapSettings, isGuestMode)
     }
-    onRouteSelect(selectedSource, selectedTarget, path)
+    onRouteSelect(selectedSource, selectedTarget, path, selectedAlgorithm)
     onOpenChange(false)
     syncRoute('sync-routes',{
       from_element_id: selectedSource.id,

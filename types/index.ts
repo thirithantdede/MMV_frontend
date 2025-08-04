@@ -153,6 +153,7 @@ export interface RouteInfo {
   sourceStore: MapElement | null
   targetStore: MapElement | null
   path: RoutePoint[]
+  algorithm?: string
 }
 
 export interface ShopInformation {

@@ -26,6 +26,7 @@ export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPrevi
     sourceStore: null,
     targetStore: null,
     path: [],
+    algorithm: undefined,
   })
   // Add a new state variable for highlighted element
   const [highlightedElement, setHighlightedElement] = useState<MapElement | null>(null)
@@ -133,11 +134,12 @@ export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPrevi
 
   // Updated to accept the pre-calculated path
   const handleRouteSelect = useCallback(
-    (source: MapElement | null, target: MapElement | null, path: any[]) => {
+    (source: MapElement | null, target: MapElement | null, path: any[], algorithm?: string) => {
       setRouteInfo({
         sourceStore: source,
         targetStore: target,
         path: path,
+        algorithm: algorithm,
       })
 
       // If the route starts on a different floor, automatically switch to that floor
@@ -154,6 +156,7 @@ export function PreviewMode({ onExitPreview,isGuestView = false }: { onExitPrevi
       sourceStore: null,
       targetStore: null,
       path: [],
+      algorithm: undefined,
     })
   }, [])
 

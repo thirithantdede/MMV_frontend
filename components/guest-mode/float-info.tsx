@@ -1,9 +1,10 @@
-import { Clock } from "lucide-react";
+import { Clock, Zap } from "lucide-react";
 import { formatWalkingTime, getPathStatistics } from "@/utils/pathfinding";
 import { RouteInfo } from "@/types";
 import { useMemo } from "react";
 import { useMapEditor } from "@/context/map-editor-context";
 import { Badge } from "@/components/ui/badge";
+import { algorithmOptions } from "@/utils/global";
 
 interface FloatInfoProps {
   routeInfo: RouteInfo;
@@ -25,6 +26,13 @@ const FloatInfo = ({ routeInfo, currentFloor }: FloatInfoProps) => {
     }
     return getPathStatistics(routeInfo.path, mapSettings);
   }, [routeInfo.path, mapSettings]);
+
+  // Get algorithm display name
+  const algorithmDisplayName = useMemo(() => {
+    if (!routeInfo.algorithm) return null;
+    const algorithm = algorithmOptions.find(option => option.value === routeInfo.algorithm);
+    return algorithm ? algorithm.label : routeInfo.algorithm;
+  }, [routeInfo.algorithm]);
 
 
 
@@ -54,6 +62,14 @@ const FloatInfo = ({ routeInfo, currentFloor }: FloatInfoProps) => {
               <Badge variant="secondary" className="ml-2 text-xs">
                 {pathStats.transitionCount} floor{pathStats.transitionCount > 1 ? 's' : ''}
               </Badge>
+            )}
+            {algorithmDisplayName && (
+              <div className="flex items-center gap-1 ml-2">
+                <Zap className="h-3 w-3 text-blue-500" />
+                <span className="text-xs text-blue-600 font-medium">
+                  {algorithmDisplayName}
+                </span>
+              </div>
             )}
           </div>
         </div>
