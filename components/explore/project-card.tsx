@@ -82,7 +82,7 @@ export default function ProjectCard( {project} : {project: Project} ) {
             className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 -mr-2"
             onClick={handleViewProject}
           >
-            View Project
+            View Mall
             <ArrowRight className="ml-1 h-4 w-4" />
           </Button>
         </div>

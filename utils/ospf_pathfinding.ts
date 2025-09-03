@@ -684,10 +684,7 @@ function markElementObstacles(
   allowedTransitionIds: string[] = []
 ) {
   for (const element of elements) {
-    // Only process elements on current floor
-    if (element.floor !== floor && element.id == targetId) {
-      continue
-    };
+    // Include elements from all floors to avoid overlaps across levels
     
     // Use the simplified obstacle detection function
     if (!isElementObstacle(element, sourceId, targetId, allowedTransitionIds)) continue;
@@ -735,8 +732,8 @@ function findSingleFloorPath(
 
   // Get ALL elements for this floor and consolidate them
   const floorElementsFromStorage = loadFloorElements(floor);
-  const floorElementsFromAll = allElements.filter(el => el.floor === floor);
-  const floorElementsFromF = fElements.filter(el => el.floor === 0);
+  const floorElementsFromAll = allElements; // include all floors to avoid cross-floor overlaps
+  const floorElementsFromF = fElements; // include shared/all provided elements
   
   const consolidatedElements = consolidateElements([
     ...floorElementsFromStorage,
@@ -810,7 +807,7 @@ function findSingleFloorPath(
     return [];
   }
 
-  return findSingleFloorPathWithCoords(
+  const path = findSingleFloorPathWithCoords(
     accessibleStart.x, 
     accessibleStart.y, 
     accessibleEnd.x, 
@@ -821,6 +818,14 @@ function findSingleFloorPath(
     mapSettings, 
     floor
   );
+
+  // Snap endpoints to element centers to ensure visual alignment
+  if (path.length > 0) {
+    path[0] = { x: sourceX, y: sourceY, floor };
+    path[path.length - 1] = { x: targetX, y: targetY, floor };
+  }
+
+  return path;
 }
 // ENHANCED: Check if direct path between two elements is clear with strict element bounds checking
 function isDirectPathClear(
@@ -837,9 +842,9 @@ function isDirectPathClear(
   const targetX = targetStore.x + targetStore.width / 2;
   const targetY = targetStore.y + targetStore.height / 2;
 
-  // Get all obstacles on this floor
+  // Get all obstacles from all floors to avoid cross-floor overlaps
   const obstacles = consolidatedElements.filter(el => 
-    el.floor === floor && isElementObstacle(el, sourceStore.id, targetStore.id, allowedTransitionIds)
+    isElementObstacle(el, sourceStore.id, targetStore.id, allowedTransitionIds)
   );
 
   // ENHANCED: Strict line-rectangle intersection with full element coverage
